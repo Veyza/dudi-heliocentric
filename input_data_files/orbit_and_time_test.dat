@@ -1,0 +1,4 @@
+0.15862259  0.92122292  0.43119895   	   # heliocentric coordinates of the asteroid at the moment of ejection [AU]
+-0.01037323 -0.01215073 -0.00932272        # heliocentric velocity of the asteroid at the moment of ejection    [AU/day]
+7d0                     # time from the moment of ejection [days]
+0.01                      # half of the acivity time for the v-integration solution [seconds]
