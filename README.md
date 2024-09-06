@@ -1,6 +1,6 @@
 = README for DUDI-heliocentric
 
-This repository contains DUDI-heliocentric, a Fortran-95 code that models dust
+This repository contains DUDI-heliocentric, a Fortran-90 code that models dust
 ejection from an atmosphereless body orbiting the Sun. This software builds upon
 the research described by 
 Ershova, A. & Schmidt, J. (2021). Two-body model for the spatial distribution 
