@@ -9,7 +9,11 @@ and extends the initial DUDI model applicable to moons of giant planets.
 Find the original DUDI at https://github.com/Veyza/dudi.
 
 Derivations of the formulae for DUDI-heliocentric are detailed in a forthcoming
-publication (**reference to the paper**).
+publication 
+Ershova, A., Schmidt, J., Liu, X., Szalay, J., Kimura, H., Hirai, T., Arai,
+T., and Kobayashi, M. (2024a). An efficient semi-analytical model for the
+dust environment of comets and asteroids. Astronomy & Astrophysics. In
+preparation.
 
 == Prerequisites 
 
