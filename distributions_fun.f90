@@ -17,8 +17,112 @@
 ! E-mail: vveyzaa@gmail.com
 
 module distributions_fun
+	use const
 	implicit none
-		contains
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	! parameters and variables for modeling the distribution of 
+	! the ejection direction using the impact-ejecta density maps
+	! from Szalay et al., 2019
+	real(8) lonmax, lonmin
+	integer, parameter :: nlats = 90
+	integer, parameter :: nlons = 180
+	real lats(nlats), lons(nlons)
+	real(8) rmap1(nlons, nlats), rmap2(nlons, nlats), ratemap(nlons, nlats)
+	real(8) rMtmp(3)
+	!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        contains
+            
+            subroutine ratematr_interpolate(rhel, rhel1, rhel2)
+                implicit none
+                real(8), intent(in) :: rhel, rhel1, rhel2
+                
+                ratemap = rmap1 + (rhel - rhel1) / (rhel2 - rhel1) * (rmap2 - rmap1)
+                
+            
+            end subroutine ratematr_interpolate
+            
+            
+            ! reads a matrix from Jamey Szalay's file fname
+            ! rhel is the heliocentric distance of the asteroid
+            ! corresponding to the moments the map is computed for
+            ! lats and lons are the latitudes and longitudes to which
+            ! the columns and the rows of the matrix correspond
+            ! they are not exactly uniform
+            ! the subroutine will return the lats and lons in radians
+            ! and rhel in AU
+            subroutine read_ratemap(fname, rhel)
+                character(*), intent(in) :: fname
+                real(8), intent(out) :: rhel
+                integer i
+                character(len = 18) strtmp
+                character(len = 14) strtmp2
+                real(8) x, y, z
+                
+                open(100, file = fname, status = 'old')
+                    do i = 1, 5
+                        read(100,*) strtmp
+                    enddo
+                    read(100,*) strtmp, x, y, z
+                    rhel = sqrt(sum((/x, y, z/)**2)) * 1d3        ! in meters
+                    rhel = rhel / AU                        ! in AU
+                    read(100,*) strtmp
+                    read(100,*) strtmp2, lons
+                    read(100,*) strtmp2, lats
+                    do i = 1, 3
+                        read(100,*) strtmp
+                    enddo
+                    do i = 1, nlats
+                        read(100,*) rmap2(:,i)
+                    enddo
+                close(100)
+                lats = lats * deg2rad
+                lons = lons * deg2rad
+                
+                lonmin = minval(lons)
+                lonmax = maxval(lons)
+            
+            end subroutine read_ratemap
+            
+            ! reads a matrix from Jamey Szalay's file fname
+            ! rhel is the heliocentric distance of the asteroid
+            ! corresponding to the moments the map is computed for
+            ! lats and lons are the latitudes and longitudes to which
+            ! the columns and the rows of the matrix correspond
+            ! they are not exactly uniform
+            ! the subroutine will return the lats and lons in radians
+            ! and rhel in AU
+            subroutine read_first_ratemap(fname, rhel)
+                character(*), intent(in) :: fname
+                real(8), intent(out) :: rhel
+                integer i
+                character(len = 18) strtmp
+                character(len = 14) strtmp2
+                real(8) x, y, z
+                
+                open(100, file = fname, status = 'old')
+                    do i = 1, 5
+                        read(100,*) strtmp
+                    enddo
+                    read(100,*) strtmp, x, y, z
+                    rhel = sqrt(sum((/x, y, z/)**2)) * 1d3        ! in meters
+                    rhel = rhel / AU                        ! in AU
+                    read(100,*) strtmp
+                    read(100,*) strtmp2, lons
+                    read(100,*) strtmp2, lats
+                    do i = 1, 3
+                        read(100,*) strtmp
+                    enddo
+                    do i = 1, nlats
+                        read(100,*) rmap1(:,i)
+                    enddo
+                close(100)
+                lats = lats * deg2rad
+                lons = lons * deg2rad
+                
+                lonmin = minval(lons)
+                lonmax = maxval(lons)
+            
+            end subroutine read_first_ratemap
 		
 		
 			! The axisymmetric distribution of ejection direction
@@ -70,6 +174,85 @@ module distributions_fun
 							fpsi = 0d0
 						endif
 					case(3)
+                    ! orts of the CS where we can easily know coords
+                    ! of the ejection velocity vector
+                        ! z-axis is along heliocentric radius
+                        zvec1 = rMtmp / norma3d(rMtmp)
+                        ! x-axis is towards local north
+                        xvec1 = zvec - zvec1 * dot_product(zvec, zvec1)
+                        xvec1 = xvec1 / norma3d(xvec1)
+                        yvec1 = vector_product(zvec1, xvec1)
+                        ! ejection velocity vector in this CS
+                        utmp(1) = sin(psi) * cos(lambdaM) ! lambdaM is azimuth
+                        utmp(2) = sin(psi) * sin(-lambdaM) ! counted from the local north clockwise
+                        utmp(3) = cos(psi) 
+                        ! ejection velocity vector in the same CS as rMtmp
+                        uvec = utmp(1) * xvec1 + utmp(2) * yvec1 &
+                             + utmp(3) * zvec1
+                        uvec = uvec / norma3d(uvec)
+                    ! the CS where the maps are defined: z-axis = (0, 0, 1)
+                        ! projection of rMtmp to xy-plane
+                        xvec = rMtmp - dot_product(zvec, rMtmp) * zvec
+                        xvec = -xvec / norma3d(xvec)
+                        yvec = vector_product(zvec, xvec)
+                        ! ejection velocity vector in this CS
+                        utmp(1) = dot_product(uvec, xvec)
+                        utmp(2) = dot_product(uvec, yvec)
+                        utmp(3) = uvec(3)
+                        
+                        lat = acos(utmp(3))            ! polar angle
+                        lat = halfpi - lat                ! latitude
+                        lon = atan(utmp(2), utmp(1))
+                        if(lon < 0d0) lon = twopi + lon
+                        lon = twopi - lon
+                        
+                        if(lat > lats(1) .and. lat < lats(nlats)) then
+                            ii1 = 1
+                            do while(lat < lats(ii1) .or. lat >= lats(ii1+1))
+                                ii1 = ii1 + 1
+                            enddo
+                            ind1 = ii1
+                            ii1 = ii1 + 1
+                            klat = (lat - lats(ind1)) / (lats(ii1) - lats(ind1))
+                        else
+                        ! if the given latitude is beyond the possible
+                        ! interpolation limits, we use the marginal values
+                            if(lat < lats(1)) then
+                                ii1 = 1 ; ind1 = 1
+                                klat = 0d0
+                            else
+                                ii1 = nlats ; ind1 = nlats
+                                klat = 0d0
+                            endif
+                        endif
+                        if(lon < lonmax .and. lon > lonmin) then
+                            ii2 = 1
+                            do while(lon < lons(ii2) .or. lon >= lons(ii2+1))
+                                ii2 = ii2 + 1
+                            enddo
+                            ind2 = ii2
+                            ii2 = ii2 + 1
+                            klon = (lon - lons(ind2)) / (lons(ii2) - lons(ind2))
+                        else
+                        ! if lon is beyond the values available for interpolation
+                        ! we round the circle and use the values corresponding 
+                        ! to the minimal and maximum longitudes
+                            ii2 = 1
+                            ind2 = nlons
+                            if(lon >= lonmax) then
+                            ! the number is 2 degrees between lon(180) = 359 deg and lon(1) = 1deg
+                                klon = (lon - lonmax) / 0.03490659d0
+                            else
+                            ! 1 deg / 2 deg + lon / 2 deg
+                                klon = 0.5d0 + lon / 0.03490659d0
+                            endif
+                        endif
+                        ! interpolation over latitudes
+                        prerate1 = ratemap(ind2, ii1) + klat * (ratemap(ind2, ind1) - ratemap(ind2, ii1))
+                        prerate2 = ratemap(ii2, ii1) + klat * (ratemap(ii2, ind1) - ratemap(ii2, ii1))
+                        ! interpolation over longitudess
+                        fpsi = prerate1 + klon * (prerate2 - prerate1)
+					case(4)
                         ! Here is the place to write the PDF 
                         ! of the distribution tailored for your needs
                         fpsi = 0d0

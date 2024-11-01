@@ -13,7 +13,7 @@
 # E-mail: vveyzaa@gmail.com
 
 objs = const.o define_types.o help.o distributions_fun.o data_in.o data_out.o twobody_fun.o DUDIhc.o
-f95s = const.f90 define_types.f90 help.f90 distributions_fun.f90 data_in.f90 data_out.f90 gu.f90 twobody_fun.f90 DUDIhc.f90
+f90s = const.f90 define_types.f90 help.f90 distributions_fun.f90 data_in.f90 data_out.f90 gu.f90 twobody_fun.f90 DUDIhc.f90
 
 example_image : example
 	./dudihc
@@ -21,6 +21,9 @@ example_image : example
 
 example : example.o $(objs)
 	gfortran -fopenmp $(objs) example.o -o dudihc
+
+phaethon : $(objs) phaethon_input.o phaethon.o
+	gfortran -fopenmp -o phaethon_dudi $(objs) phaethon_input.o phaethon.o
 
 select_method : select_method_comp ./input_data_files/orbit_and_time_test.dat
 	./select_method_dudihc
@@ -32,6 +35,12 @@ select_method.o : select_method.f90 $(objs)
 	gfortran -c $< -fopenmp
 
 example.o : example.f90 $(objs)
+	gfortran -c $< -fopenmp
+
+phaethon.o : phaethon.f90 $(objs) phaethon_input.o
+	gfortran -c $< -fopenmp
+	
+phaethon_input.o : phaethon_input.f90 help.o const.o
 	gfortran -c $< -fopenmp
 
 DUDIhc.o : DUDIhc.f90 const.o twobody_fun.o help.o define_types.o
