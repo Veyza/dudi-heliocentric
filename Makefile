@@ -23,7 +23,7 @@ example : example.o $(objs)
 	gfortran -fopenmp $(objs) example.o -o dudihc
 
 phaethon : $(objs) phaethon_input.o phaethon.o
-	gfortran -fopenmp -o phaethon_dudi $(objs) phaethon_input.o phaethon.o
+	gfortran -fopenmp -o phaethon_dudihc $(objs) phaethon_input.o phaethon.o
 
 select_method : select_method_comp ./input_data_files/orbit_and_time_test.dat
 	./select_method_dudihc
