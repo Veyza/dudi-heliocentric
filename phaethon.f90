@@ -1,16 +1,23 @@
-! This file is a part of the Fortran-95 implementation 
-! of the two-body model for dust dynamics
+! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
+! of the two-body model for the dynamics of dust ejected from an atmosphereless
+! body moving around the Sun
 ! Version 1.0.0
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 ! If you do, please cite the following paper
-! **REFERENCE TO THE PAPER IN THE RIGHT FORMAT SO THAT IT COULD BE JUST COPIED AND PASTED TO THE REFERENCE LIST**
-
-! File: main_program.f95
-! Description: A suggested template for application of the model
+! Anastasiia Ershova and Jürgen Schmidt, 
+! Two-body model for the spatial distribution of dust ejected from
+! an atmosphereless body, 2021, A&A, 650, A186 
 
 ! Author: Anastasiia Ershova
 ! E-mail: vveyzaa@gmail.com
+
+! File: phaethon_input.f90
+! Description: This is the main program managing the modeling of dust
+! ejection from NEA 3200 Phaethon at the orbital phase at which it is
+! planned to be visited by the DESTINY+ mission using the simple 
+! expansion method of DUDI-heliocentric 
+! (see Sect. 4.1.1 of Ershova et. al, 2025)
 
 program phaethon
     use const
@@ -30,7 +37,7 @@ program phaethon
     real(8), parameter :: Rast_AU = Rast / AU
     real(8), parameter :: centerpositionx = 0.5d0
     real(8), parameter :: centerpositiony = 0.5d0
-    integer, parameter :: Nmaps = 9
+    integer, parameter :: Nmaps = 3
     integer, parameter :: Nrgs = 13
     logical, parameter :: pericenter = .FALSE.
     character(len = 20) outformat
@@ -72,7 +79,7 @@ program phaethon
 
     call get_maps_data(rhels, fnames)
     density = 0.0
-    do i_R = 0, Nrgs
+    do i_R = 1, Nrgs
 
          mapind1 = 1 ; mapind2 = mapind1 + 1
          call read_first_ratemap(fnames(mapind1), rhel1)
@@ -128,9 +135,9 @@ program phaethon
         enddo
         write(*,*) minval(density), maxval(density)
         if(i_R > 0) then
-			write(fnameout, '("Rg=", F4.2, "micron.dat")') Rgs(i_R)
+			write(fnameout, '("results/Rg=", F4.2, "micron.dat")') Rgs(i_R)
         else
-			write(fnameout, '("Rg=", F4.2, "micron.dat")') 100d0
+			write(fnameout, '("results/Rg=", F4.2, "micron.dat")') 100d0
         endif
         call matrix_out(trim(fnameout), density, nt1, nt2)
     enddo

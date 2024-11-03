@@ -1,3 +1,22 @@
+! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
+! of the two-body model for the dynamics of dust ejected from an atmosphereless
+! body moving around the Sun
+! Version 1.0.0
+! This is free software. You can use and redistribute it 
+! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
+! If you do, please cite the following paper
+! Anastasiia Ershova and Jürgen Schmidt, 
+! Two-body model for the spatial distribution of dust ejected from
+! an atmosphereless body, 2021, A&A, 650, A186 
+
+! Author: Anastasiia Ershova
+! E-mail: vveyzaa@gmail.com
+
+! File: phaethon_input.f90
+! Description: This module contains the routines used for inputing
+! the dust ejection parameters and the desirable points of interest
+! to compute the number density of dust ejected from NEA 3200 Phaethon
+
 module phaethon_input
 
 contains
@@ -6,18 +25,16 @@ contains
    subroutine get_maps_data(rhels, fnames)
       use const
       implicit none
-      integer, parameter :: N = 9
+      integer, parameter :: N = 3
       real(8), intent(out) :: rhels(N)
       character(len = *), intent(out) :: fnames(N)
       integer i
       character(len = 1) ic
 
-      rhels = (/1.17d0, 1.03d0, 1.01d0, 1.00d0, 0.98d0, 0.96d0, 0.94d0, 0.93d0, 0.91d0/)
-      fnames(1) = &
-         '../shared_maps/shared_maps/data/COS3_Yield_ALL_map_24.sav_yield_orb_pha.txt'
-      do i = 2, N
-         write(ic,'(I1)') i
-         fnames(i) = '../flyby_maps_data/data/COS3_Yield_ALL_map_' &
+      rhels = (/0.94d0, 0.93d0, 0.91d0/)
+      do i = 1, N
+         write(ic,'(I1)') i+5
+         fnames(i) = './input_data_files/impact_ejecta_maps/COS3_Yield_ALL_map_' &
             // ic // '.sav_yield_orb_pha.txt'
       enddo
 

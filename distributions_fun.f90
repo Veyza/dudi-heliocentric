@@ -1,4 +1,4 @@
-! This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
+! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
 ! Version 1.0.0
@@ -308,6 +308,12 @@ module distributions_fun
 				use const
 				use define_types
 				implicit none
+                real(8), parameter :: Rad = 1737d0 ! km
+                real(8), parameter :: lambda = 200d0 ! km
+                real(8), parameter :: hrel = Rad / lambda
+                real(8), parameter :: lambda1 = 1d0 ! km
+                real(8), parameter :: hrel1 = Rad / lambda1
+                real(8), parameter :: uesc = 2.4d3 ! m/s
 				real(8) Rc, nu
 				real(8) urel, Rrel, fu
 				type(ejection_speed_properties) ud
@@ -317,7 +323,13 @@ module distributions_fun
 					case(0)
 						fu = 1d0 / (ud%umax - ud%umin) 
 					
-					case(1)
+                    case(1)
+                    ! from Szalay & Horányi, 2016, Lunar meteoritic gardening rate
+                        nu = (u * AUdays2SI) / uesc
+                        fu = 2d0 * hrel * nu / uesc / (1d0 - nu**2)**2 &
+                             * exp(- hrel / (nu**(-2) - 1d0))
+                        fu = fu * AUdays2SI
+					case(2)
                         ! Custom distribution specification
                         fu = 0d0
 				endselect
