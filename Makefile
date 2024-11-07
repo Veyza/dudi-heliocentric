@@ -19,10 +19,14 @@ example_image : example
 	./dudihc
 	python3 show_image.py
 
+phaethon : phaethon_compile
+	./phaethon_dudihc
+	python3 plot_Fig10.py
+
 example : example.o $(objs)
 	gfortran -fopenmp $(objs) example.o -o dudihc
 
-phaethon : $(objs) phaethon_input.o phaethon.o
+phaethon_compile : $(objs) phaethon_input.o phaethon.o
 	gfortran -fopenmp -o phaethon_dudihc $(objs) phaethon_input.o phaethon.o
 
 select_method : select_method_comp ./input_data_files/orbit_and_time_test.dat
