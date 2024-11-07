@@ -38,7 +38,8 @@ DUDI-heliocentric is distributed under GNU GENERAL PUBLIC LICENSE Version 3.
 4. Choosing Calculation Method
 5. Compilation and Running an Example
 6. Controlling the Accuracy of Calculations
-7. Possible Issues
+7. Modeling the dust environment of Phaethon
+8. Possible Issues
 
 == 1. Specifying Functions Describing the Dust Ejection
 
@@ -285,7 +286,7 @@ limits of delta-ejection and simple expansion methods applicability.
 To compile DUDI-heliocentric and create the executable:
 
 ----
-make
+make example
 ----
 
 This command compiles the source files using the makefile provided in the
@@ -365,7 +366,42 @@ Furthermore, if the number of warnings in `fort.666` exceeds the limit set by
 warning message to the command line. 
 
 
-== 7. Possible Issues
+== 7. Modeling dust environment of Phaethon
+
+This repository includes the routines and input files to reproduce 
+Figure 10 from Ershova et al. (2025), Astronomy & Astrophysics. 
+The input data are the ephemeridae of the asteroid saved in the file 
+
+"input_data_files/Phaethon_2025-02-22_last_int=10min_ECLIPJ2000.dat,"
+
+a table of beta values corresponding to the given particle radii saved in 
+
+"input_data_files/beta_vs_forsterite_Rg.dat," 
+
+and four maps of impact ejecta in the directory 
+
+"input_data_files/impact_ejecta_maps."
+
+The command:
+
+----
+make phaethon
+----
+
+compiles the program, runs it, and, if Python 3 is installed, generates 
+the plot. The results of the calculations and the plot are saved in the "results" 
+directory. The results are text files containing matrices of number densities at 
+points around Phaethon. These number densities are not yet weighted by the size 
+distribution. Integration over particle radii is performed by the Python script.
+The result of the integration is written to the file "integrated_Rmin=0.10.dat". 
+On a 4-core PC, the program’s typical run time is under 15 minutes. 
+
+To estimate dust number density at different points, assume different ejection 
+parameters, or use a custom beta(R) relation, modify the subroutines in the 
+"phaethon_input.f90" module.
+
+
+== 8. Possible Issues
 
 If you encounter a "Segmentation fault" when running a program compiled with 
 the `-openmp` key (as specified in our Makefile), it may be due to the stack 

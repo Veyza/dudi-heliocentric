@@ -21,19 +21,20 @@ module phaethon_input
 
 contains
 
-
+	! input the paths to the impact-ejecta maps 
+	! and the corresponding heliocentric distances
    subroutine get_maps_data(rhels, fnames)
       use const
       implicit none
-      integer, parameter :: N = 3
+      integer, parameter :: N = 4
       real(8), intent(out) :: rhels(N)
       character(len = *), intent(out) :: fnames(N)
       integer i
       character(len = 1) ic
 
-      rhels = (/0.94d0, 0.93d0, 0.91d0/)
+      rhels = (/0.96d0, 0.94d0, 0.93d0, 0.91d0/)
       do i = 1, N
-         write(ic,'(I1)') i+5
+         write(ic,'(I1)') i+4
          fnames(i) = './input_data_files/impact_ejecta_maps/COS3_Yield_ALL_map_' &
             // ic // '.sav_yield_orb_pha.txt'
       enddo
@@ -41,7 +42,10 @@ contains
    end subroutine get_maps_data
 
 
-
+	! set the parameters of the sources modeling dust ejection
+	! from the asteroid moving along its orbit
+	! fname is the name of the file
+	! containing the asteroid ephemeridae (positions and velocities)
    subroutine get_moving_sources(fname, Np, Neph, Nlin, &
                                                   sources, comet)
       use const
@@ -207,7 +211,8 @@ contains
 
 	
 
-
+	! Inputing a 2-d array of the points where the number density
+	! will be computed
    subroutine get_points(points, nt1, nt2, resolution, lastrM, &
                                           VVast, Vast, cntrpx, cntrpy)
       use const
@@ -246,7 +251,9 @@ contains
 
    end subroutine get_points
 
-
+	
+	! From the given table of particle radii and corresponding beta
+	! values, interpolate the value of beta corresponding to Rg
    subroutine beta_from_Rg(beta, Rg)
       use const
       use help
@@ -263,7 +270,6 @@ contains
          enddo
       close(300)
       beta = LiNTERPOL(N, betas, Rgs, Rg)
-      write(*,*) 'Rg =', Rg, 'beta = ', beta
    
    end subroutine beta_from_Rg
 
