@@ -17,13 +17,13 @@ preparation.
 
 == Prerequisites 
 
-To compile and run DUDI, the following is required: 
+To compile and run DUDI-heliocentric, the following is required: 
 * gfortran - Fortran compiler 
 
 For generating plots from the example applications described in this README, 
 the following additional software is needed: 
 * Python3, NumPy, and Matplotlib 
-Note: If these are not installed, DUDI will still produce results, 
+Note: If these are not installed, DUDI-heliocentric will still produce results, 
 but the plot will not be generated. 
 
 == License
