@@ -39,6 +39,7 @@ DUDI-heliocentric is distributed under GNU GENERAL PUBLIC LICENSE Version 3.
 6. Controlling the Accuracy of Calculations
 7. Modeling the dust environment of Phaethon
 8. Possible Issues
+9. Latest updates
 
 == 1. Specifying Functions Describing the Dust Ejection
 
@@ -239,7 +240,7 @@ method for given scenarios. This routine utilizes parameters defined in
 - **Line 4**: Interval of the source activity for v-integration method
               (∆τ, days).
 
-Executing `make select_method` runs this routine, outputting recommendations
+Executing `make select` compiles and runs this routine, outputting recommendations
 to the terminal based on the input parameters. The routine calculates the dust 
 number density by the three methods and compares the results. A non-uniform 
 distribution of the ejection direction is employed to ensure a proper test for 
@@ -274,7 +275,7 @@ For specific orbital shapes and phases:
 adjustments may be necessary for eccentric orbits or ejections near perihelion.
 
 It's recommended to start with ∆τ = 0.05 and ∆t = 0.1 and to run the command
-`make select_method` adjusting these values to find the value of ∆τ and ∆t for
+`make select` adjusting these values to find the value of ∆τ and ∆t for
 which the delta-ejection method is recommended. In this way one secures the 
 optimal ∆τ for future simulations. Then start increasing ∆t to identify the 
 limits of delta-ejection and simple expansion methods applicability.
@@ -295,7 +296,7 @@ repository, resulting in an executable named `dudihc`.
 
 == Example Routine Overview in DUDI-heliocentric
 
-The "example.f90" program demonstrates the package's basic functionality and is
+The "examples/example.f90" program demonstrates the package's basic functionality and is
 set up as follows:
 
 - **Asteroid Model:**
@@ -339,7 +340,7 @@ make example_image
 
 Executing this command will:
 
-- Compile the `dudihc` executable, if it is not already compiled.
+- Compile the `bins/dudihc` executable, if it is not already compiled.
 - Run the executable to simulate dust dynamics, generating the necessary
   output data.
 - Utilize the Python script `show_image.py` to visualize the simulation results.
@@ -411,3 +412,9 @@ To address this:
   `ulimit -s unlimited`
 * In `tcshell`, use:
   `limit stacksize unlimited`
+  
+  
+== 9. Latest updates
+    Version 1.0.1
+  - Restructured repository with clear src/, examples/, scripts/, bin/, build/, and results/ folders.
+  - Updated Makefile and .gitignore accordingly
