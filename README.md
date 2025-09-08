@@ -101,9 +101,7 @@ The pseudo gravitational parameter, `muR`, is essential for simulating the
 dynamics of dust particles under solar gravity and radiation pressure. It is
 defined as:
 
-----
-muR = GMsun * (1 - beta(R, Qpr))
-----
+`muR = GMsun * (1 - beta(R, Qpr))`
 
 Where:
 - `GMsun` is the solar gravitational parameter (AU^3/day^2).
@@ -285,9 +283,7 @@ limits of delta-ejection and simple expansion methods applicability.
 
 To compile DUDI-heliocentric and create the executable:
 
-----
-make example
-----
+`make example`
 
 This command compiles the source files using the makefile provided in the
 repository, resulting in an executable named `dudihc`.
@@ -334,9 +330,7 @@ the ephemeridae in the file "ephemeridae.dat" is 30 sec.
 
 To visualize the results of the dust ejection simulation:
 
-----
-make example_image
-----
+`make example_image`
 
 Executing this command will:
 
@@ -384,9 +378,7 @@ and four maps of impact ejecta in the directory
 
 The command:
 
-----
-make phaethon
-----
+`make phaethon`
 
 compiles the program, runs it, and, if Python 3 is installed, generates 
 the plot. The results of the calculations and the plot are saved in the "results" 
