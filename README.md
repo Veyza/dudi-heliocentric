@@ -283,7 +283,7 @@ limits of delta-ejection and simple expansion methods applicability.
 
 To compile DUDI-heliocentric and create the executable:
 
-`make example`
+`make dudihc`
 
 This command compiles the source files using the makefile provided in the
 repository, resulting in an executable named `dudihc`.
