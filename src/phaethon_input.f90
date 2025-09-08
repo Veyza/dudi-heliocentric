@@ -1,7 +1,7 @@
 ! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.0
+! Version 1.0.1
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 ! If you do, please cite the following paper
@@ -140,6 +140,45 @@ contains
 
    end subroutine get_moving_sources
 
+
+	subroutine get_flyby_trajectory(points, nt1, resolution, CAdist, lastrM, VVast, Vast, &
+											firstrM, VVast1, Vast1)
+      use const
+      use define_types
+      use help
+      implicit none
+      integer, intent(in) :: nt1
+      real(8), intent(in) :: resolution, CAdist
+      type(position_in_space), intent(out) :: points(nt1)
+      real(8), intent(in) :: lastrM(3), VVast(3), Vast
+      real(8), intent(in) :: firstrM(3), VVast1(3), Vast1
+      integer i
+      real(8), parameter :: angle2xvec = 29d0 * deg2rad
+      real(8) tmpvec(3), tmpnorm(3), CApoint(3)
+      real(8) zvec(3), xvec(3), yvec(3)	
+
+!~       ! the CS to compare with Szalay et al, 2019
+       zvec = (/0d0, 0d0, 1d0/)
+       xvec = lastrM  / norma3d(lastrM)
+       zvec = zvec - zvec * dot_product(xvec, zvec)
+       zvec = zvec / norma3d(zvec)
+       yvec = vector_product(zvec, xvec)
+       write(*,*) 'CS to compare with Szalay et al, 2019 is used'
+          
+       tmpvec = xvec * cos(angle2xvec) + yvec * sin(angle2xvec)
+       tmpvec =  tmpvec * resolution / AU
+       tmpnorm = -xvec * sin(angle2xvec) + yvec * cos(angle2xvec)
+       
+	   CApoint = lastrM - tmpnorm * CAdist
+	   
+	   do i = 1, nt1
+			points(i)%rvector = CApoint + tmpvec * (i - nt1/2.0)
+			points(i)%r = norma3d(points(i)%rvector)
+            points(i)%alpha = acos(points(i)%rvector(3) / points(i)%r)
+            points(i)%beta = atan(points(i)%rvector(2), points(i)%rvector(1))    ! longitude counted clockwise if looking from the South Pole from x-axis pointing in anti-Saturn direction
+	   enddo
+	
+	end subroutine get_flyby_trajectory
 
 
 

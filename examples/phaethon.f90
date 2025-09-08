@@ -1,7 +1,7 @@
 ! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.0
+! Version 1.0.1
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 ! If you do, please cite the following paper
@@ -113,6 +113,7 @@ program phaethon
         do while(tnow - sources(idt)%Tj > min(dtlim3, dtlim2))
             idt = idt + 1
         enddo
+        write(*,*) 'start index', idt
         ! Loop over the consequently active sources along the asteroid
         ! trajectory
         do i_p = idt, Np-1
