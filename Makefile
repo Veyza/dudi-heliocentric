@@ -26,6 +26,9 @@ phaethon : phaethon_compile
 example : example.o $(objs)
 	gfortran -fopenmp $(objs) example.o -o dudihc
 
+destiny_flyby : $(objs) phaethon_input.o destiny_flyby.o
+	gfortran -fopenmp -o destiny_dudihc $(objs) phaethon_input.o destiny_flyby.o
+
 phaethon_compile : $(objs) phaethon_input.o phaethon.o
 	gfortran -fopenmp -o phaethon_dudihc $(objs) phaethon_input.o phaethon.o
 
@@ -36,6 +39,9 @@ select_method_comp : select_method.o  $(objs)
 	gfortran -fopenmp -o select_method_dudihc $^
 
 select_method.o : select_method.f90 $(objs)
+	gfortran -c $< -fopenmp
+
+destiny_flyby.o : destiny_flyby.f90 $(objs)
 	gfortran -c $< -fopenmp
 
 example.o : example.f90 $(objs)

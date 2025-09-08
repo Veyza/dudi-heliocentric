@@ -113,6 +113,7 @@ program phaethon
         do while(tnow - sources(idt)%Tj > min(dtlim3, dtlim2))
             idt = idt + 1
         enddo
+        write(*,*) 'start index', idt
         ! Loop over the consequently active sources along the asteroid
         ! trajectory
         do i_p = idt, Np-1
