@@ -1,7 +1,7 @@
 ! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.0
+! Version 1.0.1
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 ! If you do, please cite the following paper
@@ -124,7 +124,7 @@ contains
 		sources(i)%ud%ud_shape = 1
 		sources(i)%ud%umin = 2d0 / AUdays2SI
 		sources(i)%ud%umax = 2399d0 / AUdays2SI
-		sources(i)%ejection_angle_distr = 0!3
+		sources(i)%ejection_angle_distr = 3
 		sources(i)%Tj = moment(i)
 		sources(i)%dtau = 0d0
 		
