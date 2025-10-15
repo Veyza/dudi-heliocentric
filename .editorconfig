@@ -1,0 +1,10 @@
+# This file defines coding style settings editors can automatically follow.
+
+root = true
+
+# Apply these rules to all Fortran files
+[*.{f,for,f90,F90}]
+indent_style = space        # use spaces, not tabs
+indent_size = 2             # 2 spaces per indent level (adjust if you prefer 4)
+insert_final_newline = true # ensure every file ends with a newline
+trim_trailing_whitespace = true
