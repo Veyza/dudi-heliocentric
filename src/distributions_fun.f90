@@ -260,7 +260,7 @@ module distributions_fun
 
         endselect
         Jpsi = 1d0
-        if(zeta /= 0d0) then
+        if(.not. is_zero_r8(zeta)) then
           Jpsi = Jacobian_tilt(psi, lambdaM, zeta, eta)
           fpsi = fpsi * abs(Jpsi)
         endif

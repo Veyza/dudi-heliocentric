@@ -128,7 +128,7 @@ module DUDIhc
 !~             ! x-coordinate of the comet velosity
             Vastx = dot_product(comet%Vastvec, source%rrM) / source%r
             Vasty = sqrt(comet%Vast**2 - Vastx**2)
-            if(Vastx == 0d0) Vastx = 2d5 / AUdays2SI
+            if(is_zero_r8(Vastx)) Vastx = 2d5 / AUdays2SI
             ! initial approximate solution
             tmpux = Vastx
             tmpuy = Vasty 

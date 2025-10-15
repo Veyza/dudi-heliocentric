@@ -397,7 +397,7 @@ module twobody_fun
                 vvec = velocity * (/sin(theta) * cos(lambdaM), sin(theta) * sin(lambdaM), cos(theta)/)
                 
                 ! ejection velocity vector in the local horizontal CS
-                if(comet%Vast /= 0d0) then
+                if(.not. is_zero_r8(comet%Vast)) then
                     call find_astapex(s%rrM, s%r, comet%Vastvec, comet%Vast, Vastvechorz)
                     uejectvec = uvec - Vastvechorz
                 else
@@ -440,7 +440,7 @@ module twobody_fun
                     fac2 = ejection_direction_distribution(s%ejection_angle_distr, &
                                     wpsi, psieject, lambdaMeject, s%zeta, s%eta)
                                                     
-                    if(fac2 == 0d0) then
+                    if(is_zero_r8(fac2)) then
                         Integrand = 0d0
                     else
                         hcJpsi = hc_jacobian_ueject(ueject, &
@@ -1176,7 +1176,7 @@ module twobody_fun
             cc = sqrt(x**2 + y**2)
             
             do i = 1, 2
-                if(cc(i) == cc(i)) then
+                if(.not. is_nan_r8(cc(i))) then
                     ee(i) = cc(i) / 2d0 / a
 
                     one_plus_e = 1d0 + ee(i)
@@ -1294,7 +1294,7 @@ module twobody_fun
                 uvec = uu * (/sin(psi) * cos(lambdaM), sin(psi) * sin(lambdaM), cos(psi)/)
                 
                 ! ejection velocity vector in the local horizontal CS
-                if(comet%Vast /= 0d0) then
+                if(.not. is_zero_r8(comet%Vast)) then
                     call find_astapex(s%rrM, s%r, comet%Vastvec, comet%Vast, Vastvechorz)
                     uejectvec = uvec - Vastvechorz
                 else
@@ -1339,7 +1339,7 @@ module twobody_fun
                     ! and here psi is the angle between the direction of ejection and the normal to surface
                     fac2 = ejection_direction_distribution(s%ejection_angle_distr, &
                                         wpsi, psieject, lambdaMeject, s%zeta, s%eta)
-                    if(fac2 == 0d0 .or. fac1 == 0d0) then
+                    if(is_zero_r8(fac2) .or. is_zero_r8(fac1)) then
                         Integrand = 0d0
                     else
                         

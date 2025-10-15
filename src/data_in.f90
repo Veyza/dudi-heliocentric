@@ -133,7 +133,7 @@ contains
 
       rtmp = rrM / norma3d(rrM)
       tmpang = 3d0 * halfpi - betaM
-      if(zeta /= 0d0) then
+      if(.not. is_zero_r8(zeta)) then
          ! rotate the CS around z-axis so that rtmp would have zero x-axis component
          call eulrot(0d0, 0d0, tmpang, rtmp(1), rtmp(2), rtmp(3), &
             xout, yout, zout, .FALSE.)
