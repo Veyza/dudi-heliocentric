@@ -147,7 +147,8 @@ module distributions_fun
 				real(8) utmp(3), uvec(3), xvec(3), yvec(3)
 				real(8) xvec1(3), yvec1(3), zvec1(3)
 				real(8) :: zvec(3) = (/0d0, 0d0, 1d0/)
-				real(8) fpsi, Jpsi
+				real(8) :: fpsi = -909d0
+				real(8) Jpsi
 				integer, intent(in) :: distribution_shape
 				real(8), intent(in) :: psi, wpsi, lambdaM, zeta, eta
 				
@@ -315,7 +316,8 @@ module distributions_fun
                 real(8), parameter :: hrel1 = Rad / lambda1
                 real(8), parameter :: uesc = 2.4d3 ! m/s
 				real(8) Rc, nu
-				real(8) urel, Rrel, fu
+				real(8) urel, Rrel
+				real(8) :: fu = -101d0
 				type(ejection_speed_properties) ud
 				real(8) u, q
 								
