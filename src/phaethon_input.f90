@@ -140,7 +140,7 @@ contains
    end subroutine get_moving_sources
 
 
-  subroutine get_flyby_trajectory(points, nt1, resolution, CAdist, lastrM, VVast, Vast)
+  subroutine get_flyby_trajectory(points, nt1, resolution, CAdist, lastrM)
       use const
       use define_types
       use help
@@ -148,7 +148,7 @@ contains
       integer, intent(in) :: nt1
       real(8), intent(in) :: resolution, CAdist
       type(position_in_space), intent(out) :: points(nt1)
-      real(8), intent(in) :: lastrM(3), VVast(3), Vast
+      real(8), intent(in) :: lastrM(3)
       integer i
       real(8), parameter :: angle2xvec = 29d0 * deg2rad
       real(8) tmpvec(3), tmpnorm(3), CApoint(3)
@@ -250,7 +250,7 @@ contains
   ! Inputing a 2-d array of the points where the number density
   ! will be computed
    subroutine get_points(points, nt1, nt2, resolution, lastrM, &
-                                          VVast, cntrpx, cntrpy)
+                                          cntrpx, cntrpy)
       use const
       use define_types
       use help
@@ -258,7 +258,7 @@ contains
       integer, intent(in) :: nt1, nt2
       real(8), intent(in) :: resolution(2), cntrpx, cntrpy
       type(position_in_space), intent(out) :: points(nt1,nt2)
-      real(8), intent(in) :: lastrM(3), VVast(3)
+      real(8), intent(in) :: lastrM(3)
       integer i, ii
       real(8) heldist
       real(8) tmpvec(3)

@@ -80,7 +80,6 @@ program phaethon
     resolution(2) = resolution(1)
     ! Generating the list of points where we compute number density
     call get_points(points, nt1, nt2, resolution, comet(Np)%coords, &
-                comet(Np)%Vastvec, &
                 centerpositionx, centerpositiony)
 
   ! Load the matrices with number density of impact ejecta (Szalay et al., 2019)
@@ -131,19 +130,14 @@ program phaethon
       call runge_kutta_point_position(comet(i_p)%coords, &
                 comet(i_p)%Vastvec, muR, dt, cloudcentr)
       rMtmp = cloudcentr
-      !$OMP PARALLEL PRIVATE(i,ii) &
-      !$OMP SHARED(i_p, i_R, points, sources, tmp_res, Rgs, muR, comet)
-      !$OMP DO
-      do ii = 1, nt2
-      do i = 1, nt1
-        
-        call hc_DUDI_simple_expansion(tmp_res(i,ii), &
-              sources(i_p), dt, cloudcentr, points(i,ii))
-
-      enddo
-      enddo
-      !$OMP END DO
-      !$OMP END PARALLEL
+    !$omp parallel do default(none) private(i,ii) collapse(2) schedule(static) &
+    !$omp& shared(nt1,nt2, i_p, points, sources, tmp_res, Rgs, muR, comet, dt, cloudcentr)
+    do ii = 1, nt2
+        do i = 1, nt1
+            call hc_DUDI_simple_expansion(tmp_res(i,ii), sources(i_p), dt, cloudcentr, points(i,ii))
+        end do
+    end do
+    !$omp end parallel do
       density = density + tmp_res
         enddo
         if(i_R > 0) then

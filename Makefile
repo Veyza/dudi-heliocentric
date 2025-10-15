@@ -21,24 +21,12 @@ LDFLAGS ?=
 .PHONY: all clean distclean clean-warnings help list \
         dudihc phaethon_dudihc select_method_dudihc \
         example_image phaethon select \
-        run-example run-phaethon_dudihc run-select_method \
-        debug debug-example
-        
-DEBUG_FLAGS = -O0 -g -fimplicit-none -fbacktrace -fcheck=all \
-              -ffpe-trap=invalid,zero,overflow -finit-real=snan -finit-integer=-2147483648
+        run-example run-phaethon_dudihc run-select_method 
 
-debug:
-	$(MAKE) clean
-	$(MAKE) -B all FFLAGS='$(DEBUG_FLAGS)'
-
-debug-example:
-	$(MAKE) clean
-	$(MAKE) -B $(BINDIR)/dudihc FFLAGS='$(DEBUG_FLAGS)'
-	$(BINDIR)/dudihc
-
-
-# your normal flags
+# normal flags
 FFLAGS ?= -O3 -fimplicit-none -Wall -Wno-tabs -Wno-unused-variable
+FFLAGS  += -fopenmp
+LDFLAGS += -fopenmp
 
 # strict flags
 STRICT_WARNINGS = -O0 -g -fimplicit-none -Wall -Wextra -Wconversion -Wsurprising \
