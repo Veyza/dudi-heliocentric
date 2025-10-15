@@ -148,8 +148,11 @@ module help
 			pure function LiNTERPOL(N, y, x, xout) result(yout)
 			  implicit none
 			  real(8), intent(in) ::  xout, y(N), x(N)
-			  real(8) yout, x1, x2
-			  integer i, i1, i2
+			  real(8) yout
+			  real(8) :: x1 = 1d0
+			  real(8) :: x2 = 1d0
+			  integer i, i1
+			  integer :: i2 = -1
 			  integer, intent(in) :: N
 			  
 			  if(xout < x(1)) then
