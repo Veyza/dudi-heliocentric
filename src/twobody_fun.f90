@@ -68,7 +68,7 @@ module twobody_fun
                 implicit none
                 type(position_in_space), intent(in) :: point
                 type(source_properties), intent(in) :: s
-                integer i, ind
+                integer i
                 real(8), intent(in) :: muR, dt, Rast_AU
                 real(8), intent(in) :: coords(3), uejectvec(3)
                 real(8) rdif(3), polan, az, radast
@@ -132,17 +132,6 @@ module twobody_fun
                             exit
                         endif
                     enddo
-                    if(collision) then
-                        dd = dx + dv * roots(ind) + da / 2d0 * roots(ind)**2
-                        ctmp = dot_product(dd, dd) - dot_product(dx, dx) &
-                        - (dot_product(dv, dv) + dot_product(dx, da)) * roots(ind)**2 &
-                        - 2d0 * dot_product(dv, dx) * roots(ind) &
-                        - dot_product(dv, da) * roots(ind)**3 &
-                        - dot_product(da, da) / 4d0 * roots(ind)**4
-                        if(abs(ctmp) > 1d-8) then
-                            collision = .False.
-                        endif
-                    endif
                 endif
                 
             end subroutine collision_check
