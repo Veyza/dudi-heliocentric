@@ -66,7 +66,7 @@ all: dudihc
 
 help:
 	@echo "Build-only:  dudihc | phaethon_dudihc | select_method_dudihc"
-	@echo "Pipelines:   example | phaethon | select   (build -> run -> plot)"
+	@echo "Pipelines:   example_image | phaethon | select   (build -> run -> plot)"
 	@echo "List files:  make list"
 	@echo "Clean:       make clean   /  make distclean"
 
