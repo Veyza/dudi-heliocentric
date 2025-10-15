@@ -51,9 +51,10 @@ MODDIR := build
 RESDIR := results
 
 # -------- core sources (ORDERED: providers before users) --------
-# Adjust this list to match files in src/ (delete non-existent ones).
+# Adjust this list to match files in src/.
 CORE_SOURCES := \
   $(SRCDIR)/const.f90 \
+  $(SRCDIR)/nan_utils.f90 \
   $(SRCDIR)/define_types.f90 \
   $(SRCDIR)/help.f90 \
   $(SRCDIR)/distributions_fun.f90 \

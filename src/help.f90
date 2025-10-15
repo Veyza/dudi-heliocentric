@@ -276,6 +276,7 @@ module help
       pure subroutine ApuTrajectoryLight(point, dphi, dbeta, source)
         use const
         use define_types
+        use nan_utils
         implicit none
         integer i
         type(position_in_space), intent(in) :: point
@@ -288,7 +289,7 @@ module help
         ! dphi is an angle between a vector pointing to the source
         ! and a vector pointing to the spacecraft
         dphi = acos(dot_product(Rsource, point%rvector) / point%r)
-        if(dphi /= dphi .or. dphi < 2d-8) &
+        if(is_nan_r8(dphi) .or. dphi < 2d-8) &
             dphi = sign(1d0, dot_product(Rsource, point%rvector)) * 1d-8
         
         ! dbeta is an angle between proections of the same vectors
@@ -296,7 +297,7 @@ module help
         dbeta = acos((Rsource(1) * point%rvector(1) &
             + Rsource(2) * point%rvector(2)) &
             / (norma2d(Rsource(1:2)) * norma2d(point%rvector(1:2))))
-        if(dbeta /= dbeta .or. dbeta < 1d-8) &
+        if(is_nan_r8(dbeta) .or. dbeta < 1d-8) &
         dbeta = sign(1d0, dot_product(Rsource, point%rvector)) * 1d-8
         
       end subroutine ApuTrajectoryLight
@@ -353,10 +354,11 @@ module help
         use const
         implicit none
         real(8), intent(in) :: a(0:3)
-        complex(16), intent(out) :: x(3)
+        integer, parameter :: dk = kind(0.0d0)
+        complex(kind=dk), intent(out) :: x(3)
+        complex(kind=dk) :: omega1, omega2, y(3), roots1(3), roots2(3)
         integer k, i, ii
         real(8) B1, B2, B3, pp, qq, phi1, phi2
-        complex(16) omega1, omega2, y(3), roots1(3), roots2(3)
         
         B1 = a(1) / a(0)
         B2 = a(2) / a(0)
@@ -365,19 +367,18 @@ module help
         pp = -B1**2 / 3d0 + B2
         qq = 2d0 * B1**3 / 27d0 - B1 * B2 / 3d0 + B3
         
-        omega1 = -qq / 2d0 + sqrt(cmplx(qq**2 / 4d0 + pp**3 / 27d0))
-        omega2 = -qq / 2d0 - sqrt(cmplx(qq**2 / 4d0 + pp**3 / 27d0))
+        omega1 = -qq / 2d0 + sqrt( cmplx(qq**2 / 4d0 + pp**3 / 27d0, kind=dk) )
+        omega2 = -qq / 2d0 - sqrt( cmplx(qq**2 / 4d0 + pp**3 / 27d0, kind=dk) )
         
         phi1 = atan(imag(omega1), real(omega1))
         phi2 = atan(imag(omega2), real(omega2))
         do k = 1, 3
-          roots1(k) = abs(omega1)**(1.0/3.0) &
-                       * cmplx(cos((phi1 + twopi * (k-1)) / 3d0), &
-                       sin((phi1 + twopi * (k-1)) / 3d0))
-                       
-          roots2(k) = abs(omega2)**(1.0/3.0) &
-                       * cmplx(cos((phi2 + twopi * (k-1)) / 3d0), &
-                       sin((phi2 + twopi * (k-1)) / 3d0))
+          roots1(k) = abs(omega1)**(1.0d0/3.0d0) * cmplx( cos((phi1 + twopi * (k-1)) / 3d0), &
+                       sin((phi1 + twopi * (k-1)) / 3d0), kind=dk )
+
+          roots2(k) = abs(omega2)**(1.0d0/3.0d0) * cmplx( cos((phi2 + twopi * (k-1)) / 3d0), &
+                      sin((phi2 + twopi * (k-1)) / 3d0), kind=dk )
+
         enddo
         
         k = 1

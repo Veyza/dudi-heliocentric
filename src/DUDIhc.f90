@@ -72,6 +72,7 @@ module DUDIhc
                     muR, dt, comet, Rast_AU)
             use const
             use define_types
+            use nan_utils
             use help
             use twobody_fun
             implicit none
@@ -216,8 +217,8 @@ module DUDIhc
             theta = asin(hh / point%r / v)
             if(psi > halfpi) theta = pi - theta
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            if(theta /= theta .or. abs(theta-halfpi) < 1d-8) then
-                if(theta /= theta) write(666,*) 'delta_eject << sin(theta) =', &
+            if(is_nan_r8(theta) .or. abs(theta-halfpi) < 1d-8) then
+                if(is_nan_r8(theta)) write(666,*) 'delta_eject << sin(theta) =', &
                                         hh / point%r / v, 'corrections applied'
                 if(abs(theta-halfpi) < 1d-8) write(666,*) &
                                   'theta is close to pi/2, corrections applied'

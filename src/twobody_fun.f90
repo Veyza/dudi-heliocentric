@@ -188,6 +188,7 @@ module twobody_fun
             ! derivative of \Delta \phi by velocity v
             function derdphidv(rr, vv, theta, mu, rrm, pericenter)
                 use const
+                use nan_utils
                 implicit none
                 real(8), intent(in) :: rr, vv, theta, mu, rrm
                 real(8) r, v, sintheta2, bracket, bracket2
@@ -243,7 +244,7 @@ module twobody_fun
 
                 endif
                     
-                if(derdphidv /= derdphidv) then
+                if(is_nan_r8(derdphidv)) then
                     delta = 1d-4
                     dphi1 = deltaphi(theta, rr, rrm, vv+2d0*delta, mu, pericenter)
                     dphi2 = deltaphi(theta, rr, rrm, vv+delta, mu, pericenter)
@@ -267,6 +268,7 @@ module twobody_fun
             function derdphidtheta(rr, vv, theta, mu, rrm, &
                                     pericenter, close2pericenter)
                 use const
+                use nan_utils
                 implicit none
                 real(8), intent(in) :: rr, vv, theta, mu, rrm
                 real(8) r, v, sintheta2, bracket, bracket2, costhx2
@@ -320,7 +322,7 @@ module twobody_fun
 
                     endif
                 endif
-                if(derdphidtheta /= derdphidtheta .or. close2pericenter .or. pericenter) then
+                if(is_nan_r8(derdphidtheta) .or. close2pericenter .or. pericenter) then
                     if(close2pericenter) then
                         delta = 3d-2
                     else
@@ -363,6 +365,7 @@ module twobody_fun
                 use const
                 use define_types
                 use help
+                use nan_utils
                 use distributions_fun
                 implicit none
                 integer i
@@ -418,7 +421,7 @@ module twobody_fun
                     psieject = acos(uejectvec(3) / ueject)
 
                     lambdaMeject = atan(uejectvec(2), uejectvec(1))
-                    if(lambdaMeject /= lambdaMeject) lambdaMeject = 0d0
+                    if(is_nan_r8(lambdaMeject)) lambdaMeject = 0d0
                     if(lambdaMeject < 0d0) lambdaMeject = lambdaMeject + twopi
                     
                     ! ejection symmetry axis in the local horizontal CS
@@ -463,7 +466,7 @@ module twobody_fun
                 else
                     Integrand = 0d0
                 endif
-                if((Integrand /= Integrand .or. Integrand < 0.0d0 .or. Integrand > check_inf)) then
+                if((is_nan_r8(Integrand) .or. Integrand < 0.0d0 .or. is_finite_r8(Integrand))) then
                     write(666,*) ' '
                     write(666,*) 'a bad value is obtained for the integrand &
                     in case of delta-ejection:', Integrand
@@ -1226,6 +1229,7 @@ module twobody_fun
             use const
             use define_types
             use help
+            use nan_utils
             use distributions_fun
             implicit none
             integer i
@@ -1313,11 +1317,11 @@ module twobody_fun
                     fac1 = velocity * fac1 / uu / uu
 
                     psieject = acos(uejectvec(3) / ueject)
-                    if(psieject /= psieject) then
+                    if(is_nan_r8(psieject)) then
                         write(*,*) uejectvec*AUdays2SI, ueject*AUdays2SI
                     endif
                     lambdaMeject = atan(uejectvec(2), uejectvec(1))
-                    if(lambdaMeject /= lambdaMeject) lambdaMeject = 0d0
+                    if(is_nan_r8(lambdaMeject)) lambdaMeject = 0d0
                     if(lambdaMeject < 0d0) lambdaMeject = lambdaMeject + twopi
                     
                     ! ejection symmetry axis in the local horizontal CS
@@ -1358,8 +1362,8 @@ module twobody_fun
             else
                 Integrand = 0d0
             endif
-            if(Integrand /= Integrand .or. Integrand < 0.0d0 &
-                    .or. Integrand > check_inf) then
+            if(is_nan_r8(Integrand) .or. Integrand < 0.0d0 &
+                    .or. is_finite_r8(Integrand)) then
                 write(666,*) ' '
                 write(666,*) 'a bad value is obtained for the integrand &
                     in case of delta-ejection:', Integrand
