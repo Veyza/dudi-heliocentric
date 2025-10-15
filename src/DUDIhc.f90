@@ -37,27 +37,54 @@ module DUDIhc
             type(source_properties), intent(in) :: source 
             real(8) ueject, psi, lambdaM, dist, fac1, fac2
             real(8) uejectvec(3), tmp
+            ! guard cloud center norm
+            real(8) :: cnorm, sinpsi, dens8
             
             dist = norma3d(point%rvector - cloudcentr)
+            if (dist <= tiny(1.0d0)) then
+                density = 0.0
+                return
+            end if
+
+            if (dt <= 0.0d0) then
+                density = 0.0
+                return
+            end if
+
             ueject = dist / dt
             uejectvec = (point%rvector - cloudcentr) / dist        ! unit vector
-            tmp = dot_product(uejectvec, cloudcentr) / norma3d(cloudcentr)
-            if(tmp >= 1d0 .or. tmp <= -1d0) tmp = sign(9.9999d-1, tmp)
+
+            cnorm = norma3d(cloudcentr)
+            if (cnorm <= tiny(1.0d0)) then
+                density = 0.0
+                return
+            end if
+
+            tmp = dot_product(uejectvec, cloudcentr) / cnorm
+            if (tmp >= 1d0 .or. tmp <= -1d0) tmp = sign(9.9999d-1, tmp)
             psi = acos(tmp)
             lambdaM = azimuth(point%rvector - cloudcentr, cloudcentr)
-            
+
             fac1 = 0d0 ; fac2 = 0d0
-            if(source%ud%umin <= ueject &
-                               .and. ueject <= source%ud%umax) then
+            if (source%ud%umin <= ueject .and. ueject <= source%ud%umax) then
                 fac1 = ejection_speed_distribution(source%ud, ueject)
                 fac2 = ejection_direction_distribution(source%ejection_angle_distr, &
                        psi, psi, lambdaM, 0d0, 0d0)
-                density = real(source%Nparticles * fac1 * fac2 / dt)
-                
-                density = density / real(AU**3 * (dist**2) * sin(psi))
+
+                ! compute in double, guard sin(psi)
+                sinpsi = sin(psi)
+                if (abs(sinpsi) <= 1.0d-15) then
+                    density = 0.0
+                    return
+                end if
+
+                dens8 = source%Nparticles * fac1 * fac2 / dt
+                dens8 = dens8 / (AU**3 * dist**2 * sinpsi)
+                density = real(dens8, kind=kind(0.0))
             else
                 density = 0.0
-            endif
+            end if
+
         
         end subroutine hc_DUDI_simple_expansion
         

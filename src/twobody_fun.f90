@@ -63,6 +63,7 @@ module twobody_fun
             subroutine collision_check(muR, dt, coords, s, &
                        uejectvec, collision, Rast_AU)
                 use const
+                use nan_utils
                 use define_types
                 use help
                 implicit none
@@ -71,11 +72,13 @@ module twobody_fun
                 real(8), intent(in) :: muR, dt, Rast_AU
                 real(8), intent(in) :: coords(3), uejectvec(3)
                 real(8) rdif(3), polan, az, radast
-                real(8) da(3), dv(3), dx(3), rero, imro, tmpa(3), dd(3)
+                real(8) da(3), dv(3), dx(3), rero, imro, tmpa(3)
                 real(8) dda(3), ddda(3)
-                real(8) coefs(0:3), rtmp, tmp
+                real(8) coefs(0:3), tmp
                 complex(8) roots(3), ctmp
                 logical, intent(out) :: collision
+                real(8), parameter :: reltol = 1d-12, abstol = 1d-16
+                logical :: root_is_real
                 
                 collision = .False.
                 ! if the grain was ejected toward the Sun
@@ -117,19 +120,14 @@ module twobody_fun
                     ! if a positive real root < dt exists
                     do i = 1, 3
                         rero = realpart(roots(i))
-                        imro = imagpart(roots(i))
-                        dd = dx + dv * rero + da / 2d0 * rero**2
-                        rtmp = dot_product(dd, dd) - dot_product(dx, dx) &
-                        - (dot_product(dv, dv) + dot_product(dx, da)) * rero**2 &
-                        - 2d0 * dot_product(dv, dx) * rero &
-                        - dot_product(dv, da) * rero**3 &
-                        - dot_product(da, da) / 4d0 * rero**4
-                        
-                        collision = (abs(imro/ rero) < 1e-16 .and. &
-                                    rero < dt .and. rero > 0.0)
-                        if(collision) then
-                            exit
-                        endif
+						imro = imagpart(roots(i))
+
+						! Skip this root if either part is not finite (avoids NaN/SNaN traps in abs/compare)
+						if (.not. is_finite_r8(rero) .or. .not. is_finite_r8(imro)) cycle
+
+						root_is_real = abs(imro) <= max(abstol, reltol*max(1d0, abs(rero)))
+						collision    = root_is_real .and. (rero < dt .and. rero > 0.0d0)
+						if (collision) exit
                     enddo
                 endif
                 
@@ -465,8 +463,8 @@ module twobody_fun
                 else
                     Integrand = 0.0
                 endif
-                if((is_nan_r8(dble(Integrand)) .or. Integrand < 0.0d0 &
-                    .or. is_finite_r8(dble(Integrand)))) then
+                if(is_nan_r8(dble(Integrand)) .or. Integrand < 0.0d0 &
+                    .or. (.not. is_finite_r8(dble(Integrand)))) then
                     write(666,*) ' '
                     write(666,*) 'a bad value is obtained for the integrand ' // &
                     'in case of delta-ejection:', Integrand
@@ -1374,10 +1372,10 @@ module twobody_fun
                 Integrand = 0d0
             endif
             if(is_nan_r8(Integrand) .or. Integrand < 0.0d0 &
-                    .or. is_finite_r8(Integrand)) then
+                    .or. (.not. is_finite_r8(Integrand))) then
                 write(666,*) ' '
                 write(666,*) 'a bad value is obtained for the integrand ' // &
-                    'in case of delta-ejection:', Integrand
+                    'in case of v-integration:', Integrand
                 write(666,*) 'factor of ejection speed distribution', fac1
                 write(666,*) 'factor of ejection direction distribution', fac2
                 write(666,*) 'Jacobian', 1d0 / abs(ddphidtheta)
