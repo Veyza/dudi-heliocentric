@@ -120,14 +120,14 @@ module twobody_fun
                     ! if a positive real root < dt exists
                     do i = 1, 3
                         rero = realpart(roots(i))
-						imro = imagpart(roots(i))
+                        imro = imagpart(roots(i))
 
-						! Skip this root if either part is not finite (avoids NaN/SNaN traps in abs/compare)
-						if (.not. is_finite_r8(rero) .or. .not. is_finite_r8(imro)) cycle
+                        ! Skip this root if either part is not finite (avoids NaN/SNaN traps in abs/compare)
+                        if (.not. is_finite_r8(rero) .or. .not. is_finite_r8(imro)) cycle
 
-						root_is_real = abs(imro) <= max(abstol, reltol*max(1d0, abs(rero)))
-						collision    = root_is_real .and. (rero < dt .and. rero > 0.0d0)
-						if (collision) exit
+                        root_is_real = abs(imro) <= max(abstol, reltol*max(1d0, abs(rero)))
+                        collision    = root_is_real .and. (rero < dt .and. rero > 0.0d0)
+                        if (collision) exit
                     enddo
                 endif
                 
