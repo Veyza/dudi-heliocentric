@@ -21,8 +21,8 @@ module phaethon_input
 
 contains
 
-	! input the paths to the impact-ejecta maps 
-	! and the corresponding heliocentric distances
+  ! input the paths to the impact-ejecta maps 
+  ! and the corresponding heliocentric distances
    subroutine get_maps_data(rhels, fnames)
       use const
       implicit none
@@ -42,10 +42,10 @@ contains
    end subroutine get_maps_data
 
 
-	! set the parameters of the sources modeling dust ejection
-	! from the asteroid moving along its orbit
-	! fname is the name of the file
-	! containing the asteroid ephemeridae (positions and velocities)
+  ! set the parameters of the sources modeling dust ejection
+  ! from the asteroid moving along its orbit
+  ! fname is the name of the file
+  ! containing the asteroid ephemeridae (positions and velocities)
    subroutine get_moving_sources(fname, Np, Neph, Nlin, &
                                                   sources, comet)
       use const
@@ -58,7 +58,7 @@ contains
       integer, intent(in) :: Np, Neph, Nlin
       ! Phaethon's radius is used as a normalization factor when 
       ! calculating the dust production rate
-      real(8), parameter :: Rast = 2.9e3		
+      real(8), parameter :: Rast = 2.9e3    
       type(source_properties), intent(out) :: sources(Np)
       type(ephemeris), intent(out) :: comet(Np)
       integer i, ii, iii
@@ -79,7 +79,7 @@ contains
       ! reading the 1st line of the ephemeridae
       read(200,*) moment(1), comet(1)%coords, comet(1)%Vastvec
       do i = Nlin+1, Np, Nlin
-		! reading subsequent lines of the ephemeridae
+    ! reading subsequent lines of the ephemeridae
          read(200,*) moment(i), comet(i)%coords, comet(i)%Vastvec
          ! linearly interpolating in between
          if(Nlin > 1) then
@@ -115,34 +115,34 @@ contains
          comet(i)%Vast = norma3d(comet(i)%Vastvec)    ! asteroid speed at position i
          ! generating Ns points uniformly distributed over a unit sphere
          
-		sources(i)%alphaM = acos(sources(i)%rrM(3) / sources(i)%r)
-		sources(i)%betaM = atan(sources(i)%rrM(2), &
-									sources(i)%rrM(1))
-		sources(i)%symmetry_axis = sources(i)%rrM(1) / sources(i)%r
-		sources(i)%zeta = 0d0
-		sources(i)%eta = 0d0
-		sources(i)%ud%ud_shape = 1
-		sources(i)%ud%umin = 2d0 / AUdays2SI
-		sources(i)%ud%umax = 2399d0 / AUdays2SI
-		sources(i)%ejection_angle_distr = 3
-		sources(i)%Tj = moment(i)
-		sources(i)%dtau = 0d0
-		
-		! integrate the number density of impact ejecta over the matrix
-		call integrate_over_matrix(totrate)
-		! converting the number density to flux
-		! see Eq. 3 from the Szalay et al, 2016 (asteroid on a spherical orbit)
-		totrate = totrate / 0.31d0 / 7.2e-3 / 4d0 / pi * Rast**2
-		! converting flux to the number of ejected particles
-		sources(i)%Nparticles = totrate &
-		                    * (moment(2) - moment(1)) * s_in_day
+    sources(i)%alphaM = acos(sources(i)%rrM(3) / sources(i)%r)
+    sources(i)%betaM = atan(sources(i)%rrM(2), &
+                  sources(i)%rrM(1))
+    sources(i)%symmetry_axis = sources(i)%rrM(1) / sources(i)%r
+    sources(i)%zeta = 0d0
+    sources(i)%eta = 0d0
+    sources(i)%ud%ud_shape = 1
+    sources(i)%ud%umin = 2d0 / AUdays2SI
+    sources(i)%ud%umax = 2399d0 / AUdays2SI
+    sources(i)%ejection_angle_distr = 3
+    sources(i)%Tj = moment(i)
+    sources(i)%dtau = 0d0
+    
+    ! integrate the number density of impact ejecta over the matrix
+    call integrate_over_matrix(totrate)
+    ! converting the number density to flux
+    ! see Eq. 3 from the Szalay et al, 2016 (asteroid on a spherical orbit)
+    totrate = totrate / 0.31d0 / 7.2e-3 / 4d0 / pi * Rast**2
+    ! converting flux to the number of ejected particles
+    sources(i)%Nparticles = totrate &
+                        * (moment(2) - moment(1)) * s_in_day
       enddo
 
    end subroutine get_moving_sources
 
 
-	subroutine get_flyby_trajectory(points, nt1, resolution, CAdist, lastrM, VVast, Vast, &
-											firstrM, VVast1, Vast1)
+  subroutine get_flyby_trajectory(points, nt1, resolution, CAdist, lastrM, VVast, Vast, &
+                      firstrM, VVast1, Vast1)
       use const
       use define_types
       use help
@@ -155,7 +155,7 @@ contains
       integer i
       real(8), parameter :: angle2xvec = 29d0 * deg2rad
       real(8) tmpvec(3), tmpnorm(3), CApoint(3)
-      real(8) zvec(3), xvec(3), yvec(3)	
+      real(8) zvec(3), xvec(3), yvec(3)  
 
 !~       ! the CS to compare with Szalay et al, 2019
        zvec = (/0d0, 0d0, 1d0/)
@@ -169,16 +169,16 @@ contains
        tmpvec =  tmpvec * resolution / AU
        tmpnorm = -xvec * sin(angle2xvec) + yvec * cos(angle2xvec)
        
-	   CApoint = lastrM - tmpnorm * CAdist
-	   
-	   do i = 1, nt1
-			points(i)%rvector = CApoint + tmpvec * (i - nt1/2.0)
-			points(i)%r = norma3d(points(i)%rvector)
+     CApoint = lastrM - tmpnorm * CAdist
+     
+     do i = 1, nt1
+      points(i)%rvector = CApoint + tmpvec * (i - nt1/2.0)
+      points(i)%r = norma3d(points(i)%rvector)
             points(i)%alpha = acos(points(i)%rvector(3) / points(i)%r)
             points(i)%beta = atan(points(i)%rvector(2), points(i)%rvector(1))    ! longitude counted clockwise if looking from the South Pole from x-axis pointing in anti-Saturn direction
-	   enddo
-	
-	end subroutine get_flyby_trajectory
+     enddo
+  
+  end subroutine get_flyby_trajectory
 
 
 
@@ -248,10 +248,10 @@ contains
    end subroutine integrate_over_matrix
 
 
-	
+  
 
-	! Inputing a 2-d array of the points where the number density
-	! will be computed
+  ! Inputing a 2-d array of the points where the number density
+  ! will be computed
    subroutine get_points(points, nt1, nt2, resolution, lastrM, &
                                           VVast, Vast, cntrpx, cntrpy)
       use const
@@ -290,9 +290,9 @@ contains
 
    end subroutine get_points
 
-	
-	! From the given table of particle radii and corresponding beta
-	! values, interpolate the value of beta corresponding to Rg
+  
+  ! From the given table of particle radii and corresponding beta
+  ! values, interpolate the value of beta corresponding to Rg
    subroutine beta_from_Rg(beta, Rg)
       use const
       use help

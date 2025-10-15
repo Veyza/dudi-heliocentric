@@ -46,10 +46,10 @@ module const
         integer, parameter :: order_v = 20
         
         real(8), parameter :: check_inf = 9d+38  
-        integer :: N_of_warnings = 0				! warnings counter
-		integer, parameter :: maxNofWarnings = 100	! maximum number of
-		                                            ! warnings printed 
-		                                            ! out to the text file
-		                                            ! fort.666
+        integer :: N_of_warnings = 0        ! warnings counter
+    integer, parameter :: maxNofWarnings = 100  ! maximum number of
+                                                ! warnings printed 
+                                                ! out to the text file
+                                                ! fort.666
             
 end module const

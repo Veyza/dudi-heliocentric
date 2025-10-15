@@ -1,0 +1,4038 @@
+mkdir -p bin
+mkdir -p build
+gfortran -O0 -g -fimplicit-none -Wall -Wextra -Wconversion -Wsurprising -Warray-temporaries -Wcharacter-truncation -Wreal-q-constant -Wtarget-lifetime -Jbuild -Ibuild src/const.f90 src/define_types.f90 src/help.f90 src/distributions_fun.f90 src/twobody_fun.f90 src/data_in.f90 src/data_out.f90 src/DUDIhc.f90 src/phaethon_input.f90  examples/example.f90 -o bin/dudihc 
+src/const.f90:49:38:
+
+   49 |         integer :: N_of_warnings = 0                            ! warnings counter
+      |                                         1~~~~~~~
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/const.f90:50:2:
+
+   50 |                 integer, parameter :: maxNofWarnings = 100      ! maximum number of
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:20:2:
+
+   20 |         use const
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:21:2:
+
+   21 |         implicit none
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:23:2:
+
+   23 |         type ejection_speed_properties
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:24:2:
+
+   24 |                 integer ud_shape                ! parameter defining which distribution is used for ejection speed
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:25:2:
+
+   25 |                 real(8) umax                    ! gas velocity
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:26:2:
+
+   26 |                 real(8) umin                    ! a parameter in velocity distribution
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:27:2:
+
+   27 |         end type ejection_speed_properties
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:29:2:
+
+   29 |         type source_properties           ! parameters of dust ejection
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:30:2:
+
+   30 |                 real(8) rrM(3)               ! Cartesian coordinates of a point
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:33:2:
+
+   33 |                 real(8) r                    ! heliocentric distance of the point source
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:34:2:
+
+   34 |                 real(8) alphaM               ! polar angle of the point source
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:35:2:
+
+   35 |                 real(8) betaM                ! eastern longitude of the point source
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:36:2:
+
+   36 |                 real(8) zeta                 ! zenith angle of the axis around which
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:38:2:
+
+   38 |                 real(8) eta                  ! azimuth of this axis (counted from
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:40:2:
+
+   40 |                 real(8) symmetry_axis(3)             ! unit vector in heliocentric
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:44:2:
+
+   44 |                 type(ejection_speed_properties) ud   ! parameters of ejection speed
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:46:2:
+
+   46 |                 integer ejection_angle_distr         ! parameter defining which ejection
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:48:2:
+
+   48 |                 real(8) Nparticles                   ! number of particles ejected by
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:50:2:
+
+   50 |                 real(8) Tj                    ! moment of dust ejection (for simple
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:54:2:
+
+   54 |                 real(8) dtau                  ! Length of the time interval centered at
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:57:2:
+
+   57 |         end type source_properties
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:59:2:
+
+   59 |         type ephemeris
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:60:2:
+
+   60 |                 real(8) coords(3)                ! heliocentric coordinates of the comet
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:61:2:
+
+   61 |                 real(8) Vastvec(3)               ! heliocentric velocity of the comet
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:62:2:
+
+   62 |                 real(8) Vast                     ! comet's heliocentric speed
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:63:2:
+
+   63 |         end type ephemeris
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:65:2:
+
+   65 |         type position_in_space       ! where the dust density is to be calculated
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:66:2:
+
+   66 |                 real(8) r                        ! distance from the Sun's center
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:67:2:
+
+   67 |                 real(8) alpha                    ! polar angle
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:68:2:
+
+   68 |                 real(8) beta                     ! eastern longitude
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:69:2:
+
+   69 |                 real(8) rvector(3)               ! Cartesian coordinates of the point
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/define_types.f90:70:2:
+
+   70 |         end type position_in_space
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:20:2:
+
+   20 |         implicit none
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:21:2:
+
+   21 |                 contains
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:24:2:
+
+   24 |                         pure function rot2d(r, phi) result(x)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:25:2:
+
+   25 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:26:2:
+
+   26 |                                 real(8), intent(in) :: r(2), phi
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:27:2:
+
+   27 |                                 real(8) x(2)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:29:2:
+
+   29 |                                 x(1) = r(1) * cos(phi) - r(2) * sin(phi)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:30:2:
+
+   30 |                                 x(2) = r(1) * sin(phi) + r(2) * cos(phi)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:32:2:
+
+   32 |                         end function rot2d
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:69:51:
+
+   69 |         end subroutine runge_kutta_point_position
+      |                                                         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:78:2:
+
+   78 |                         pure subroutine circle_intersection(x0, y0, R0, x1, R1, x, y)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:79:2:
+
+   79 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:80:2:
+
+   80 |                                 real(8), intent(in) :: x0, y0, R0, x1, R1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:81:2:
+
+   81 |                                 real(8), intent(out) :: x(2), y(2)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:82:2:
+
+   82 |                                 real(8) sR, dx, sx, dx2, dy2, R02, R12, x1x0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:83:2:
+
+   83 |                                 real(8) sumdifs2, sqrtshort, ybracket
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:84:2:
+
+   84 |                                 real(8) tmp(2), eps, eps1, eps0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:86:2:
+
+   86 |                                 sR = R0 + R1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:87:2:
+
+   87 |                                 dx = x0 - x1 ; sx = x0 + x1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:88:2:
+
+   88 |                                 x1x0 = x0 * x1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:89:2:
+
+   89 |                                 dx2 = dx * dx ; dy2 = y0 * y0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:90:2:
+
+   90 |                                 R02 = R0 * R0 ; R12 = R1 * R1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:92:2:
+
+   92 |                                 sumdifs2 = dx2 + dy2
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:94:2:
+
+   94 |                                 sqrtshort = sqrt(-2d0 * (x1x0 - abs(x1)) * (sR**2 - sumdifs2) * dy2)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:96:2:
+
+   96 |                                 ybracket = (R12 + sumdifs2) * dy2
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:98:2:
+
+   98 |                                 x(1) = ((R12 - R02) * dx + sx * sumdifs2 &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:99:2:
+
+   99 |                                         - sqrtshort) / (2d0 * sumdifs2)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:102:2:
+
+  102 |                                 y(1) = (-R02 * dy2 + (x0 - x1) * sqrtshort + ybracket) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:103:2:
+
+  103 |                                                 / (2d0 * sumdifs2 * y0)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:105:2:
+
+  105 |                                 x(2) = ((R12 - R02) * dx + sx * sumdifs2 &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:106:2:
+
+  106 |                                         + sqrtshort) / (2d0 * sumdifs2)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:109:2:
+
+  109 |                                 y(2) = (-R02 * dy2 + (x1 - x0) * sqrtshort + ybracket) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:110:2:
+
+  110 |                                                 / (2d0 * sumdifs2 * y0)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:112:2:
+
+  112 |                         end subroutine circle_intersection
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:117:2:
+
+  117 |                         pure subroutine cartesian2cylindrical(x, y, z, r, phi, h)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:118:2:
+
+  118 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:119:2:
+
+  119 |                                 real(8), intent(in) :: x, y, z
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:120:2:
+
+  120 |                                 real(8), intent(out) :: r, phi, h
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:122:2:
+
+  122 |                                 r = sqrt(x * x + y * y)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:123:2:
+
+  123 |                                 phi = atan(y, x)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:124:2:
+
+  124 |                                 h = z
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:126:2:
+
+  126 |                         end subroutine cartesian2cylindrical
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:130:2:
+
+  130 |                         pure function vector_product(x,y) result(z)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:131:2:
+
+  131 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:132:2:
+
+  132 |                                 real(8), intent(in) :: x(3), y(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:133:2:
+
+  133 |                                 real(8) z(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:135:2:
+
+  135 |                                 z(1) = x(2) * y(3) - x(3) * y(2)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:136:2:
+
+  136 |                                 z(2) = x(3) * y(1) - x(1) * y(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:137:2:
+
+  137 |                                 z(3) = x(1) * y(2) - x(2) * y(1)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:139:2:
+
+  139 |                         end function vector_product
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:148:2:
+
+  148 |                         pure function LiNTERPOL(N, y, x, xout) result(yout)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:149:2:
+
+  149 |                           implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:150:2:
+
+  150 |                           real(8), intent(in) ::  xout, y(N), x(N)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:151:2:
+
+  151 |                           real(8) yout, x1, x2
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:152:2:
+
+  152 |                           integer i, i1, i2
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:153:2:
+
+  153 |                           integer, intent(in) :: N
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:155:2:
+
+  155 |                           if(xout < x(1)) then
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:156:2:
+
+  156 |                                         yout = y(1)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:157:2:
+
+  157 |                                         return
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:158:2:
+
+  158 |                           endif
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:160:2:
+
+  160 |                           if(xout > x(N)) then
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:161:2:
+
+  161 |                                         yout = y(N)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:162:2:
+
+  162 |                                         return
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:163:2:
+
+  163 |                           endif
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:165:2:
+
+  165 |                           i = 1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:166:2:
+
+  166 |                           i1 = 0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:167:2:
+
+  167 |                           do while(i1 == 0 .and. i .lt. N)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:168:2:
+
+  168 |                             if(xout .lt. x(i+1) .and. xout .ge. x(i)) then
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:169:2:
+
+  169 |                               i1 = i;       i2 = i+1;
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:170:2:
+
+  170 |                               x1 = x(i1);   x2 = x(i2);
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:171:2:
+
+  171 |                             endif
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:172:2:
+
+  172 |                             i = i + 1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:173:2:
+
+  173 |                           enddo
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:175:2:
+
+  175 |                           yout = y(i1) + (y(i2) - y(i1)) / (x2 - x1) * (xout - x1)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:176:2:
+
+  176 |                           return
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:178:2:
+
+  178 |                         end function LiNTERPOL
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:183:2:
+
+  183 |                         pure function norma3d(v)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:184:2:
+
+  184 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:185:2:
+
+  185 |                                 real(8), intent(in) :: v(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:186:2:
+
+  186 |                                 real(8) norma3d
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:188:2:
+
+  188 |                                         norma3d = sqrt(dot_product(v,v))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:190:2:
+
+  190 |                         end function norma3d
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:194:2:
+
+  194 |                         pure function norma2d(v)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:195:2:
+
+  195 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:196:2:
+
+  196 |                                 real(8), intent(in) :: v(2)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:197:2:
+
+  197 |                                 real(8) norma2d
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:199:2:
+
+  199 |                                         norma2d = sqrt(dot_product(v,v))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:201:2:
+
+  201 |                         end function norma2d
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:208:2:
+
+  208 |                         pure function myatan(N, re0, im)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:209:2:
+
+  209 |                                 use const
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:210:2:
+
+  210 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:211:2:
+
+  211 |                                 integer i
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:212:2:
+
+  212 |                                 integer, intent(in):: N
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:213:2:
+
+  213 |                                 real(8), intent(in) :: re0(N), im(N)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:214:2:
+
+  214 |                                 real(8) myatan(N), re(N)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:216:2:
+
+  216 |                                 re = re0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:219:2:
+
+  219 |                                 do i = 1, N
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:220:2:
+
+  220 |                                         if(re(i) < 1d-12 .and. re(i) > 0d0) re(i) = 1d-12
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:221:2:
+
+  221 |                                         if(re(i) > 1d-12 .and. re(i) < 0d0) re(i) = -1d-12
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:222:2:
+
+  222 |                                 enddo
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:224:2:
+
+  224 |                                 myatan = atan(im / re)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:226:2:
+
+  226 |                                 do i = 1, N
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:227:2:
+
+  227 |                                         if(re(i) < 0d0) myatan(i) = myatan(i) + pi
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:228:2:
+
+  228 |                                         if(re(i) > 0d0 .and. im(i) < 0d0) myatan(i) = myatan(i) + twopi
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:229:2:
+
+  229 |                                 enddo
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:231:2:
+
+  231 |                         end function myatan
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:236:2:
+
+  236 |                         pure subroutine eulrot(phiE, thetaE, psiE, xin, yin, zin, xout, yout, zout, inverse)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:237:2:
+
+  237 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:238:2:
+
+  238 |                                 integer i
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:239:2:
+
+  239 |                                 logical, intent(in) :: inverse
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:240:2:
+
+  240 |                                 real(8), intent(in) :: phiE, thetaE, psiE, xin, yin, zin
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:241:2:
+
+  241 |                                 real(8), intent(out) :: xout, yout, zout
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:242:2:
+
+  242 |                                 real(8) cp, sp, ct, st, cps, sps
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:244:2:
+
+  244 |                                 cp = cos(phiE)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:245:2:
+
+  245 |                                 sp = sin(phiE)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:246:2:
+
+  246 |                                 ct = cos(thetaE)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:247:2:
+
+  247 |                                 st = sin(thetaE)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:248:2:
+
+  248 |                                 cps = cos(psiE)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:249:2:
+
+  249 |                                 sps = sin(psiE)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:251:2:
+
+  251 |                                 if (.not. inverse) then                 ! if NOT INVERSE case
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:253:2:
+
+  253 |                                         xout= (cps*cp-ct*sp*sps)*xin + (cps*sp+ct*cp*sps)*yin + sps*st*zin
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:254:2:
+
+  254 |                                         yout=(-sps*cp-ct*sp*cps)*xin + (-sps*sp+ct*cp*cps)*yin + cps*st*zin
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:255:2:
+
+  255 |                                         zout=st*sp*xin - st*cp*yin + ct*zin
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:257:2:
+
+  257 |                                 else
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:259:2:
+
+  259 |                                         xout=(cps*cp-ct*sp*sps)*xin + (-sps*cp-ct*sp*cps)*yin + st*sp*zin
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:260:2:
+
+  260 |                                         yout=(cps*sp+ct*cp*sps)*xin + (-sps*sp+ct*cp*cps)*yin - st*cp*zin
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:261:2:
+
+  261 |                                         zout=st*sps*xin + st*cps*yin + ct*zin
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:263:2:
+
+  263 |                                 endif
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:265:2:
+
+  265 |                         end subroutine eulrot
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:273:2:
+
+  273 |                         pure subroutine ApuTrajectoryLight(point, dphi, dbeta, source)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:274:2:
+
+  274 |                                 use const
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:275:2:
+
+  275 |                                 use define_types
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:276:2:
+
+  276 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:277:2:
+
+  277 |                                 integer i
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:278:2:
+
+  278 |                                 type(position_in_space), intent(in) :: point
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:279:2:
+
+  279 |                                 type(source_properties), intent(in) :: source
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:280:2:
+
+  280 |                                 real(8), intent(out) :: dphi, dbeta
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:281:2:
+
+  281 |                                 real(8) Rsource(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:283:2:
+
+  283 |                                 Rsource = source%rrM / source%r
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:287:2:
+
+  287 |                                 dphi = acos(dot_product(Rsource, point%rvector) / point%r)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:288:2:
+
+  288 |                                 if(dphi /= dphi .or. dphi < 2d-8) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:289:2:
+
+  289 |                                     dphi = sign(1d0, dot_product(Rsource, point%rvector)) * 1d-8
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:293:2:
+
+  293 |                                 dbeta = acos((Rsource(1) * point%rvector(1) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:294:2:
+
+  294 |                                                 + Rsource(2) * point%rvector(2)) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:295:2:
+
+  295 |                                                 / (norma2d(Rsource(1:2)) * norma2d(point%rvector(1:2))))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:296:2:
+
+  296 |                                 if(dbeta /= dbeta .or. dbeta < 1d-8) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:297:2:
+
+  297 |                                 dbeta = sign(1d0, dot_product(Rsource, point%rvector)) * 1d-8
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:299:2:
+
+  299 |                         end subroutine ApuTrajectoryLight
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:304:2:
+
+  304 |                         function azimuth(direction, location)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:305:2:
+
+  305 |                                 use const
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:306:2:
+
+  306 |                                 real(8), intent(in) :: direction(3), location(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:307:2:
+
+  307 |                                 real(8), parameter, dimension(3) :: zvec = (/0d0, 0d0, 1d0/)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:308:2:
+
+  308 |                                 real(8) azimuth
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:309:2:
+
+  309 |                                 real(8) tmpr(3), north(3), dirplane(3), testhir(3), tmpd(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:310:2:
+
+  310 |                                 real(8) dotpr
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:314:2:
+
+  314 |                                 tmpr = location / norma3d(location)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:318:2:
+
+  318 |                                 north = zvec - tmpr * dot_product(zvec, tmpr)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:321:2:
+
+  321 |                                 north = north / norma3d(north)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:325:2:
+
+  325 |                                 tmpd = direction / norma3d(direction)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:326:2:
+
+  326 |                                 dirplane = tmpd - tmpr * dot_product(tmpd, tmpr)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:328:2:
+
+  328 |                                 dirplane = dirplane / norma3d(dirplane)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:332:2:
+
+  332 |                                 dotpr = dot_product(dirplane, north)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:334:2:
+
+  334 |                                 if(abs(dotpr) > 1d0) dotpr = sign(1d0, dotpr)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:335:2:
+
+  335 |                                 azimuth = acos(dotpr)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:341:2:
+
+  341 |                                 testhir = vector_product(north, dirplane)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:342:2:
+
+  342 |                                 testhir = testhir / norma3d(testhir)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:343:2:
+
+  343 |                                 if(norma3d(testhir - tmpr) < 1d-3) azimuth = twopi - azimuth
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:345:2:
+
+  345 |                         end function azimuth
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:349:2:
+
+  349 |                         subroutine cardano_formula(a, x)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:350:2:
+
+  350 |                                 use const
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:351:2:
+
+  351 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:352:2:
+
+  352 |                                 real(8), intent(in) :: a(0:3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:353:2:
+
+  353 |                                 complex(8), intent(out) :: x(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:354:2:
+
+  354 |                                 integer k, i, ii
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:355:2:
+
+  355 |                                 real(8) B1, B2, B3, pp, qq, phi1, phi2
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:356:2:
+
+  356 |                                 complex(8) omega1, omega2, y(3), roots1(3), roots2(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:358:2:
+
+  358 |                                 B1 = a(1) / a(0)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:359:2:
+
+  359 |                                 B2 = a(2) / a(0)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:360:2:
+
+  360 |                                 B3 = a(3) / a(0)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:362:2:
+
+  362 |                                 pp = -B1**2 / 3d0 + B2
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:363:2:
+
+  363 |                                 qq = 2d0 * B1**3 / 27d0 - B1 * B2 / 3d0 + B3
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:365:2:
+
+  365 |                                 omega1 = -qq / 2d0 + sqrt(cmplx(qq**2 / 4d0 + pp**3 / 27d0))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:366:2:
+
+  366 |                                 omega2 = -qq / 2d0 - sqrt(cmplx(qq**2 / 4d0 + pp**3 / 27d0))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:368:2:
+
+  368 |                                 phi1 = atan(imag(omega1), real(omega1))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:369:2:
+
+  369 |                                 phi2 = atan(imag(omega2), real(omega2))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:370:2:
+
+  370 |                                 do k = 1, 3
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:371:2:
+
+  371 |                                         roots1(k) = abs(omega1)**(1.0/3.0) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:372:2:
+
+  372 |                                                      * cmplx(cos((phi1 + twopi * (k-1)) / 3d0), &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:373:2:
+
+  373 |                                                      sin((phi1 + twopi * (k-1)) / 3d0))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:375:2:
+
+  375 |                                         roots2(k) = abs(omega2)**(1.0/3.0) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:376:2:
+
+  376 |                                                      * cmplx(cos((phi2 + twopi * (k-1)) / 3d0), &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:377:2:
+
+  377 |                                                      sin((phi2 + twopi * (k-1)) / 3d0))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:378:2:
+
+  378 |                                 enddo
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:380:2:
+
+  380 |                                 k = 1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:381:2:
+
+  381 |                                 do i = 1, 3
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:382:2:
+
+  382 |                                         do ii = 1, 3
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:383:2:
+
+  383 |                                                 if(k <= 3 .and. abs(roots1(i) * roots2(ii) + pp / 3d0) < 1d-8) then
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:384:2:
+
+  384 |                                                         y(k) = roots1(i) + roots2(ii)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:385:2:
+
+  385 |                                                         x(k) = y(k) - B1 / 3d0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:386:2:
+
+  386 |                                                         k = k + 1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:387:2:
+
+  387 |                                                 endif
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:388:2:
+
+  388 |                                         enddo
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:389:2:
+
+  389 |                                 enddo
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:391:2:
+
+  391 |                         end subroutine cardano_formula
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:395:2:
+
+  395 |                         pure subroutine invert_matrix3(A, B)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:396:2:
+
+  396 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:397:2:
+
+  397 |                                 real(8), intent(in) :: A(3,3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:398:2:
+
+  398 |                                 real(8), intent(out) :: B(3,3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:399:2:
+
+  399 |                                 real(8) detinv
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:401:2:
+
+  401 |                                 detinv = (A(1,1) * A(2,2) * A(3,3) - A(1,1) * A(2,3)  * A(3,2) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:402:2:
+
+  402 |                                                 - A(1,2) * A(2,1) * A(3,3) + A(1,2) * A(2,3) * A(3,1) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:403:2:
+
+  403 |                                                 + A(1,3) * A(2,1) * A(3,2) - A(1,3) * A(2,2) * A(3,1))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:404:2:
+
+  404 |                                 detinv = 1d0 / detinv
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:406:2:
+
+  406 |                                 B(1,1) = detinv * (A(2,2) * A(3,3) - A(2,3) * A(3,2))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:407:2:
+
+  407 |                                 B(2,1) = - detinv * (A(2,1) * A(3,3) - A(2,3) * A(3,1))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:408:2:
+
+  408 |                                 B(3,1) = detinv * (A(2,1) * A(3,2) - A(2,2) * A(3,1))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:409:2:
+
+  409 |                                 B(1,2) = - detinv * (A(1,2) * A(3,3) - A(1,3) * A(3,2))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:410:2:
+
+  410 |                                 B(2,2) = detinv * (A(1,1) * A(3,3) - A(1,3) * A(3,1))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:411:2:
+
+  411 |                                 B(3,2) = - detinv * (A(1,1) * A(3,2) - A(1,2) * A(3,1))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:412:2:
+
+  412 |                                 B(1,3) = detinv * (A(1,2) * A(2,3) - A(1,3) * A(2,2))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:413:2:
+
+  413 |                                 B(2,3) = - detinv * (A(1,1) * A(2,3) - A(1,3) * A(2,1))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:414:2:
+
+  414 |                                 B(3,3) = detinv * (A(1,1) * A(2,2) - A(1,2) * A(2,1))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:416:2:
+
+  416 |                         end subroutine invert_matrix3
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:420:2:
+
+  420 |                         pure function invert_matrix4(A) result(B)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:421:2:
+
+  421 |                                 real(8), intent(in) :: A(4,4)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:422:2:
+
+  422 |                                 real(8) B(4,4)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:423:2:
+
+  423 |                                 real(8) detinv
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:425:2:
+
+  425 |                                 detinv = &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:426:2:
+
+  426 |                                   1/(A(1,1)*(A(2,2)*(A(3,3)*A(4,4)-A(3,4)*A(4,3))+A(2,3)*(A(3,4)*A(4,2)-A(3,2)*A(4,4))+A(2,4)*(A(3,2)*A(4,3)-A(3,3)*A(4,2)))&
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:427:2:
+
+  427 |                                    - A(1,2)*(A(2,1)*(A(3,3)*A(4,4)-A(3,4)*A(4,3))+A(2,3)*(A(3,4)*A(4,1)-A(3,1)*A(4,4))+A(2,4)*(A(3,1)*A(4,3)-A(3,3)*A(4,1)))&
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:428:2:
+
+  428 |                                    + A(1,3)*(A(2,1)*(A(3,2)*A(4,4)-A(3,4)*A(4,2))+A(2,2)*(A(3,4)*A(4,1)-A(3,1)*A(4,4))+A(2,4)*(A(3,1)*A(4,2)-A(3,2)*A(4,1)))&
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:429:2:
+
+  429 |                                    - A(1,4)*(A(2,1)*(A(3,2)*A(4,3)-A(3,3)*A(4,2))+A(2,2)*(A(3,3)*A(4,1)-A(3,1)*A(4,3))+A(2,3)*(A(3,1)*A(4,2)-A(3,2)*A(4,1))))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:431:2:
+
+  431 |                                 B(1,1) = detinv*(A(2,2)*(A(3,3)*A(4,4)-A(3,4)*A(4,3))+A(2,3)*(A(3,4)*A(4,2)-A(3,2)*A(4,4))+A(2,4)*(A(3,2)*A(4,3)-A(3,3)*A(4,2)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:432:2:
+
+  432 |                                 B(2,1) = detinv*(A(2,1)*(A(3,4)*A(4,3)-A(3,3)*A(4,4))+A(2,3)*(A(3,1)*A(4,4)-A(3,4)*A(4,1))+A(2,4)*(A(3,3)*A(4,1)-A(3,1)*A(4,3)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:433:2:
+
+  433 |                                 B(3,1) = detinv*(A(2,1)*(A(3,2)*A(4,4)-A(3,4)*A(4,2))+A(2,2)*(A(3,4)*A(4,1)-A(3,1)*A(4,4))+A(2,4)*(A(3,1)*A(4,2)-A(3,2)*A(4,1)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:434:2:
+
+  434 |                                 B(4,1) = detinv*(A(2,1)*(A(3,3)*A(4,2)-A(3,2)*A(4,3))+A(2,2)*(A(3,1)*A(4,3)-A(3,3)*A(4,1))+A(2,3)*(A(3,2)*A(4,1)-A(3,1)*A(4,2)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:435:2:
+
+  435 |                                 B(1,2) = detinv*(A(1,2)*(A(3,4)*A(4,3)-A(3,3)*A(4,4))+A(1,3)*(A(3,2)*A(4,4)-A(3,4)*A(4,2))+A(1,4)*(A(3,3)*A(4,2)-A(3,2)*A(4,3)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:436:2:
+
+  436 |                                 B(2,2) = detinv*(A(1,1)*(A(3,3)*A(4,4)-A(3,4)*A(4,3))+A(1,3)*(A(3,4)*A(4,1)-A(3,1)*A(4,4))+A(1,4)*(A(3,1)*A(4,3)-A(3,3)*A(4,1)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:437:2:
+
+  437 |                                 B(3,2) = detinv*(A(1,1)*(A(3,4)*A(4,2)-A(3,2)*A(4,4))+A(1,2)*(A(3,1)*A(4,4)-A(3,4)*A(4,1))+A(1,4)*(A(3,2)*A(4,1)-A(3,1)*A(4,2)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:438:2:
+
+  438 |                                 B(4,2) = detinv*(A(1,1)*(A(3,2)*A(4,3)-A(3,3)*A(4,2))+A(1,2)*(A(3,3)*A(4,1)-A(3,1)*A(4,3))+A(1,3)*(A(3,1)*A(4,2)-A(3,2)*A(4,1)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:439:2:
+
+  439 |                                 B(1,3) = detinv*(A(1,2)*(A(2,3)*A(4,4)-A(2,4)*A(4,3))+A(1,3)*(A(2,4)*A(4,2)-A(2,2)*A(4,4))+A(1,4)*(A(2,2)*A(4,3)-A(2,3)*A(4,2)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:440:2:
+
+  440 |                                 B(2,3) = detinv*(A(1,1)*(A(2,4)*A(4,3)-A(2,3)*A(4,4))+A(1,3)*(A(2,1)*A(4,4)-A(2,4)*A(4,1))+A(1,4)*(A(2,3)*A(4,1)-A(2,1)*A(4,3)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:441:2:
+
+  441 |                                 B(3,3) = detinv*(A(1,1)*(A(2,2)*A(4,4)-A(2,4)*A(4,2))+A(1,2)*(A(2,4)*A(4,1)-A(2,1)*A(4,4))+A(1,4)*(A(2,1)*A(4,2)-A(2,2)*A(4,1)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:442:2:
+
+  442 |                                 B(4,3) = detinv*(A(1,1)*(A(2,3)*A(4,2)-A(2,2)*A(4,3))+A(1,2)*(A(2,1)*A(4,3)-A(2,3)*A(4,1))+A(1,3)*(A(2,2)*A(4,1)-A(2,1)*A(4,2)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:443:2:
+
+  443 |                                 B(1,4) = detinv*(A(1,2)*(A(2,4)*A(3,3)-A(2,3)*A(3,4))+A(1,3)*(A(2,2)*A(3,4)-A(2,4)*A(3,2))+A(1,4)*(A(2,3)*A(3,2)-A(2,2)*A(3,3)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:444:2:
+
+  444 |                                 B(2,4) = detinv*(A(1,1)*(A(2,3)*A(3,4)-A(2,4)*A(3,3))+A(1,3)*(A(2,4)*A(3,1)-A(2,1)*A(3,4))+A(1,4)*(A(2,1)*A(3,3)-A(2,3)*A(3,1)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:445:2:
+
+  445 |                                 B(3,4) = detinv*(A(1,1)*(A(2,4)*A(3,2)-A(2,2)*A(3,4))+A(1,2)*(A(2,1)*A(3,4)-A(2,4)*A(3,1))+A(1,4)*(A(2,2)*A(3,1)-A(2,1)*A(3,2)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:446:2:
+
+  446 |                                 B(4,4) = detinv*(A(1,1)*(A(2,2)*A(3,3)-A(2,3)*A(3,2))+A(1,2)*(A(2,3)*A(3,1)-A(2,1)*A(3,3))+A(1,3)*(A(2,1)*A(3,2)-A(2,2)*A(3,1)))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:447:2:
+
+  447 |                           end function
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:454:2:
+
+  454 |                         subroutine GaussLegendreQuadra(xi, wi, order)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:455:2:
+
+  455 |                                 use const
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:456:2:
+
+  456 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:457:2:
+
+  457 |                                 integer, intent(in) :: order
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:458:2:
+
+  458 |                                 real, intent(out) :: xi(order), wi(order)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:460:2:
+
+  460 |                                 if(order /= 5 .and. order /= 10 &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:461:2:
+
+  461 |                                                         .and. order /= 20 .and. order /= 30 .and. order /= 40 &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:462:2:
+
+  462 |                                                         .and. order /= 50 .and. order /= 64) then
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:461:2:
+
+  461 |                                                         .and. order /= 20 .and. order /= 30 .and. order /= 40 &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:462:2:
+
+  462 |                                                         .and. order /= 50 .and. order /= 64) then
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:463:2:
+
+  463 |                                         write(*,*) 'order of integration must be equal to 5, 10, 20, 30, 40, 50 or 64'
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:464:2:
+
+  464 |                                         write(*,*) 'check variables order_v and order_R'
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:465:2:
+
+  465 |                                         stop
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:466:2:
+
+  466 |                                 endif
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:468:2:
+
+  468 |                                 select case(order)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:469:2:
+
+  469 |                                         case(64)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:470:2:
+
+  470 |                                                  wi(1) = 0.0486909570091397;    xi(1) = -0.0243502926634244
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:471:2:
+
+  471 |                                                  wi(2) = 0.0486909570091397;    xi(2) = 0.0243502926634244
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:472:2:
+
+  472 |                                                  wi(3) = 0.0485754674415034;    xi(3) = -0.0729931217877990
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:473:2:
+
+  473 |                                                  wi(4) = 0.0485754674415034;    xi(4) = 0.0729931217877990
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:474:2:
+
+  474 |                                                  wi(5) = 0.0483447622348030;    xi(5) = -0.1214628192961206
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:475:2:
+
+  475 |                                                  wi(6) = 0.0483447622348030;    xi(6) = 0.1214628192961206
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:476:2:
+
+  476 |                                                  wi(7) = 0.0479993885964583;    xi(7) = -0.1696444204239928
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:477:2:
+
+  477 |                                                  wi(8) = 0.0479993885964583;    xi(8) = 0.1696444204239928
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:478:2:
+
+  478 |                                                  wi(9) = 0.0475401657148303;    xi(9) = -0.2174236437400071
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:479:2:
+
+  479 |                                                  wi(10) = 0.0475401657148303;    xi(10) = 0.2174236437400071
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:480:2:
+
+  480 |                                                  wi(11) = 0.0469681828162100;    xi(11) = -0.2646871622087674
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:481:2:
+
+  481 |                                                  wi(12) = 0.0469681828162100;    xi(12) = 0.2646871622087674
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:482:2:
+
+  482 |                                                  wi(13) = 0.0462847965813144;    xi(13) = -0.3113228719902110
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:483:2:
+
+  483 |                                                  wi(14) = 0.0462847965813144;    xi(14) = 0.3113228719902110
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:484:2:
+
+  484 |                                                  wi(15) = 0.0454916279274181;    xi(15) = -0.3572201583376681
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:485:2:
+
+  485 |                                                  wi(16) = 0.0454916279274181;    xi(16) = 0.3572201583376681
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:486:2:
+
+  486 |                                                  wi(17) = 0.0445905581637566;    xi(17) = -0.4022701579639916
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:487:2:
+
+  487 |                                                  wi(18) = 0.0445905581637566;    xi(18) = 0.4022701579639916
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:488:2:
+
+  488 |                                                  wi(19) = 0.0435837245293235;    xi(19) = -0.4463660172534641
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:489:2:
+
+  489 |                                                  wi(20) = 0.0435837245293235;    xi(20) = 0.4463660172534641
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:490:2:
+
+  490 |                                                  wi(21) = 0.0424735151236536;    xi(21) = -0.4894031457070530
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:491:2:
+
+  491 |                                                  wi(22) = 0.0424735151236536;    xi(22) = 0.4894031457070530
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:492:2:
+
+  492 |                                                  wi(23) = 0.0412625632426235;    xi(23) = -0.5312794640198946
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:493:2:
+
+  493 |                                                  wi(24) = 0.0412625632426235;    xi(24) = 0.5312794640198946
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:494:2:
+
+  494 |                                                  wi(25) = 0.0399537411327203;    xi(25) = -0.5718956462026340
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:495:2:
+
+  495 |                                                  wi(26) = 0.0399537411327203;    xi(26) = 0.5718956462026340
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:496:2:
+
+  496 |                                                  wi(27) = 0.0385501531786156;    xi(27) = -0.6111553551723933
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:497:2:
+
+  497 |                                                  wi(28) = 0.0385501531786156;    xi(28) = 0.6111553551723933
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:498:2:
+
+  498 |                                                  wi(29) = 0.0370551285402400;    xi(29) = -0.6489654712546573
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:499:2:
+
+  499 |                                                  wi(30) = 0.0370551285402400;    xi(30) = 0.6489654712546573
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:500:2:
+
+  500 |                                                  wi(31) = 0.0354722132568824;    xi(31) = -0.6852363130542333
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:501:2:
+
+  501 |                                                  wi(32) = 0.0354722132568824;    xi(32) = 0.6852363130542333
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:502:2:
+
+  502 |                                                  wi(33) = 0.0338051618371416;    xi(33) = -0.7198818501716109
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:503:2:
+
+  503 |                                                  wi(34) = 0.0338051618371416;    xi(34) = 0.7198818501716109
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:504:2:
+
+  504 |                                                  wi(35) = 0.0320579283548516;    xi(35) = -0.7528199072605319
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:505:2:
+
+  505 |                                                  wi(36) = 0.0320579283548516;    xi(36) = 0.7528199072605319
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:506:2:
+
+  506 |                                                  wi(37) = 0.0302346570724025;    xi(37) = -0.7839723589433414
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:507:2:
+
+  507 |                                                  wi(38) = 0.0302346570724025;    xi(38) = 0.7839723589433414
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:508:2:
+
+  508 |                                                  wi(39) = 0.0283396726142595;    xi(39) = -0.8132653151227975
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:509:2:
+
+  509 |                                                  wi(40) = 0.0283396726142595;    xi(40) = 0.8132653151227975
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:510:2:
+
+  510 |                                                  wi(41) = 0.0263774697150547;    xi(41) = -0.8406292962525803
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:511:2:
+
+  511 |                                                  wi(42) = 0.0263774697150547;    xi(42) = 0.8406292962525803
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:512:2:
+
+  512 |                                                  wi(43) = 0.0243527025687109;    xi(43) = -0.8659993981540928
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:513:2:
+
+  513 |                                                  wi(44) = 0.0243527025687109;    xi(44) = 0.8659993981540928
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:514:2:
+
+  514 |                                                  wi(45) = 0.0222701738083833;    xi(45) = -0.8893154459951141
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:515:2:
+
+  515 |                                                  wi(46) = 0.0222701738083833;    xi(46) = 0.8893154459951141
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:516:2:
+
+  516 |                                                  wi(47) = 0.0201348231535302;    xi(47) = -0.9105221370785028
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:517:2:
+
+  517 |                                                  wi(48) = 0.0201348231535302;    xi(48) = 0.9105221370785028
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:518:2:
+
+  518 |                                                  wi(49) = 0.0179517157756973;    xi(49) = -0.9295691721319396
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:519:2:
+
+  519 |                                                  wi(50) = 0.0179517157756973;    xi(50) = 0.9295691721319396
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:520:2:
+
+  520 |                                                  wi(51) = 0.0157260304760247;    xi(51) = -0.9464113748584028
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:521:2:
+
+  521 |                                                  wi(52) = 0.0157260304760247;    xi(52) = 0.9464113748584028
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:522:2:
+
+  522 |                                                  wi(53) = 0.0134630478967186;    xi(53) = -0.9610087996520538
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:523:2:
+
+  523 |                                                  wi(54) = 0.0134630478967186;    xi(54) = 0.9610087996520538
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:524:2:
+
+  524 |                                                  wi(55) = 0.0111681394601311;    xi(55) = -0.9733268277899110
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:525:2:
+
+  525 |                                                  wi(56) = 0.0111681394601311;    xi(56) = 0.9733268277899110
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:526:2:
+
+  526 |                                                  wi(57) = 0.0088467598263639;    xi(57) = -0.9833362538846260
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:527:2:
+
+  527 |                                                  wi(58) = 0.0088467598263639;    xi(58) = 0.9833362538846260
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:528:2:
+
+  528 |                                                  wi(59) = 0.0065044579689784;    xi(59) = -0.9910133714767443
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:529:2:
+
+  529 |                                                  wi(60) = 0.0065044579689784;    xi(60) = 0.9910133714767443
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:530:2:
+
+  530 |                                                  wi(61) = 0.0041470332605625;    xi(61) = -0.9963401167719553
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:531:2:
+
+  531 |                                                  wi(62) = 0.0041470332605625;    xi(62) = 0.9963401167719553
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:532:2:
+
+  532 |                                                  wi(63) = 0.0017832807216964;    xi(63) = -0.9993050417357722
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:533:2:
+
+  533 |                                                  wi(64) = 0.0017832807216964;    xi(64) = 0.9993050417357722
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:534:2:
+
+  534 |                                         case(50)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:535:2:
+
+  535 |                                                  xi(1) = -0.9988664044;    wi(1) = 0.0029086226
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:536:2:
+
+  536 |                                                  xi(2) = -0.9940319694;    wi(2) = 0.0067597992
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:537:2:
+
+  537 |                                                  xi(3) = -0.9853540841;    wi(3) = 0.0105905484
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:538:2:
+
+  538 |                                                  xi(4) = -0.9728643851;    wi(4) = 0.0143808228
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:539:2:
+
+  539 |                                                  xi(5) = -0.9566109552;    wi(5) = 0.0181155607
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:540:2:
+
+  540 |                                                  xi(6) = -0.9366566189;    wi(6) = 0.0217802432
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:541:2:
+
+  541 |                                                  xi(7) = -0.9130785567;    wi(7) = 0.0253606736
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:542:2:
+
+  542 |                                                  xi(8) = -0.8859679795;    wi(8) = 0.0288429936
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:543:2:
+
+  543 |                                                  xi(9) = -0.8554297694;    wi(9) = 0.032213728
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:544:2:
+
+  544 |                                                  xi(10) = -0.8215820709;   wi(10) = 0.035459836
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:545:2:
+
+  545 |                                                  xi(11) = -0.7845558329;   wi(11) = 0.0385687566
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:546:2:
+
+  546 |                                                  xi(12) = -0.7444943022;   wi(12) = 0.0415284631
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:547:2:
+
+  547 |                                                  xi(13) = -0.7015524687;   wi(13) = 0.0443275043
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:548:2:
+
+  548 |                                                  xi(14) = -0.6558964657;   wi(14) = 0.0469550513
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:549:2:
+
+  549 |                                                  xi(15) = -0.6077029272;   wi(15) = 0.0494009384
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:550:2:
+
+  550 |                                                  xi(16) = -0.5571583045;   wi(16) = 0.0516557031
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:551:2:
+
+  551 |                                                  xi(17) = -0.5044581449;   wi(17) = 0.0537106219
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:552:2:
+
+  552 |                                                  xi(18) = -0.449806335;    wi(18) = 0.0555577448
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:553:2:
+
+  553 |                                                  xi(19) = -0.393414312;    wi(19) = 0.05718992565
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:554:2:
+
+  554 |                                                  xi(20) = -0.335500245;    wi(20) = 0.05860084981
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:555:2:
+
+  555 |                                                  xi(21) = -0.2762881938;   wi(21) = 0.0597850587
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:556:2:
+
+  556 |                                                  xi(22) = -0.2160072369;   wi(22) = 0.0607379708
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:557:2:
+
+  557 |                                                  xi(23) = -0.15489059;     wi(23) = 0.0614558996
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:558:2:
+
+  558 |                                                  xi(24) = -0.0931747016;   wi(24) = 0.0619360674
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:559:2:
+
+  559 |                                                  xi(25) = -0.0310983383;   wi(25) = 0.0621766167
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:560:2:
+
+  560 |                                                  xi(26) = 0.0310983383;    wi(26) = 0.0621766167
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:561:2:
+
+  561 |                                                  xi(27) = 0.0931747016;    wi(27) = 0.0619360674
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:562:2:
+
+  562 |                                                  xi(28) = 0.15489059 ;     wi(28) = 0.0614558996
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:563:2:
+
+  563 |                                                  xi(29) = 0.2160072369;    wi(29) = 0.0607379708
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:564:2:
+
+  564 |                                                  xi(30) = 0.2762881938;    wi(30) = 0.0597850587
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:565:2:
+
+  565 |                                                  xi(31) = 0.335500245;     wi(31) = 0.0586008498
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:566:2:
+
+  566 |                                                  xi(32) = 0.3934143119;    wi(32) = 0.057189926
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:567:2:
+
+  567 |                                                  xi(33) = 0.449806335;     wi(33) = 0.0555577448
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:568:2:
+
+  568 |                                                  xi(34) = 0.504458145;     wi(34) = 0.0537106219
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:569:2:
+
+  569 |                                                  xi(35) = 0.5571583045;    wi(35) = 0.051655703
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:570:2:
+
+  570 |                                                  xi(36) = 0.6077029272;    wi(36) = 0.04940093845
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:571:2:
+
+  571 |                                                  xi(37) = 0.6558964657;    wi(37) = 0.0469550513
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:572:2:
+
+  572 |                                                  xi(38) = 0.7015524687;    wi(38) = 0.044327504
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:573:2:
+
+  573 |                                                  xi(39) = 0.7444943022;    wi(39) = 0.0415284631
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:574:2:
+
+  574 |                                                  xi(40) = 0.7845558329;    wi(40) = 0.03856875661
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:575:2:
+
+  575 |                                                  xi(41) = 0.8215820709;    wi(41) = 0.0354598356
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:576:2:
+
+  576 |                                                  xi(42) = 0.8554297694;    wi(42) = 0.0322137282
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:577:2:
+
+  577 |                                                  xi(43) = 0.8859679795;    wi(43) = 0.0288429936
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:578:2:
+
+  578 |                                                  xi(44) = 0.9130785567;    wi(44) = 0.025360674
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:579:2:
+
+  579 |                                                  xi(45) = 0.9366566189;    wi(45) = 0.021780243
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:580:2:
+
+  580 |                                                  xi(46) = 0.9566109552;    wi(46) = 0.018115561
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:581:2:
+
+  581 |                                                  xi(47) = 0.9728643851;    wi(47) = 0.0143808228
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:582:2:
+
+  582 |                                                  xi(48) = 0.9853540841;    wi(48) = 0.0105905484
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:583:2:
+
+  583 |                                                  xi(49) = 0.9940319694;    wi(49) = 0.006759799
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:584:2:
+
+  584 |                                                  xi(50) = 0.9988664044;    wi(50) = 0.00290862255
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:585:2:
+
+  585 |                                         case(40)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:586:2:
+
+  586 |                                                  xi(1) = -0.998237710;     wi(1) = 0.0045212771
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:587:2:
+
+  587 |                                                  xi(2) = -0.990726239;     wi(2) = 0.0104982845
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:588:2:
+
+  588 |                                                  xi(3) = -0.977259950;     wi(3) = 0.0164210584
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:589:2:
+
+  589 |                                                  xi(4) = -0.957916819;     wi(4) = 0.0222458492
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:590:2:
+
+  590 |                                                  xi(5) = -0.932812808;     wi(5) = 0.0279370070
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:591:2:
+
+  591 |                                                  xi(6) = -0.902098807;     wi(6) = 0.0334601953
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:592:2:
+
+  592 |                                                  xi(7) = -0.865959503;     wi(7) = 0.0387821680
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:593:2:
+
+  593 |                                                  xi(8) = -0.824612231;     wi(8) = 0.0438709082
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:594:2:
+
+  594 |                                                  xi(9) = -0.778305651;     wi(9) = 0.0486958076
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:595:2:
+
+  595 |                                                  xi(10) = -0.727318255;     wi(10) = 0.053227847
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:596:2:
+
+  596 |                                                  xi(11) = -0.671956685;     wi(11) = 0.057439769
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:597:2:
+
+  597 |                                                  xi(12) = -0.612553890;     wi(12) = 0.061306242
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:598:2:
+
+  598 |                                                  xi(13) = -0.549467125;     wi(13) = 0.064804013
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:599:2:
+
+  599 |                                                  xi(14) = -0.483075802;     wi(14) = 0.067912046
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:600:2:
+
+  600 |                                                  xi(15) = -0.413779204;     wi(15) = 0.070611647
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:601:2:
+
+  601 |                                                  xi(16) = -0.341994091;     wi(16) = 0.072886582
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:602:2:
+
+  602 |                                                  xi(17) = -0.268152185;     wi(17) = 0.074723169
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:603:2:
+
+  603 |                                                  xi(18) = -0.192697581;     wi(18) = 0.076110362
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:604:2:
+
+  604 |                                                  xi(19) = -0.116084071;     wi(19) = 0.077039818
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:605:2:
+
+  605 |                                                  xi(20) = -0.038772418;     wi(20) = 0.077505948
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:606:2:
+
+  606 |                                                  xi(21) = 0.0387724175;     wi(21) = 0.077505948
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:607:2:
+
+  607 |                                                  xi(22) = 0.1160840707;     wi(22) = 0.077039818
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:608:2:
+
+  608 |                                                  xi(23) = 0.1926975807;     wi(23) = 0.076110362
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:609:2:
+
+  609 |                                                  xi(24) = 0.2681521850;     wi(24) = 0.074723169
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:610:2:
+
+  610 |                                                  xi(25) = 0.3419940908;     wi(25) = 0.072886582
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:611:2:
+
+  611 |                                                  xi(26) = 0.4137792044;     wi(26) = 0.070611647
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:612:2:
+
+  612 |                                                  xi(27) = 0.4830758017;     wi(27) = 0.067912046
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:613:2:
+
+  613 |                                                  xi(28) = 0.5494671251;     wi(28) = 0.064804013
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:614:2:
+
+  614 |                                                  xi(29) = 0.6125538897;     wi(29) = 0.061306242
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:615:2:
+
+  615 |                                                  xi(30) = 0.6719566846;     wi(30) = 0.057439769
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:616:2:
+
+  616 |                                                  xi(31) = 0.7273182552;     wi(31) = 0.053227847
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:617:2:
+
+  617 |                                                  xi(32) = 0.7783056514;     wi(32) = 0.048695808
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:618:2:
+
+  618 |                                                  xi(33) = 0.8246122308;     wi(33) = 0.043870908
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:619:2:
+
+  619 |                                                  xi(34) = 0.8659595032;     wi(34) = 0.038782168
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:620:2:
+
+  620 |                                                  xi(35) = 0.9020988070;     wi(35) = 0.033460195
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:621:2:
+
+  621 |                                                  xi(36) = 0.9328128083;     wi(36) = 0.027937007
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:622:2:
+
+  622 |                                                  xi(37) = 0.9579168192;     wi(37) = 0.022245849
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:623:2:
+
+  623 |                                                  xi(38) = 0.9772599500;     wi(38) = 0.016421058
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:624:2:
+
+  624 |                                                  xi(39) = 0.9907262387;     wi(39) = 0.010498285
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:625:2:
+
+  625 |                                                  xi(40) = 0.9982377097;     wi(40) = 0.004521277
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:626:2:
+
+  626 |                                         case(30)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:627:2:
+
+  627 |                                                  xi(1) = -0.996893466;     wi(1) = 7.96819292E-03
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:628:2:
+
+  628 |                                                  xi(2) = -0.983668149;     wi(2) = 1.84664689E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:629:2:
+
+  629 |                                                  xi(3) = -0.960021853;     wi(3) = 2.87847072E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:630:2:
+
+  630 |                                                  xi(4) = -0.926200032;     wi(4) = 3.87991928E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:631:2:
+
+  631 |                                                  xi(5) = -0.882560551;     wi(5) = 4.84026745E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:632:2:
+
+  632 |                                                  xi(6) = -0.829565763;     wi(6) = 5.74931577E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:633:2:
+
+  633 |                                                  xi(7) = -0.767777443;     wi(7) = 6.59742281E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:634:2:
+
+  634 |                                                  xi(8) = -0.697850466;     wi(8) = 7.37559721E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:635:2:
+
+  635 |                                                  xi(9) = -0.620526195;     wi(9) = 8.07558969E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:636:2:
+
+  636 |                                                  xi(10) = -0.536624134;    wi(10) = 8.68997872E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:637:2:
+
+  637 |                                                  xi(11) = -0.447033763;    wi(11) = 9.21225250E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:638:2:
+
+  638 |                                                  xi(12) = -0.352704734;    wi(12) = 9.63687375E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:639:2:
+
+  639 |                                                  xi(13) = -0.254636914;    wi(13) = 9.95934233E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:640:2:
+
+  640 |                                                  xi(14) = -0.153869912;    wi(14) = 0.101762392
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:641:2:
+
+  641 |                                                  xi(15) = -5.14718443E-02; wi(15) = 0.102852650
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:642:2:
+
+  642 |                                                  xi(16) = 5.14718443E-02;  wi(16) = 0.102852650
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:643:2:
+
+  643 |                                                  xi(17) = 0.153869912;     wi(17) = 0.101762392
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:644:2:
+
+  644 |                                                  xi(18) = 0.254636914;     wi(18) = 9.95934233E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:645:2:
+
+  645 |                                                  xi(19) = 0.352704734;     wi(19) = 9.63687375E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:646:2:
+
+  646 |                                                  xi(20) = 0.447033763;     wi(20) = 9.21225250E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:647:2:
+
+  647 |                                                  xi(21) = 0.536624134;     wi(21) = 8.68997872E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:648:2:
+
+  648 |                                                  xi(22) = 0.620526195;     wi(22) = 8.07558969E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:649:2:
+
+  649 |                                                  xi(23) = 0.697850466;     wi(23) = 7.37559721E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:650:2:
+
+  650 |                                                  xi(24) = 0.767777443;     wi(24) = 6.59742281E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:651:2:
+
+  651 |                                                  xi(25) = 0.829565763;     wi(25) = 5.74931577E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:652:2:
+
+  652 |                                                  xi(26) = 0.882560551;     wi(26) = 4.84026745E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:653:2:
+
+  653 |                                                  xi(27) = 0.926200032;     wi(27) = 3.87991928E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:654:2:
+
+  654 |                                                  xi(28) = 0.960021853;     wi(28) = 2.87847072E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:655:2:
+
+  655 |                                                  xi(29) = 0.983668149;     wi(29) = 1.84664689E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:656:2:
+
+  656 |                                                  xi(30) = 0.996893466;     wi(30) = 7.96819292E-03
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:657:2:
+
+  657 |                                         case(20)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:658:2:
+
+  658 |                                                 xi(1) = -0.993128598;     wi(1) = 1.76140070E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:659:2:
+
+  659 |                                                 xi(2) = -0.963971913;     wi(2) = 4.06014286E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:660:2:
+
+  660 |                                                 xi(3) = -0.912234426;     wi(3) = 6.26720488E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:661:2:
+
+  661 |                                                 xi(4) = -0.839116991;     wi(4) = 8.32767412E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:662:2:
+
+  662 |                                                 xi(5) = -0.746331930;     wi(5) = 0.101930119
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:663:2:
+
+  663 |                                                 xi(6) = -0.636053681;     wi(6) = 0.118194535
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:664:2:
+
+  664 |                                                 xi(7) = -0.510867000;     wi(7) = 0.131688640
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:665:2:
+
+  665 |                                                 xi(8) = -0.373706102;     wi(8) = 0.142096102
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:666:2:
+
+  666 |                                                 xi(9) = -0.227785856;     wi(9) = 0.149172992
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:667:2:
+
+  667 |                                                 xi(10) = -7.65265226E-02; wi(10) = 0.152753383
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:668:2:
+
+  668 |                                                 xi(11) = 7.65265226E-02;  wi(11) = 0.152753383
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:669:2:
+
+  669 |                                                 xi(12) = 0.227785856;     wi(12) = 0.149172992
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:670:2:
+
+  670 |                                                 xi(13) = 0.373706102;     wi(13) = 0.142096102
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:671:2:
+
+  671 |                                                 xi(14) = 0.510867000;     wi(14) = 0.131688640
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:672:2:
+
+  672 |                                                 xi(15) = 0.636053681;     wi(15) = 0.118194535
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:673:2:
+
+  673 |                                                 xi(16) = 0.746331930;     wi(16) = 0.101930119
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:674:2:
+
+  674 |                                                 xi(17) = 0.839116991;     wi(17) = 8.32767412E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:675:2:
+
+  675 |                                                 xi(18) = 0.912234426;     wi(18) = 6.26720488E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:676:2:
+
+  676 |                                                 xi(19) = 0.963971913;     wi(19) = 4.06014286E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:677:2:
+
+  677 |                                                 xi(20) = 0.993128598;     wi(20) = 1.76140070E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:678:2:
+
+  678 |                                         case(10)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:679:2:
+
+  679 |                                                 xi(1) = -0.973906517;     wi(1) = 6.66713417E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:680:2:
+
+  680 |                                                 xi(2) = -0.865063369;     wi(2) = 0.149451345
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:681:2:
+
+  681 |                                                 xi(3) = -0.679409564;     wi(3) = 0.219086364
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:682:2:
+
+  682 |                                                 xi(4) = -0.433395386;     wi(4) = 0.269266725
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:683:2:
+
+  683 |                                                 xi(5) = -0.148874342;     wi(5) = 0.295524240
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:684:2:
+
+  684 |                                                 xi(6) = 0.148874342;      wi(6) = 0.295524240
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:685:2:
+
+  685 |                                                 xi(7) = 0.433395386;      wi(7) = 0.269266725
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:686:2:
+
+  686 |                                                 xi(8) = 0.679409564;      wi(8) = 0.219086364
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:687:3:
+
+  687 |                                                 xi(9) = 0.865063369;      wi(9) = 0.149451345
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:688:2:
+
+  688 |                                                 xi(10) = 0.973906517;     wi(10) = 6.66713417E-02
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:689:2:
+
+  689 |                                         case(5)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:690:2:
+
+  690 |                                                 xi(1) = -0.906179845;    wi(1) = 0.236926883
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:691:2:
+
+  691 |                                                 xi(2) = -0.538469315;    wi(2) = 0.478628665
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:692:2:
+
+  692 |                                                 xi(3) = 0.00000000;      wi(3) = 0.568888903
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:693:2:
+
+  693 |                                                 xi(4) = 0.538469315;     wi(4) = 0.478628665
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:694:2:
+
+  694 |                                                 xi(5) = 0.906179845;     wi(5) = 0.236926883
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:696:2:
+
+  696 |                                 endselect
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:699:2:
+
+  699 |                         end subroutine GaussLegendreQuadra
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/help.f90:365:36:
+
+  365 |                                 omega1 = -qq / 2d0 + sqrt(cmplx(qq**2 / 4d0 + pp**3 / 27d0))
+      |                                                                1
+Warning: Conversion from REAL(8) to default-kind COMPLEX(4) at (1) might lose precision, consider using the KIND argument [-Wconversion]
+src/help.f90:366:36:
+
+  366 |                                 omega2 = -qq / 2d0 - sqrt(cmplx(qq**2 / 4d0 + pp**3 / 27d0))
+      |                                                                1
+Warning: Conversion from REAL(8) to default-kind COMPLEX(4) at (1) might lose precision, consider using the KIND argument [-Wconversion]
+src/help.f90:372:26:
+
+  372 |                                                      * cmplx(cos((phi1 + twopi * (k-1)) / 3d0), &
+      |                                                             1
+Warning: Conversion from REAL(8) to default-kind COMPLEX(4) at (1) might lose precision, consider using the KIND argument [-Wconversion]
+src/help.f90:376:26:
+
+  376 |                                                      * cmplx(cos((phi2 + twopi * (k-1)) / 3d0), &
+      |                                                             1
+Warning: Conversion from REAL(8) to default-kind COMPLEX(4) at (1) might lose precision, consider using the KIND argument [-Wconversion]
+src/help.f90:288:7:
+
+  288 |                                 if(dphi /= dphi .or. dphi < 2d-8) &
+      |                                   1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/help.f90:296:7:
+
+  296 |                                 if(dbeta /= dbeta .or. dbeta < 1d-8) &
+      |                                   1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/help.f90:343:15:
+
+  343 |                                 if(norma3d(testhir - tmpr) < 1d-3) azimuth = twopi - azimuth
+      |                                           1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/help.f90:277:13:
+
+  277 |                                 integer i
+      |                                         1
+Warning: Unused variable ‘i’ declared at (1) [-Wunused-variable]
+src/help.f90:238:13:
+
+  238 |                                 integer i
+      |                                         1
+Warning: Unused variable ‘i’ declared at (1) [-Wunused-variable]
+src/help.f90:84:23:
+
+   84 |                                 real(8) tmp(2), eps, eps1, eps0
+      |                                                   1
+Warning: Unused variable ‘eps’ declared at (1) [-Wunused-variable]
+src/help.f90:84:35:
+
+   84 |                                 real(8) tmp(2), eps, eps1, eps0
+      |                                                               1
+Warning: Unused variable ‘eps0’ declared at (1) [-Wunused-variable]
+src/help.f90:84:29:
+
+   84 |                                 real(8) tmp(2), eps, eps1, eps0
+      |                                                         1
+Warning: Unused variable ‘eps1’ declared at (1) [-Wunused-variable]
+src/help.f90:84:18:
+
+   84 |                                 real(8) tmp(2), eps, eps1, eps0
+      |                                              1
+Warning: Unused variable ‘tmp’ declared at (1) [-Wunused-variable]
+src/distributions_fun.f90:20:2:
+
+   20 |         use const
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:21:2:
+
+   21 |         implicit none
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:26:2:
+
+   26 |         real(8) lonmax, lonmin
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:27:2:
+
+   27 |         integer, parameter :: nlats = 90
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:28:2:
+
+   28 |         integer, parameter :: nlons = 180
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:29:2:
+
+   29 |         real lats(nlats), lons(nlons)
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:30:2:
+
+   30 |         real(8) rmap1(nlons, nlats), rmap2(nlons, nlats), ratemap(nlons, nlats)
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:31:2:
+
+   31 |         real(8) rMtmp(3)
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:137:2:
+
+  137 |                         function ejection_direction_distribution(distribution_shape, &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:138:2:
+
+  138 |                                             wpsi, psi, lambdaM, zeta, eta) result(fpsi)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:139:2:
+
+  139 |                                 use const
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:140:2:
+
+  140 |                                 use help
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:141:2:
+
+  141 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:142:2:
+
+  142 |                                 integer N, i
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:143:2:
+
+  143 |                                 real(8), parameter :: normconst1 = 0.7723999d0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:144:2:
+
+  144 |                                 real(8), parameter :: omega60 = 1.047198d0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:145:2:
+
+  145 |                                 integer ii1, ii2, ind1, ind2
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:146:2:
+
+  146 |                                 real lat, lon, klat, klon, prerate1, prerate2
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:147:2:
+
+  147 |                                 real(8) utmp(3), uvec(3), xvec(3), yvec(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:148:2:
+
+  148 |                                 real(8) xvec1(3), yvec1(3), zvec1(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:149:2:
+
+  149 |                                 real(8) :: zvec(3) = (/0d0, 0d0, 1d0/)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:150:2:
+
+  150 |                                 real(8) fpsi, Jpsi
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:151:2:
+
+  151 |                                 integer, intent(in) :: distribution_shape
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:152:2:
+
+  152 |                                 real(8), intent(in) :: psi, wpsi, lambdaM, zeta, eta
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:154:2:
+
+  154 |                                 select case(distribution_shape)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:155:2:
+
+  155 |                                         case(0)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:156:2:
+
+  156 |                                                 fpsi = 0.25d0 / pi
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:157:2:
+
+  157 |                                         case(1)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:159:2:
+
+  159 |                                                 if(wpsi < pi) then
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:160:2:
+
+  160 |                                                         fpsi = Exp(-(psi)**2 / 2d0 / omega60 / omega60)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:163:2:
+
+  163 |                                                         fpsi = fpsi / normconst1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:164:2:
+
+  164 |                                                         fpsi = fpsi / twopi
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:165:2:
+
+  165 |                                                 else
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:166:2:
+
+  166 |                                                         fpsi = 0d0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:167:2:
+
+  167 |                                                 endif
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:168:2:
+
+  168 |                                         case(2)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:171:2:
+
+  171 |                                                 if(wpsi <= omega60) then
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:172:2:
+
+  172 |                                                         fpsi = 1d0 / (1d0 - cos(omega60)) / twopi
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:173:2:
+
+  173 |                                                 else
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:174:2:
+
+  174 |                                                         fpsi = 0d0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:175:2:
+
+  175 |                                                 endif
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:176:2:
+
+  176 |                                         case(3)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:255:2:
+
+  255 |                                         case(4)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:260:2:
+
+  260 |                                 endselect
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:261:2:
+
+  261 |                                 Jpsi = 1d0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:262:2:
+
+  262 |                                 if(zeta /= 0d0) then
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:263:2:
+
+  263 |                                         Jpsi = Jacobian_tilt(psi, lambdaM, zeta, eta)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:264:2:
+
+  264 |                                         fpsi = fpsi * abs(Jpsi)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:265:2:
+
+  265 |                                 endif
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:266:2:
+
+  266 |                                 fpsi = fpsi * sin(wpsi)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:268:2:
+
+  268 |                         end function ejection_direction_distribution
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:278:2:
+
+  278 |                         function Jacobian_tilt(psi, lambdaM, zeta, A) result(J)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:279:2:
+
+  279 |                                 use const
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:280:2:
+
+  280 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:281:2:
+
+  281 |                                 real(8), intent(in) :: psi, lambdaM, zeta, A
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:282:2:
+
+  282 |                                 real(8) sinpsi, cospsi, sinzeta, coszeta
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:283:2:
+
+  283 |                                 real(8) J
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:285:2:
+
+  285 |                                 if(psi < 0.12d0 .and. zeta < 0.12d0) then
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:286:2:
+
+  286 |                                         J = psi / sqrt(psi*psi + zeta*zeta &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:287:2:
+
+  287 |                                                        - 2d0 * psi * zeta * cos(lambdaM - A))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:288:2:
+
+  288 |                                 else
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:289:2:
+
+  289 |                                         sinpsi = sin(psi) ; cospsi = cos(psi)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:290:2:
+
+  290 |                                         sinzeta = sin(zeta) ; coszeta = cos(zeta)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:292:2:
+
+  292 |                                         J = 4d0 * sinpsi / sqrt(10d0 - 2d0 * (cospsi - sinpsi) * (cospsi + sinpsi) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:293:2:
+
+  293 |                                                 - 3d0 * cos(2d0 * (psi - zeta)) - 2d0 * (coszeta - sinzeta) * (coszeta + sinzeta) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:294:2:
+
+  294 |                                                 - 3d0 * cos(2d0 * (psi + zeta)) &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:295:2:
+
+  295 |                                                 - 8d0 * cos(2d0 * (lambdaM - A)) * sinpsi * sinpsi * sinzeta * sinzeta &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:296:2:
+
+  296 |                                                 - 32d0 * cos(lambdaM - A) * sinpsi * cospsi * sinzeta * coszeta)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:297:2:
+
+  297 |                                 endif
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:299:2:
+
+  299 |                         end function Jacobian_tilt
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:307:2:
+
+  307 |                         function ejection_speed_distribution(ud, u) result(fu)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:308:2:
+
+  308 |                                 use const
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:309:2:
+
+  309 |                                 use define_types
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:310:2:
+
+  310 |                                 implicit none
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:317:2:
+
+  317 |                                 real(8) Rc, nu
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:318:2:
+
+  318 |                                 real(8) urel, Rrel, fu
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:319:2:
+
+  319 |                                 type(ejection_speed_properties) ud
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:320:2:
+
+  320 |                                 real(8) u, q
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:322:2:
+
+  322 |                                 select case(ud%ud_shape)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:323:2:
+
+  323 |                                         case(0)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:324:2:
+
+  324 |                                                 fu = 1d0 / (ud%umax - ud%umin)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:332:2:
+
+  332 |                                         case(2)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:335:2:
+
+  335 |                                 endselect
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:337:2:
+
+  337 |                         end function ejection_speed_distribution
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/distributions_fun.f90:203:30:
+
+  203 |                         lat = acos(utmp(3))            ! polar angle
+      |                              1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:204:30:
+
+  204 |                         lat = halfpi - lat                ! latitude
+      |                              1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:205:30:
+
+  205 |                         lon = atan(utmp(2), utmp(1))
+      |                              1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:206:44:
+
+  206 |                         if(lon < 0d0) lon = twopi + lon
+      |                                            1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:207:30:
+
+  207 |                         lon = twopi - lon
+      |                              1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:244:39:
+
+  244 |                                 klon = (lon - lonmax) / 0.03490659d0
+      |                                       1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:247:39:
+
+  247 |                                 klon = 0.5d0 + lon / 0.03490659d0
+      |                                       1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:251:35:
+
+  251 |                         prerate1 = ratemap(ind2, ii1) + klat * (ratemap(ind2, ind1) - ratemap(ind2, ii1))
+      |                                   1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:252:35:
+
+  252 |                         prerate2 = ratemap(ii2, ii1) + klat * (ratemap(ii2, ind1) - ratemap(ii2, ii1))
+      |                                   1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:262:7:
+
+  262 |                                 if(zeta /= 0d0) then
+      |                                   1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/distributions_fun.f90:119:23:
+
+  119 |                 lats = lats * deg2rad
+      |                       1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:120:23:
+
+  120 |                 lons = lons * deg2rad
+      |                       1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:78:23:
+
+   78 |                 lats = lats * deg2rad
+      |                       1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:79:23:
+
+   79 |                 lons = lons * deg2rad
+      |                       1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/distributions_fun.f90:30:72:
+
+   30 |         real(8) rmap1(nlons, nlats), rmap2(nlons, nlats), ratemap(nlons, nlats)
+      |                                                                               1
+Warning: Array ‘ratemap’ at (1) is larger than limit set by ‘-fmax-stack-var-size=’, moved from stack to static storage. This makes the procedure unsafe when called recursively, or concurrently from multiple threads. Consider increasing the ‘-fmax-stack-var-size=’ limit (or use ‘-frecursive’, which implies unlimited ‘-fmax-stack-var-size’) - or change the code to use an ALLOCATABLE array. If the variable is never accessed concurrently, this warning can be ignored, and the variable could also be declared with the SAVE attribute. [-Wsurprising]
+src/distributions_fun.f90:30:28:
+
+   30 |         real(8) rmap1(nlons, nlats), rmap2(nlons, nlats), ratemap(nlons, nlats)
+      |                                   1
+Warning: Array ‘rmap1’ at (1) is larger than limit set by ‘-fmax-stack-var-size=’, moved from stack to static storage. This makes the procedure unsafe when called recursively, or concurrently from multiple threads. Consider increasing the ‘-fmax-stack-var-size=’ limit (or use ‘-frecursive’, which implies unlimited ‘-fmax-stack-var-size’) - or change the code to use an ALLOCATABLE array. If the variable is never accessed concurrently, this warning can be ignored, and the variable could also be declared with the SAVE attribute. [-Wsurprising]
+src/distributions_fun.f90:30:49:
+
+   30 |         real(8) rmap1(nlons, nlats), rmap2(nlons, nlats), ratemap(nlons, nlats)
+      |                                                        1
+Warning: Array ‘rmap2’ at (1) is larger than limit set by ‘-fmax-stack-var-size=’, moved from stack to static storage. This makes the procedure unsafe when called recursively, or concurrently from multiple threads. Consider increasing the ‘-fmax-stack-var-size=’ limit (or use ‘-frecursive’, which implies unlimited ‘-fmax-stack-var-size’) - or change the code to use an ALLOCATABLE array. If the variable is never accessed concurrently, this warning can be ignored, and the variable could also be declared with the SAVE attribute. [-Wsurprising]
+src/distributions_fun.f90:315:43:
+
+  315 |                 real(8), parameter :: hrel1 = Rad / lambda1
+      |                                           1
+Warning: Unused parameter ‘hrel1’ declared at (1) [-Wunused-parameter]
+src/distributions_fun.f90:320:16:
+
+  320 |                                 real(8) u, q
+      |                                            1
+Warning: Unused variable ‘q’ declared at (1) [-Wunused-variable]
+src/distributions_fun.f90:317:14:
+
+  317 |                                 real(8) Rc, nu
+      |                                          1
+Warning: Unused variable ‘rc’ declared at (1) [-Wunused-variable]
+src/distributions_fun.f90:318:22:
+
+  318 |                                 real(8) urel, Rrel, fu
+      |                                                  1
+Warning: Unused variable ‘rrel’ declared at (1) [-Wunused-variable]
+src/distributions_fun.f90:318:16:
+
+  318 |                                 real(8) urel, Rrel, fu
+      |                                            1
+Warning: Unused variable ‘urel’ declared at (1) [-Wunused-variable]
+src/distributions_fun.f90:142:16:
+
+  142 |                                 integer N, i
+      |                                            1
+Warning: Unused variable ‘i’ declared at (1) [-Wunused-variable]
+src/distributions_fun.f90:142:13:
+
+  142 |                                 integer N, i
+      |                                         1
+Warning: Unused variable ‘n’ declared at (1) [-Wunused-variable]
+src/distributions_fun.f90:107:32:
+
+  107 |                     rhel = sqrt(sum((/x, y, z/)**2)) * 1d3        ! in meters
+      |                                1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/distributions_fun.f90:66:32:
+
+   66 |                     rhel = sqrt(sum((/x, y, z/)**2)) * 1d3        ! in meters
+      |                                1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:265:33:
+
+  265 |                                 because the analytical expression contains numerically difficult parts'
+      |                                 1
+Warning: Missing ‘&’ in continued character constant at (1) [-Wampersand]
+src/twobody_fun.f90:351:33:
+
+  351 |                                 because the analytical expression contains numerically difficult parts'
+      |                                 1
+Warning: Missing ‘&’ in continued character constant at (1) [-Wampersand]
+src/twobody_fun.f90:480:21:
+
+  480 |                     in case of delta-ejection:', Integrand
+      |                     1
+Warning: Missing ‘&’ in continued character constant at (1) [-Wampersand]
+src/twobody_fun.f90:1376:21:
+
+ 1376 |                     in case of delta-ejection:', Integrand
+      |                     1
+Warning: Missing ‘&’ in continued character constant at (1) [-Wampersand]
+src/twobody_fun.f90:1187:19:
+
+ 1187 |                 if(cc(i) == cc(i)) then
+      |                   1
+Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:1304:19:
+
+ 1304 |                 if(comet%Vast /= 0d0) then
+      |                   1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:136:29:
+
+  136 |                         dd = dx + dv * roots(ind) + da / 2d0 * roots(ind)**2
+      |                             1
+Warning: Possible change of value in conversion from COMPLEX(8) to REAL(8) at (1) [-Wconversion]
+src/twobody_fun.f90:1327:23:
+
+ 1327 |                     if(psieject /= psieject) then
+      |                       1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:1331:23:
+
+ 1331 |                     if(lambdaMeject /= lambdaMeject) lambdaMeject = 0d0
+      |                       1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:1349:39:
+
+ 1349 |                     if(fac2 == 0d0 .or. fac1 == 0d0) then
+      |                                       1
+Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:1349:23:
+
+ 1349 |                     if(fac2 == 0d0 .or. fac1 == 0d0) then
+      |                       1
+Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:334:19:
+
+  334 |                 if(derdphidtheta /= derdphidtheta .or. close2pericenter .or. pericenter) then
+      |                   1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:1372:15:
+
+ 1372 |             if(Integrand /= Integrand .or. Integrand < 0.0d0 &
+      |               1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:408:19:
+
+  408 |                 if(comet%Vast /= 0d0) then
+      |                   1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:432:23:
+
+  432 |                     if(lambdaMeject /= lambdaMeject) lambdaMeject = 0d0
+      |                       1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:451:23:
+
+  451 |                     if(fac2 == 0d0) then
+      |                       1
+Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:257:19:
+
+  257 |                 if(derdphidv /= derdphidv) then
+      |                   1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:472:36:
+
+  472 |                         Integrand = fac1 * fac2 / fac3 * s%Nparticles
+      |                                    1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/twobody_fun.f90:477:20:
+
+  477 |                 if((Integrand /= Integrand .or. Integrand < 0.0d0 .or. Integrand > check_inf)) then
+      |                    1
+Warning: Inequality comparison for REAL(4) at (1) [-Wcompare-reals]
+src/twobody_fun.f90:1250:51:
+
+ 1250 |             real(8) lambdaM, sinlambdaM, coslambdaM, lambda
+      |                                                   1
+Warning: Unused variable ‘coslambdam’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1234:62:
+
+ 1234 |                                             point, dphi, dbeta, s, &
+      |                                                              1
+Warning: Unused dummy argument ‘dbeta’ at (1) [-Wunused-dummy-argument]
+src/twobody_fun.f90:1242:21:
+
+ 1242 |             integer i
+      |                     1
+Warning: Unused variable ‘i’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1250:59:
+
+ 1250 |             real(8) lambdaM, sinlambdaM, coslambdaM, lambda
+      |                                                           1
+Warning: Unused variable ‘lambda’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1257:36:
+
+ 1257 |             real(8) fac1, fac2, rate
+      |                                    1
+Warning: Unused variable ‘rate’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1250:39:
+
+ 1250 |             real(8) lambdaM, sinlambdaM, coslambdaM, lambda
+      |                                       1
+Warning: Unused variable ‘sinlambdam’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1298:34:
+
+ 1298 |                 lambdaM = azimuth(point%rvector - s%rrM, s%rrM)
+      |                                  1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:1301:23:
+
+ 1301 |                 uvec = uu * (/sin(psi) * cos(lambdaM), sin(psi) * sin(lambdaM), cos(psi)/)
+      |                       1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:1335:29:
+
+ 1335 |                     jetdir = (/sin(s%zeta) * cos(s%eta), sin(s%zeta) * sin(s%eta), cos(s%zeta)/)
+      |                             1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:1162:23:
+
+ 1162 |             real(8) aux
+      |                       1
+Warning: Unused variable ‘aux’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1160:25:
+
+ 1160 |             real(8) E1(1), f1, f2, sinf1, cosf1, ean, rtest
+      |                         1
+Warning: Unused variable ‘e1’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1160:59:
+
+ 1160 |             real(8) E1(1), f1, f2, sinf1, cosf1, ean, rtest
+      |                                                           1
+Warning: Unused variable ‘rtest’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1160:40:
+
+ 1160 |             real(8) E1(1), f1, f2, sinf1, cosf1, ean, rtest
+      |                                        1
+Warning: Unused variable ‘sinf1’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1159:43:
+
+ 1159 |             real(8) r2d(2), rm2d(2), tmp(2), tmp1, tmp2
+      |                                           1
+Warning: Unused variable ‘tmp’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1041:34:
+
+ 1041 |             real(8) eanm, ean, psi, discr
+      |                                  1
+Warning: Unused variable ‘psi’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1045:35:
+
+ 1045 |             real(16) x1, y1, x2, r1, r2, s1(2), s2(2)
+      |                                   1
+Warning: Unused variable ‘r1’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1045:39:
+
+ 1045 |             real(16) x1, y1, x2, r1, r2, s1(2), s2(2)
+      |                                       1
+Warning: Unused variable ‘r2’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1045:46:
+
+ 1045 |             real(16) x1, y1, x2, r1, r2, s1(2), s2(2)
+      |                                              1
+Warning: Unused variable ‘s1’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1045:53:
+
+ 1045 |             real(16) x1, y1, x2, r1, r2, s1(2), s2(2)
+      |                                                     1
+Warning: Unused variable ‘s2’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1040:64:
+
+ 1040 |             real(8) shift(2), r2d(2), rm2d(2), angle, tangent(2), tmp(2)
+      |                                                                1
+Warning: Unused variable ‘tangent’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1040:72:
+
+ 1040 |             real(8) shift(2), r2d(2), rm2d(2), angle, tangent(2), tmp(2)
+      |                                                                        1
+Warning: Unused variable ‘tmp’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1042:68:
+
+ 1042 |             real(8) one_plus_e, one_minus_e, one_minus_e2, aux, tmp1, tmp2
+      |                                                                    1
+Warning: Unused variable ‘tmp1’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1042:74:
+
+ 1042 |             real(8) one_plus_e, one_minus_e, one_minus_e2, aux, tmp1, tmp2
+      |                                                                          1
+Warning: Unused variable ‘tmp2’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1045:23:
+
+ 1045 |             real(16) x1, y1, x2, r1, r2, s1(2), s2(2)
+      |                       1
+Warning: Unused variable ‘x1’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1045:31:
+
+ 1045 |             real(16) x1, y1, x2, r1, r2, s1(2), s2(2)
+      |                               1
+Warning: Unused variable ‘x2’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1039:37:
+
+ 1039 |             real(8) c, x(2), y(2), xm, ym, b, vec1(2), vec2(2)
+      |                                     1
+Warning: Unused variable ‘xm’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1045:27:
+
+ 1045 |             real(16) x1, y1, x2, r1, r2, s1(2), s2(2)
+      |                           1
+Warning: Unused variable ‘y1’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1039:41:
+
+ 1039 |             real(8) c, x(2), y(2), xm, ym, b, vec1(2), vec2(2)
+      |                                         1
+Warning: Unused variable ‘ym’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:1081:22:
+
+ 1081 |                 r2d = rot2d(r2d, -angle)
+      |                      1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:1084:23:
+
+ 1084 |                 rm2d = rot2d(rm2d, -angle)
+      |                       1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:1087:24:
+
+ 1087 |                 shift = rot2d(shift, -angle)
+      |                        1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:1100:27:
+
+ 1100 |                     vec1 = (/r, 0d0/)
+      |                           1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:1101:27:
+
+ 1101 |                     vec2 = vec1 - (/x(i), y(i)/)
+      |                           1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:922:44:
+
+  922 |             real(8) c, x(2), y(2), xm, ym, b
+      |                                            1
+Warning: Unused variable ‘b’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:924:41:
+
+  924 |             real(8) cosf1, eanm, ean, psi, f1, f2, discr
+      |                                         1
+Warning: Unused variable ‘psi’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:923:64:
+
+  923 |             real(8) shift(2), r2d(2), rm2d(2), angle, tangent(2), tmp(2)
+      |                                                                1
+Warning: Unused variable ‘tangent’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:923:72:
+
+  923 |             real(8) shift(2), r2d(2), rm2d(2), angle, tangent(2), tmp(2)
+      |                                                                        1
+Warning: Unused variable ‘tmp’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:925:68:
+
+  925 |             real(8) one_plus_e, one_minus_e, one_minus_e2, aux, tmp1, tmp2
+      |                                                                    1
+Warning: Unused variable ‘tmp1’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:925:74:
+
+  925 |             real(8) one_plus_e, one_minus_e, one_minus_e2, aux, tmp1, tmp2
+      |                                                                          1
+Warning: Unused variable ‘tmp2’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:922:37:
+
+  922 |             real(8) c, x(2), y(2), xm, ym, b
+      |                                     1
+Warning: Unused variable ‘xm’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:922:41:
+
+  922 |             real(8) c, x(2), y(2), xm, ym, b
+      |                                         1
+Warning: Unused variable ‘ym’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:962:22:
+
+  962 |                 r2d = rot2d(r2d, -angle)
+      |                      1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:965:23:
+
+  965 |                 rm2d = rot2d(rm2d, -angle)
+      |                       1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:968:24:
+
+  968 |                 shift = rot2d(shift, -angle)
+      |                        1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:820:45:
+
+  820 |             subroutine control(muR, theta, ee, phi, vv, r0, rm0, &
+      |                                             1
+Warning: Unused dummy argument ‘ee’ at (1) [-Wunused-dummy-argument]
+src/twobody_fun.f90:724:73:
+
+  724 |             subroutine deltat_num_derivatives(mu, v, theta, r, r0, u, psi, &
+      |                                                                         1
+Warning: Unused dummy argument ‘psi’ at (1) [-Wunused-dummy-argument]
+src/twobody_fun.f90:724:68:
+
+  724 |             subroutine deltat_num_derivatives(mu, v, theta, r, r0, u, psi, &
+      |                                                                    1
+Warning: Unused dummy argument ‘u’ at (1) [-Wunused-dummy-argument]
+src/twobody_fun.f90:573:41:
+
+  573 |                 real(8) Ekep, h, dt1, dt0, dt2, dt3
+      |                                         1
+Warning: Unused variable ‘dt0’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:573:36:
+
+  573 |                 real(8) Ekep, h, dt1, dt0, dt2, dt3
+      |                                    1
+Warning: Unused variable ‘dt1’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:573:46:
+
+  573 |                 real(8) Ekep, h, dt1, dt0, dt2, dt3
+      |                                              1
+Warning: Unused variable ‘dt2’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:573:51:
+
+  573 |                 real(8) Ekep, h, dt1, dt0, dt2, dt3
+      |                                                   1
+Warning: Unused variable ‘dt3’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:579:28:
+
+  579 |                 real(8) eps1, eps2, signdr
+      |                            1
+Warning: Unused variable ‘eps1’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:579:34:
+
+  579 |                 real(8) eps1, eps2, signdr
+      |                                  1
+Warning: Unused variable ‘eps2’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:524:42:
+
+  524 |                 real(8) a, meanmotion, phi, phi0, ea, ea0, e
+      |                                          1
+Warning: Unused variable ‘phi’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:524:48:
+
+  524 |                 real(8) a, meanmotion, phi, phi0, ea, ea0, e
+      |                                                1
+Warning: Unused variable ‘phi0’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:526:60:
+
+  526 |                 real(8) one_minus_e, one_plus_e, pp, thesqrt
+      |                                                            1
+Warning: Unused variable ‘thesqrt’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:372:52:
+
+  372 |                                          dphi, dbeta, s, muR, dt, &
+      |                                                    1
+Warning: Unused dummy argument ‘dbeta’ at (1) [-Wunused-dummy-argument]
+src/twobody_fun.f90:371:44:
+
+  371 |                                           ee, psi, theta, point, &
+      |                                            1
+Warning: Unused dummy argument ‘ee’ at (1) [-Wunused-dummy-argument]
+src/twobody_fun.f90:379:25:
+
+  379 |                 integer i
+      |                         1
+Warning: Unused variable ‘i’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:389:46:
+
+  389 |                 real(8) fac1, fac2, fac3, Jpsi
+      |                                              1
+Warning: Unused variable ‘jpsi’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:390:31:
+
+  390 |                 real(8) sindphi, hcJpsi, Vastvechorz(3)
+      |                               1
+Warning: Unused variable ‘sindphi’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:393:40:
+
+  393 |                 real(8) zvec(3), xvec(3), yvec(3)
+      |                                        1
+Warning: Unused variable ‘xvec’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:393:49:
+
+  393 |                 real(8) zvec(3), xvec(3), yvec(3)
+      |                                                 1
+Warning: Unused variable ‘yvec’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:393:31:
+
+  393 |                 real(8) zvec(3), xvec(3), yvec(3)
+      |                               1
+Warning: Unused variable ‘zvec’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:400:34:
+
+  400 |                 lambdaM = azimuth(point%rvector - s%rrM, s%rrM)
+      |                                  1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:403:23:
+
+  403 |                 uvec = uu * (/sin(psi) * cos(lambdaM), sin(psi) * sin(lambdaM), cos(psi)/)
+      |                       1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:405:23:
+
+  405 |                 vvec = velocity * (/sin(theta) * cos(lambdaM), sin(theta) * sin(lambdaM), cos(theta)/)
+      |                       1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:436:29:
+
+  436 |                     jetdir = (/sin(s%zeta) * cos(s%eta), sin(s%zeta) * sin(s%eta), cos(s%zeta)/)
+      |                             1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:205:48:
+
+  205 |                 real(8) rv, rv2, r2v2, cos2theta, mu2, v2, rv2sin, r2v2sin
+      |                                                1
+Warning: Unused variable ‘cos2theta’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:76:39:
+
+   76 |                 real(8) dda(3), ddda(3)
+      |                                       1
+Warning: Unused variable ‘ddda’ declared at (1) [-Wunused-variable]
+src/twobody_fun.f90:63:64:
+
+   63 |             subroutine collision_check(muR, dt, coords, s, point, &
+      |                                                                1
+Warning: Unused dummy argument ‘point’ at (1) [-Wunused-dummy-argument]
+src/twobody_fun.f90:96:25:
+
+   96 |                     dx = Rast_AU * (/sin(polan) * cos(az), sin(polan) * sin(az), cos(polan)/)
+      |                         1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:102:33:
+
+  102 |                     az = azimuth(-coords/radast, s%rrM)
+      |                                 1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:107:25:
+
+  107 |                     da = (/0d0, 0d0, -muR / s%r**2/) - tmpa
+      |                         1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:109:26:
+
+  109 |                     dda = (/-dv(1), -dv(2), dv(3) * 2d0/) * muR / s%r**3
+      |                          1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/twobody_fun.f90:136:76:
+
+  136 |                         dd = dx + dv * roots(ind) + da / 2d0 * roots(ind)**2
+      |                                                                            ^
+Warning: ‘ind’ may be used uninitialized [-Wmaybe-uninitialized]
+src/twobody_fun.f90:71:30:
+
+   71 |                 integer i, ind
+      |                              ^
+note: ‘ind’ was declared here
+src/data_in.f90:136:9:
+
+  136 |       if(zeta /= 0d0) then
+      |         1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/data_in.f90:39:24:
+
+   39 |       integer i, ii, iii
+      |                        1
+Warning: Unused variable ‘iii’ declared at (1) [-Wunused-variable]
+src/data_in.f90:40:51:
+
+   40 |       real(8) moment(Np), xyz(Ns,3), tmp, tmpvec(3)
+      |                                                   1
+Warning: Unused variable ‘tmpvec’ declared at (1) [-Wunused-variable]
+src/DUDIhc.f90:387:34:
+
+  387 |                         density = density + ldif * wi(i) * term
+      |                                  1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/DUDIhc.f90:390:30:
+
+  390 |                     density = density / point%r / source%r / sin(dphi) / AU**3
+      |                              1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/DUDIhc.f90:130:15:
+
+  130 |             if(Vastx == 0d0) Vastx = 2d5 / AUdays2SI
+      |               1
+Warning: Equality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/DUDIhc.f90:219:15:
+
+  219 |             if(theta /= theta .or. abs(theta-halfpi) < 1d-8) then
+      |               1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/DUDIhc.f90:220:19:
+
+  220 |                 if(theta /= theta) write(666,*) 'delta_eject << sin(theta) =', &
+      |                   1
+Warning: Inequality comparison for REAL(8) at (1) [-Wcompare-reals]
+src/DUDIhc.f90:235:22:
+
+  235 |             density = density / sin(dphi) / point%r / source%r / AU**3
+      |                      1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/DUDIhc.f90:55:26:
+
+   55 |                 density = source%Nparticles * fac1 * fac2 / dt
+      |                          1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/DUDIhc.f90:57:26:
+
+   57 |                 density = density / AU**3 / (dist**2) / sin(psi)
+      |                          1
+Warning: Possible change of value in conversion from REAL(8) to REAL(4) at (1) [-Wconversion]
+src/DUDIhc.f90:88:39:
+
+   88 |             real(8) r2d(2), rm2d(2), ax, ux, uy, theta
+      |                                       1
+Warning: Unused variable ‘ax’ declared at (1) [-Wunused-variable]
+src/DUDIhc.f90:94:31:
+
+   94 |             real(8) coefsx(0:4), coefsy(0:3), tmpux, tmpuy
+      |                               1
+Warning: Unused variable ‘coefsx’ declared at (1) [-Wunused-variable]
+src/DUDIhc.f90:94:44:
+
+   94 |             real(8) coefsx(0:4), coefsy(0:3), tmpux, tmpuy
+      |                                            1
+Warning: Unused variable ‘coefsy’ declared at (1) [-Wunused-variable]
+src/DUDIhc.f90:84:25:
+
+   84 |             real(8) dr(3),  midval
+      |                         1
+Warning: Unused variable ‘dr’ declared at (1) [-Wunused-variable]
+src/DUDIhc.f90:79:21:
+
+   79 |             integer i, ii
+      |                     1
+Warning: Unused variable ‘i’ declared at (1) [-Wunused-variable]
+src/DUDIhc.f90:84:34:
+
+   84 |             real(8) dr(3),  midval
+      |                                  1
+Warning: Unused variable ‘midval’ declared at (1) [-Wunused-variable]
+src/DUDIhc.f90:83:39:
+
+   83 |             real(8) u, psi,  v, tmp2(2)
+      |                                       1
+Warning: Unused variable ‘tmp2’ declared at (1) [-Wunused-variable]
+src/DUDIhc.f90:41:27:
+
+   41 |             dist = norma3d(point%rvector - cloudcentr)
+      |                           1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/DUDIhc.f90:47:30:
+
+   47 |             lambdaM = azimuth(point%rvector - cloudcentr, cloudcentr)
+      |                              1
+Warning: Creating array temporary at (1) [-Warray-temporaries]
+src/phaethon_input.f90:61:42:
+
+   61 |       real(8), parameter :: Rast = 2.9e3
+      |                                                 1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:118:2:
+
+  118 |                 sources(i)%alphaM = acos(sources(i)%rrM(3) / sources(i)%r)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:119:2:
+
+  119 |                 sources(i)%betaM = atan(sources(i)%rrM(2), &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:120:2:
+
+  120 |                                                                         sources(i)%rrM(1))
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:121:2:
+
+  121 |                 sources(i)%symmetry_axis = sources(i)%rrM(1) / sources(i)%r
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:122:2:
+
+  122 |                 sources(i)%zeta = 0d0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:123:2:
+
+  123 |                 sources(i)%eta = 0d0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:124:2:
+
+  124 |                 sources(i)%ud%ud_shape = 1
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:125:2:
+
+  125 |                 sources(i)%ud%umin = 2d0 / AUdays2SI
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:126:2:
+
+  126 |                 sources(i)%ud%umax = 2399d0 / AUdays2SI
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:127:2:
+
+  127 |                 sources(i)%ejection_angle_distr = 3
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:128:2:
+
+  128 |                 sources(i)%Tj = moment(i)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:129:2:
+
+  129 |                 sources(i)%dtau = 0d0
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:132:2:
+
+  132 |                 call integrate_over_matrix(totrate)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:135:2:
+
+  135 |                 totrate = totrate / 0.31d0 / 7.2e-3 / 4d0 / pi * Rast**2
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:137:2:
+
+  137 |                 sources(i)%Nparticles = totrate &
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:138:2:
+
+  138 |                                     * (moment(2) - moment(1)) * s_in_day
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:144:2:
+
+  144 |         subroutine get_flyby_trajectory(points, nt1, resolution, CAdist, lastrM, VVast, Vast, &
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:145:2:
+
+  145 |                                                                                         firstrM, VVast1, Vast1)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:158:40:
+
+  158 |       real(8) zvec(3), xvec(3), yvec(3)
+      |                                        1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:172:2:
+
+  172 |            CApoint = lastrM - tmpnorm * CAdist
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:174:2:
+
+  174 |            do i = 1, nt1
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:175:2:
+
+  175 |                         points(i)%rvector = CApoint + tmpvec * (i - nt1/2.0)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:176:2:
+
+  176 |                         points(i)%r = norma3d(points(i)%rvector)
+      |         1       
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:179:2:
+
+  179 |            enddo
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:181:2:
+
+  181 |         end subroutine get_flyby_trajectory
+      |         1
+Warning: Nonconforming tab character at (1) [-Wtabs]
+src/phaethon_input.f90:303:37:
+
+  303 |       real(8) Rgs(N), betas(N), mass1
+      |                                     1
+Warning: Unused variable ‘mass1’ declared at (1) [-Wunused-variable]
+src/phaethon_input.f90:266:21:
+
+  266 |       real(8) heldist
+      |                     1
+Warning: Unused variable ‘heldist’ declared at (1) [-Wunused-variable]
+src/phaethon_input.f90:256:53:
+
+  256 |                                           VVast, Vast, cntrpx, cntrpy)
+      |                                                     1
+Warning: Unused dummy argument ‘vast’ at (1) [-Wunused-dummy-argument]
+src/phaethon_input.f90:256:47:
+
+  256 |                                           VVast, Vast, cntrpx, cntrpy)
+      |                                               1
+Warning: Unused dummy argument ‘vvast’ at (1) [-Wunused-dummy-argument]
+src/phaethon_input.f90:187:10:
+
+  187 |       use distributions_fun
+      |          1
+Warning: Array ‘ratemap’ at (1) is larger than limit set by ‘-fmax-stack-var-size=’, moved from stack to static storage. This makes the procedure unsafe when called recursively, or concurrently from multiple threads. Consider increasing the ‘-fmax-stack-var-size=’ limit (or use ‘-frecursive’, which implies unlimited ‘-fmax-stack-var-size’) - or change the code to use an ALLOCATABLE array. If the variable is never accessed concurrently, this warning can be ignored, and the variable could also be declared with the SAVE attribute. [-Wsurprising]
+src/phaethon_input.f90:145:18:
+
+  145 |                                                                                         firstrM, VVast1, Vast1)
+      |                                                                                               1
+Warning: Unused dummy argument ‘firstrm’ at (1) [-Wunused-dummy-argument]
+src/phaethon_input.f90:144:85:
+
+  144 |         subroutine get_flyby_trajectory(points, nt1, resolution, CAdist, lastrM, VVast, Vast, &
+      |                                                                                            1
+Warning: Unused dummy argument ‘vast’ at (1) [-Wunused-dummy-argument]
+src/phaethon_input.f90:145:33:
+
+  145 |                                                                                         firstrM, VVast1, Vast1)
+      |                                                                                                              1
+Warning: Unused dummy argument ‘vast1’ at (1) [-Wunused-dummy-argument]
+src/phaethon_input.f90:144:79:
+
+  144 |         subroutine get_flyby_trajectory(points, nt1, resolution, CAdist, lastrM, VVast, Vast, &
+      |                                                                                      1
+Warning: Unused dummy argument ‘vvast’ at (1) [-Wunused-dummy-argument]
+src/phaethon_input.f90:145:26:
+
+  145 |                                                                                         firstrM, VVast1, Vast1)
+      |                                                                                                       1
+Warning: Unused dummy argument ‘vvast1’ at (1) [-Wunused-dummy-argument]
+src/phaethon_input.f90:64:24:
+
+   64 |       integer i, ii, iii
+      |                        1
+Warning: Unused variable ‘iii’ declared at (1) [-Wunused-variable]
+src/phaethon_input.f90:57:29:
+
+   57 |       integer, parameter :: N = 500
+      |                             1
+Warning: Unused parameter ‘n’ declared at (1) [-Wunused-parameter]
+src/phaethon_input.f90:49:48:
+
+   49 |    subroutine get_moving_sources(fname, Np, Neph, Nlin, &
+      |                                                1
+Warning: Unused dummy argument ‘neph’ at (1) [-Wunused-dummy-argument]
+src/phaethon_input.f90:66:33:
+
+   66 |       real(8) rates(nlons, nlats), totrate
+      |                                 1
+Warning: Unused variable ‘rates’ declared at (1) [-Wunused-variable]
+src/phaethon_input.f90:54:10:
+
+   54 |       use distributions_fun
+      |          1
+Warning: Array ‘rmap1’ at (1) is larger than limit set by ‘-fmax-stack-var-size=’, moved from stack to static storage. This makes the procedure unsafe when called recursively, or concurrently from multiple threads. Consider increasing the ‘-fmax-stack-var-size=’ limit (or use ‘-frecursive’, which implies unlimited ‘-fmax-stack-var-size’) - or change the code to use an ALLOCATABLE array. If the variable is never accessed concurrently, this warning can be ignored, and the variable could also be declared with the SAVE attribute. [-Wsurprising]
+src/phaethon_input.f90:54:10:
+
+   54 |       use distributions_fun
+      |          1
+Warning: Array ‘rmap2’ at (1) is larger than limit set by ‘-fmax-stack-var-size=’, moved from stack to static storage. This makes the procedure unsafe when called recursively, or concurrently from multiple threads. Consider increasing the ‘-fmax-stack-var-size=’ limit (or use ‘-frecursive’, which implies unlimited ‘-fmax-stack-var-size’) - or change the code to use an ALLOCATABLE array. If the variable is never accessed concurrently, this warning can be ignored, and the variable could also be declared with the SAVE attribute. [-Wsurprising]

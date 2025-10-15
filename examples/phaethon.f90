@@ -31,8 +31,8 @@ program phaethon
     
     implicit none
     integer, parameter :: Neph = 2000  ! this many positions are in the file with ephemeridae
-    integer, parameter :: Nlin = 10	! this many positions - 1 are interpolated between the ephemeridae
-	integer, parameter :: Np = (Neph-1) * Nlin + 1	! number of points along the asteroid trajectory
+    integer, parameter :: Nlin = 10  ! this many positions - 1 are interpolated between the ephemeridae
+  integer, parameter :: Np = (Neph-1) * Nlin + 1  ! number of points along the asteroid trajectory
     real(8), parameter :: Rast = 0d0
     real(8), parameter :: Rast_AU = Rast / AU
     real(8), parameter :: centerpositionx = 0.5d0
@@ -61,7 +61,7 @@ program phaethon
     real(8) rhels(Nmaps), rhel1, rhel2
     integer mapind1, mapind2
     
-	! We will compute the number density in a planar rectangular grid
+  ! We will compute the number density in a planar rectangular grid
     ! nt1 and nt2 are the number of the grid nodes along the vertical
     ! and horizontal directions
     nt1 = 400 ; nt2 = 400
@@ -73,9 +73,9 @@ program phaethon
     
     ! the moment for which we compute the number density
     tnow = sources(Np)%Tj
-	
-	! resolution(1) and (2) are the distances between the grid nodes in 
-	! horizontal and vertical directions
+  
+  ! resolution(1) and (2) are the distances between the grid nodes in 
+  ! horizontal and vertical directions
     resolution(1) = 5d3
     resolution(2) = resolution(1)
     ! Generating the list of points where we compute number density
@@ -83,7 +83,7 @@ program phaethon
                 comet(Np)%Vastvec, comet(Np)%Vast, &
                 centerpositionx, centerpositiony)
 
-	! Load the matrices with number density of impact ejecta (Szalay et al., 2019)
+  ! Load the matrices with number density of impact ejecta (Szalay et al., 2019)
     call get_maps_data(rhels, fnames)
     
     density = 0.0
@@ -99,7 +99,7 @@ program phaethon
         ! obtain beta for the given particle radius
             call beta_from_Rg(beta, Rgs(i_R))
         else
-            beta = 0d0	! approximation for large grains of 100 um radius
+            beta = 0d0  ! approximation for large grains of 100 um radius
         endif
         muR = GMsun * (1d0 - beta)        
         ! when the particles ejected with umin leave the FoV
@@ -117,8 +117,8 @@ program phaethon
         ! Loop over the consequently active sources along the asteroid
         ! trajectory
         do i_p = idt, Np-1
-			! use the impact-ejecta map that corresponds to the current
-			! heliocentric distance
+      ! use the impact-ejecta map that corresponds to the current
+      ! heliocentric distance
             do while(sources(i_p)%r < rhel2)
                 rhel1 = rhel2
                 mapind1 = mapind2
@@ -128,34 +128,34 @@ program phaethon
             enddo
             call ratematr_interpolate(sources(i_p)%r, rhel1, rhel2)
             dt = tnow - sources(i_p)%Tj
-			call runge_kutta_point_position(comet(i_p)%coords, &
-								comet(i_p)%Vastvec, muR, dt, cloudcentr)
-			rMtmp = cloudcentr
-			!$OMP PARALLEL PRIVATE(i,ii) &
-			!$OMP SHARED(i_p, i_R, points, sources, tmp_res, Rgs, muR, comet)
-			!$OMP DO
-			do ii = 1, nt2
-			do i = 1, nt1
-				
-				call hc_DUDI_simple_expansion(tmp_res(i,ii), &
-							sources(i_p), dt, cloudcentr, points(i,ii))
+      call runge_kutta_point_position(comet(i_p)%coords, &
+                comet(i_p)%Vastvec, muR, dt, cloudcentr)
+      rMtmp = cloudcentr
+      !$OMP PARALLEL PRIVATE(i,ii) &
+      !$OMP SHARED(i_p, i_R, points, sources, tmp_res, Rgs, muR, comet)
+      !$OMP DO
+      do ii = 1, nt2
+      do i = 1, nt1
+        
+        call hc_DUDI_simple_expansion(tmp_res(i,ii), &
+              sources(i_p), dt, cloudcentr, points(i,ii))
 
-			enddo
-			enddo
-			!$OMP END DO
-			!$OMP END PARALLEL
-			density = density + tmp_res
+      enddo
+      enddo
+      !$OMP END DO
+      !$OMP END PARALLEL
+      density = density + tmp_res
         enddo
         if(i_R > 0) then
-			write(fnameout, '("results/Rg=", F5.2, "micron.dat")') Rgs(i_R)
+      write(fnameout, '("results/Rg=", F5.2, "micron.dat")') Rgs(i_R)
         else
-			write(fnameout, '("results/Rg=", F6.2, "micron.dat")') 100d0
+      write(fnameout, '("results/Rg=", F6.2, "micron.dat")') 100d0
         endif
         call matrix_out(trim(fnameout), density, nt1, nt2)
-		write(*,*) 'result is in the file ', fnameout
-		if(i_R < Nrgs) then
-			write(*,*) 'calculations continue'
-		endif
+    write(*,*) 'result is in the file ', fnameout
+    if(i_R < Nrgs) then
+      write(*,*) 'calculations continue'
+    endif
     enddo
 
     deallocate(points, tmp_res, density, sources, comet)

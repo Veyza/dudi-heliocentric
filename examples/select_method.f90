@@ -124,7 +124,7 @@ program select_method
     
     call matrix_out('./results/test_simple_exp_meth.dat', density_s, nt1, nt2)
     call matrix_out('./results/test_delta-eject_meth.dat', density_d, nt1, nt2)
-	call matrix_out('./results/test_v-integr_meth.dat', density_v, nt1, nt2)
+  call matrix_out('./results/test_v-integr_meth.dat', density_v, nt1, nt2)
 
     ! compute the matrix of delta-ejection solution deviations
     ! from the v-integration solution
@@ -154,7 +154,7 @@ program select_method
     else
         write(*,*) 'v-integration method is recommended'
     endif
-	! recommend the simple expansion method if the deviations are small
+  ! recommend the simple expansion method if the deviations are small
     if(sum(abs(test_s)) / dble(nt1 * nt2) < accuracy * 1e-2 &
     .and. max(abs(minval(test_s) * 100), abs(maxval(test_s) * 100)) < accuracy) then
         write(*,*) 'simple expansion method is applicable too'

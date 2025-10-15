@@ -14,8 +14,23 @@
 
 # -------- compiler --------
 FC      ?= gfortran
-#FFLAGS  ?= -O3 -fimplicit-none -Wall -Wno-tabs -Wno-unused-variable
-FFLAGS ?= -O3 -fimplicit-none -Wno-tabs -Wno-unused-variable
+.PHONY: all clean clean-warnings
+
+# your normal flags
+FFLAGS ?= -O3 -fimplicit-none -Wall -Wno-tabs -Wno-unused-variable
+
+# stricter sweep (adjust if your gfortran doesn't recognize some)
+STRICT_WARNINGS = -O0 -g -fimplicit-none -Wall -Wextra -Wconversion \
+                  -Wsurprising -Warray-temporaries -Wcharacter-truncation \
+                  -Wreal-q-constant -Wtarget-lifetime
+
+# warnings sweep: clean + rebuild (compile only, no run)
+clean-warnings:
+	$(MAKE) clean
+	$(MAKE) -B all FFLAGS="$(STRICT_WARNINGS)"
+
+	
+#FFLAGS ?= -O3 -fimplicit-none -Wno-tabs -Wno-unused-variable
 LDFLAGS ?=
 PYTHON  ?= python3
 
