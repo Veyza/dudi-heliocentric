@@ -1,4 +1,4 @@
-! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
+! This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
 ! Version 1.0.1
@@ -247,7 +247,7 @@ module DUDIhc
             use twobody_fun
             implicit none
             real(8), intent(in) :: muR, r, r0, v, dphi
-            real(8), intent(out) :: dt
+            real(8), intent(out) :: dt = 100d0
             logical, intent(in) :: pericenter
             real(8) ee, theta, semi_major_axis
             
