@@ -23,12 +23,12 @@ module distributions_fun
   ! parameters and variables for modeling the distribution of 
   ! the ejection direction using the impact-ejecta density maps
   ! from Szalay et al., 2019
-  real(8) lonmax, lonmin
   integer, parameter :: nlats = 90
   integer, parameter :: nlons = 180
-  real lats(nlats), lons(nlons)
-  real(8) rmap1(nlons, nlats), rmap2(nlons, nlats), ratemap(nlons, nlats)
-  real(8) rMtmp(3)
+  real(8), save :: lonmax, lonmin
+  real,    save :: lats(nlats), lons(nlons)
+  real(8), save :: rmap1(nlons,nlats), rmap2(nlons,nlats), ratemap(nlons,nlats)
+  real(8), save :: rMtmp(3)
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         contains
             
@@ -75,8 +75,8 @@ module distributions_fun
                         read(100,*) rmap2(:,i)
                     enddo
                 close(100)
-                lats = lats * deg2rad
-                lons = lons * deg2rad
+                lats = lats * real(deg2rad)
+                lons = lons * real(deg2rad)
                 
                 lonmin = minval(lons)
                 lonmax = maxval(lons)
@@ -116,8 +116,8 @@ module distributions_fun
                         read(100,*) rmap1(:,i)
                     enddo
                 close(100)
-                lats = lats * deg2rad
-                lons = lons * deg2rad
+                lats = lats * real(deg2rad)
+                lons = lons * real(deg2rad)
                 
                 lonmin = minval(lons)
                 lonmax = maxval(lons)
@@ -137,20 +137,23 @@ module distributions_fun
       function ejection_direction_distribution(distribution_shape, &
                           wpsi, psi, lambdaM, zeta, eta) result(fpsi)
         use const
+        use nan_utils
         use help
         implicit none
         integer N, i
         real(8), parameter :: normconst1 = 0.7723999d0
         real(8), parameter :: omega60 = 1.047198d0
         integer ii1, ii2, ind1, ind2
-        real lat, lon, klat, klon, prerate1, prerate2
+        real(8) lat, lon, klat, klon, prerate1, prerate2
         real(8) utmp(3), uvec(3), xvec(3), yvec(3)
         real(8) xvec1(3), yvec1(3), zvec1(3)
         real(8) :: zvec(3) = (/0d0, 0d0, 1d0/)
-        real(8) :: fpsi = -909d0
+        real(8) fpsi
         real(8) Jpsi
         integer, intent(in) :: distribution_shape
         real(8), intent(in) :: psi, wpsi, lambdaM, zeta, eta
+        
+        fpsi = -909d0
         
         select case(distribution_shape)
           case(0)
@@ -317,9 +320,11 @@ module distributions_fun
                 real(8), parameter :: uesc = 2.4d3 ! m/s
         real(8) Rc, nu
         real(8) urel, Rrel
-        real(8) :: fu = -101d0
+        real(8) fu
         type(ejection_speed_properties) ud
         real(8) u, q
+        
+        fu  = -101d0
                 
         select case(ud%ud_shape)
           case(0)

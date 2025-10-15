@@ -69,7 +69,7 @@ program phaethon
              corr_res(nt1, nt2), sources(Np), comet(Np))
     
     ! input sources parameters
-    call get_moving_sources(fname, Np, Neph, Nlin, sources, comet)
+    call get_moving_sources(fname, Np, Nlin, sources, comet)
     
     ! the moment for which we compute the number density
     tnow = sources(Np)%Tj
@@ -80,7 +80,7 @@ program phaethon
     resolution(2) = resolution(1)
     ! Generating the list of points where we compute number density
     call get_points(points, nt1, nt2, resolution, comet(Np)%coords, &
-                comet(Np)%Vastvec, comet(Np)%Vast, &
+                comet(Np)%Vastvec, &
                 centerpositionx, centerpositiony)
 
   ! Load the matrices with number density of impact ejecta (Szalay et al., 2019)

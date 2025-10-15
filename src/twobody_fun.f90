@@ -60,13 +60,12 @@ module twobody_fun
 
             ! tests if the particle  re-impacted the asteroid on its way
             ! from the source to the point of interest
-            subroutine collision_check(muR, dt, coords, s, point, &
+            subroutine collision_check(muR, dt, coords, s, &
                        uejectvec, collision, Rast_AU)
                 use const
                 use define_types
                 use help
                 implicit none
-                type(position_in_space), intent(in) :: point
                 type(source_properties), intent(in) :: s
                 integer i
                 real(8), intent(in) :: muR, dt, Rast_AU
@@ -251,8 +250,8 @@ module twobody_fun
                     dphi3 = deltaphi(theta, rr, rrm, vv-delta, mu, pericenter)
                     dphi4 = deltaphi(theta, rr, rrm, vv-2d0*delta, mu, pericenter)
                     numder = (-dphi1 + 8d0 * dphi2 - 8d0 * dphi3 + dphi4) / 12d0 / delta 
-                    write(666,*) 'the derivative d\Delta\phi/d\theta was obtained numerically &
-                                because the analytical expression contains numerically difficult parts'
+                    write(666,*) 'the derivative d\Delta\phi/d\theta was obtained numerically ' // &
+                                'because the analytical expression contains numerically difficult parts'
                     N_of_warnings = N_of_warnings + 1
                     if(N_of_warnings > maxNofWarnings) then
                         write(*,*) 'too many warnings have been printed to fort.666'
@@ -338,8 +337,8 @@ module twobody_fun
                     !numder = (dphi2 - dphi3) / 2d0 / delta 
                     !write(*,*) 'numder2', numder
                     if((.not. close2pericenter) .and. (.not. pericenter)) then
-                        write(666,*) 'the derivative d\Delta\phi/d\theta was obtained numerically &
-                                because the analytical expression contains numerically difficult parts'
+                        write(666,*) 'the derivative d\Delta\phi/d\theta was obtained numerically ' // &
+                                'because the analytical expression contains numerically difficult parts'
                         N_of_warnings = N_of_warnings + 1
                         if(N_of_warnings > maxNofWarnings) then
                             write(*,*) 'too many warnings have been printed to fort.666'
@@ -359,8 +358,8 @@ module twobody_fun
             ! (only one value of the integrand is computed for each pair 
             ! 'a source + a point of interest'
             subroutine Integrand_delta_ejection(Integrand, uu, velocity, &
-                                          ee, psi, theta, point, &
-                                         dphi, dbeta, s, muR, dt, &
+                                          psi, theta, point, &
+                                         dphi, s, muR, dt, &
                                          comet, Rast_AU)
                 use const
                 use define_types
@@ -369,8 +368,8 @@ module twobody_fun
                 use distributions_fun
                 implicit none
                 integer i
-                real(8), intent(in) :: uu, dphi, dbeta, psi
-                real(8), intent(in) :: velocity, theta, ee
+                real(8), intent(in) :: uu, dphi, psi
+                real(8), intent(in) :: velocity, theta
                 real(8), intent(in) :: muR, dt, Rast_AU
                 type(ephemeris), intent(in) :: comet
                 type(source_properties), intent(in) :: s
@@ -385,7 +384,7 @@ module twobody_fun
                 real(8) zvec(3), xvec(3), yvec(3)
                 logical collision
                 
-                Integrand = 0d0
+                Integrand = 0.0
                 collision = .FALSE.
                 wpsi = halfpi 
                 ! azimuth of the particle velocity vector at the moment of ejection
@@ -408,7 +407,7 @@ module twobody_fun
                 
                 if(Rast_AU > 0d0) then
                     call collision_check(muR, dt, comet%coords, s, &
-                            point, uejectvec, collision, Rast_AU)
+                            uejectvec, collision, Rast_AU)
                 else
                     collision = .FALSE.
                 endif
@@ -441,7 +440,7 @@ module twobody_fun
                                     wpsi, psieject, lambdaMeject, s%zeta, s%eta)
                                                     
                     if(is_zero_r8(fac2)) then
-                        Integrand = 0d0
+                        Integrand = 0.0
                     else
                         hcJpsi = hc_jacobian_ueject(ueject, &
                              sqrt(uejectvec(1)**2 + uejectvec(2)**2), &
@@ -456,20 +455,21 @@ module twobody_fun
                         ddphidv = derdphidv(point%r, velocity, theta, muR, s%r, .FALSE.)
                         
                         call deltat_num_derivatives(muR, velocity, theta, &
-                               point%r, s%r, uu, psi, .FALSE. , ddeltatdv, ddeltatdtheta)
+                               point%r, s%r, .FALSE. , ddeltatdv, ddeltatdtheta)
                         
                                
                         fac3 = abs(ddeltatdv * ddphidtheta - ddeltatdtheta * ddphidv)
                         
-                        Integrand = fac1 * fac2 / fac3 * s%Nparticles
+                        Integrand = real(fac1 * fac2 / fac3 * s%Nparticles)
                     endif
                 else
-                    Integrand = 0d0
+                    Integrand = 0.0
                 endif
-                if((is_nan_r8(Integrand) .or. Integrand < 0.0d0 .or. is_finite_r8(Integrand))) then
+                if((is_nan_r8(dble(Integrand)) .or. Integrand < 0.0d0 &
+                    .or. is_finite_r8(dble(Integrand)))) then
                     write(666,*) ' '
-                    write(666,*) 'a bad value is obtained for the integrand &
-                    in case of delta-ejection:', Integrand
+                    write(666,*) 'a bad value is obtained for the integrand ' // &
+                    'in case of delta-ejection:', Integrand
                     write(666,*) 'factor of ejection speed distribution', fac1
                     write(666,*) 'factor of ejection direction distribution', fac2
                     write(666,*) 'Jacobian', fac3
@@ -713,11 +713,11 @@ module twobody_fun
             
             
             ! derivatives of the time interval \Delta t computed numerically
-            subroutine deltat_num_derivatives(mu, v, theta, r, r0, u, psi, &
+            subroutine deltat_num_derivatives(mu, v, theta, r, r0, &
                               pericenter, ddeltatdv, ddeltatdtheta)
                 use const
                 implicit none
-                real(8), intent(in) :: mu, v, theta, r, r0, u, psi
+                real(8), intent(in) :: mu, v, theta, r, r0
                 real(8), intent(out) :: ddeltatdtheta, ddeltatdv
                 logical, intent(in) :: pericenter
                 real(8) dt1, dt0, dt2, dt3
@@ -824,8 +824,16 @@ module twobody_fun
                 hh = r0 * vv * sin(theta)
                 hh2 = hh * hh
             !  eccentricity (eq 31)
-                ee1 = sqrt(1d0 + 2d0 * Ekep * (hh / muR) * (hh / muR))
-
+               ee1 = sqrt(1d0 + 2d0 * Ekep * (hh / muR) * (hh / muR))
+               if(abs(ee1 - ee) > eps) then
+                    write(666,*) 'eccentricity is incorrect:', ee, 'instead of', ee1
+                    N_of_warnings = N_of_warnings + 1
+                    if(N_of_warnings > maxNofWarnings) then
+                        write(*,*) 'THERE WERE TOO MANY WARNINGS --', N_of_warnings
+                        write(*,*) 'CHECK FILE fort.666'
+                        stop
+                    endif
+                endif
             !   delta phi (equation 32)
                 cosp = (hh2 / r0 / muR - 1d0) / ee1
                 cospm = (hh2 / rm0 / muR - 1d0) / ee1
@@ -1022,6 +1030,7 @@ module twobody_fun
                                         ee, theta_res, deltat_res, pericenter)
             use help
             use const
+            use nan_utils
             implicit none
             real(8), intent(in) :: r0, rm0, a0, phi,  vv, muR
             real(8), intent(out) :: ee, theta_res, deltat_res
@@ -1142,6 +1151,7 @@ module twobody_fun
                                 ee_res, theta_res, deltat, pericenter)
             use help
             use const
+            use nan_utils
             implicit none
             real(8), intent(in) :: r0, rm0, a0, phi,  vv, muR
             real(8), intent(out) :: ee_res, theta_res, deltat
@@ -1223,7 +1233,7 @@ module twobody_fun
         ! this subroutine is called `order_v´ times for each pair
         ! 'a source + a point'
         subroutine Integrand_v_integration(Integrand, velocity,  dt, &
-                                            point, dphi, dbeta, s, &
+                                            point, dphi, s, &
                                             tnow, muR, comet, &
                                             Rast_AU, pericenter)
             use const
@@ -1233,7 +1243,7 @@ module twobody_fun
             use distributions_fun
             implicit none
             integer i
-            real(8), intent(in) :: velocity, dphi, dbeta, tnow
+            real(8), intent(in) :: velocity, dphi, tnow
             real(8), intent(out) :: dt
             real(8), intent(in) :: muR, Rast_AU
             logical, intent(in) :: pericenter
@@ -1253,6 +1263,7 @@ module twobody_fun
             semi_major_axis = (2d0 / point%r - velocity**2 / muR)**(-1)
             theta = -999d0
             dt = -111d0
+            uu = -222d0
             collision = .False.
             ! find solutions for theta
             if(semi_major_axis > 0d0 .and. muR > 0d0) then
@@ -1304,7 +1315,7 @@ module twobody_fun
                 ueject = norma3d(uejectvec)
                 
                 if(Rast_AU > 0d0) then
-                    call collision_check(muR, dt, comet%coords, s, point, &
+                    call collision_check(muR, dt, comet%coords, s, &
                            uejectvec, collision, Rast_AU)
                 else
                     collision = .False.
@@ -1365,8 +1376,8 @@ module twobody_fun
             if(is_nan_r8(Integrand) .or. Integrand < 0.0d0 &
                     .or. is_finite_r8(Integrand)) then
                 write(666,*) ' '
-                write(666,*) 'a bad value is obtained for the integrand &
-                    in case of delta-ejection:', Integrand
+                write(666,*) 'a bad value is obtained for the integrand ' // &
+                    'in case of delta-ejection:', Integrand
                 write(666,*) 'factor of ejection speed distribution', fac1
                 write(666,*) 'factor of ejection direction distribution', fac2
                 write(666,*) 'Jacobian', 1d0 / abs(ddphidtheta)

@@ -14,27 +14,24 @@
 
 # -------- compiler --------
 FC      ?= gfortran
-.PHONY: all clean clean-warnings
+PYTHON  ?= python3
+LDFLAGS ?=
+
+# phony
+.PHONY: all clean distclean clean-warnings help list \
+        dudihc phaethon_dudihc select_method_dudihc \
+        example_image phaethon select \
+        run-example run-phaethon_dudihc run-select_method
 
 # your normal flags
 FFLAGS ?= -O3 -fimplicit-none -Wall -Wno-tabs -Wno-unused-variable
 
-# stricter sweep (adjust if your gfortran doesn't recognize some)
-STRICT_WARNINGS = -O0 -g -fimplicit-none -Wall -Wextra -Wconversion \
-                  -Wsurprising -Warray-temporaries -Wcharacter-truncation \
-                  -Wreal-q-constant -Wtarget-lifetime
+# strict flags
+STRICT_WARNINGS = -O0 -g -fimplicit-none -Wall -Wextra -Wconversion -Wsurprising \
+                  -Warray-temporaries -Wcharacter-truncation -Wreal-q-constant \
+                  -Wtarget-lifetime -Wimplicit-interface
 
-# warnings sweep: clean + rebuild (compile only, no run)
-clean-warnings:
-	$(MAKE) clean
-	$(MAKE) -B all FFLAGS="$(STRICT_WARNINGS)"
-
-	
-#FFLAGS ?= -O3 -fimplicit-none -Wno-tabs -Wno-unused-variable
-LDFLAGS ?=
-PYTHON  ?= python3
-
-# Guard against FC=f77 (disable on clean/list/help)
+# ---- guard against FC=f77 (disable on clean/list/help) ----
 NEEDS_FC_GUARD := $(filter-out clean distclean help list,$(MAKECMDGOALS))
 ifneq ($(NEEDS_FC_GUARD),)
   ifneq (,$(findstring f77,$(FC)))
@@ -51,7 +48,6 @@ MODDIR := build
 RESDIR := results
 
 # -------- core sources (ORDERED: providers before users) --------
-# Adjust this list to match files in src/.
 CORE_SOURCES := \
   $(SRCDIR)/const.f90 \
   $(SRCDIR)/nan_utils.f90 \
@@ -62,7 +58,7 @@ CORE_SOURCES := \
   $(SRCDIR)/data_in.f90 \
   $(SRCDIR)/data_out.f90 \
   $(SRCDIR)/DUDIhc.f90 \
-  $(SRCDIR)/phaethon_input.f90 \
+  $(SRCDIR)/phaethon_input.f90
 
 # -------- example mains --------
 EXAMPLE_SRC   ?= $(EXDIR)/example.f90
@@ -73,40 +69,35 @@ SELECT_SRC    ?= $(EXDIR)/select_method.f90
 EXAMPLE_PYSCRIPT  ?= scripts/show_image.py
 PHAETHON_PYSCRIPT ?= scripts/plot_Fig10.py
 
-.PHONY: all help list clean distclean \
-        dudihc phaethon_dudihc select_method_dudihc \
-        example_image phaethon select_method \
-        run-example run-phaethon run-select_method
+# -------- objects --------
+CORE_OBJS   := $(patsubst %.f90,$(MODDIR)/%.o,$(CORE_SOURCES))
+EXAMPLE_OBJ := $(patsubst %.f90,$(MODDIR)/%.o,$(EXAMPLE_SRC))
+PHAETHON_OBJ:= $(patsubst %.f90,$(MODDIR)/%.o,$(PHAETHON_SRC))
+SELECT_OBJ  := $(patsubst %.f90,$(MODDIR)/%.o,$(SELECT_SRC))
 
-all: dudihc
+# Default goal builds all binaries
+all: $(BINDIR)/dudihc $(BINDIR)/phaethon_dudihc $(BINDIR)/select_method_dudihc
 
-help:
-	@echo "Build-only:  dudihc | phaethon_dudihc | select_method_dudihc"
-	@echo "Pipelines:   example_image | phaethon | select   (build -> run -> plot)"
-	@echo "List files:  make list"
-	@echo "Clean:       make clean   /  make distclean"
-
-list:
-	@echo "Core:   $(CORE_SOURCES)"
-	@echo "Mains:  EXAMPLE=$(EXAMPLE_SRC)  PHAETHON=$(PHAETHON_SRC)  SELECT=$(SELECT_SRC)"
-	@echo "Plots:  EXAMPLE=$(EXAMPLE_PYSCRIPT)  PHAETHON=$(PHAETHON_PYSCRIPT)  SELECT=$(SELECT_PYSCRIPT)"
-
-# ensure dirs
-$(BINDIR) $(MODDIR) $(RESDIR):
-	mkdir -p $@
-
-# ------------ build-only binaries ------------
-$(BINDIR)/dudihc: $(CORE_SOURCES) $(EXAMPLE_SRC) | $(BINDIR) $(MODDIR)
-	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $(CORE_SOURCES) $(EXAMPLE_SRC) -o $@ $(LDFLAGS)
+# ------------ link steps ------------
+$(BINDIR)/dudihc: $(CORE_OBJS) $(EXAMPLE_OBJ) | $(BINDIR)
+	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $^ -o $@ $(LDFLAGS)
 dudihc: $(BINDIR)/dudihc
 
-$(BINDIR)/phaethon_dudihc: $(CORE_SOURCES) $(PHAETHON_SRC) | $(BINDIR) $(MODDIR)
-	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $(CORE_SOURCES) $(PHAETHON_SRC) -o $@ $(LDFLAGS)
+$(BINDIR)/phaethon_dudihc: $(CORE_OBJS) $(PHAETHON_OBJ) | $(BINDIR)
+	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $^ -o $@ $(LDFLAGS)
 phaethon_dudihc: $(BINDIR)/phaethon_dudihc
 
-$(BINDIR)/select_method_dudihc: $(CORE_SOURCES) $(SELECT_SRC) | $(BINDIR) $(MODDIR)
-	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $(CORE_SOURCES) $(SELECT_SRC) -o $@ $(LDFLAGS)
+$(BINDIR)/select_method_dudihc: $(CORE_OBJS) $(SELECT_OBJ) | $(BINDIR)
+	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $^ -o $@ $(LDFLAGS)
 select_method_dudihc: $(BINDIR)/select_method_dudihc
+
+# ------------ compile step (pattern rule) ------------
+$(MODDIR)/%.o: %.f90 | $(MODDIR)
+	@mkdir -p $(dir $@)
+	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) -c $< -o $@
+
+# Suppress compare-reals ONLY for nan_utils (intentional x /= x)
+$(MODDIR)/$(SRCDIR)/nan_utils.o: FFLAGS += -Wno-compare-reals
 
 # ------------ pipelines: build -> run -> plot ------------
 example_image: $(BINDIR)/dudihc | $(RESDIR)
@@ -126,11 +117,33 @@ select: $(BINDIR)/select_method_dudihc | $(RESDIR)
 	$(BINDIR)/select_method_dudihc
 
 # run-only helpers
-run-example:  $(BINDIR)/dudihc  ; $(BINDIR)/dudihc
-run-phaethon_dudihc: $(BINDIR)/phaethon_dudihc ; $(BINDIR)/phaethon_dudihc
-run-select_method:   $(BINDIR)/select_method_dudihc   ; $(BINDIR)/select_method_dudihc
+run-example:           $(BINDIR)/dudihc            ; $(BINDIR)/dudihc
+run-phaethon_dudihc:   $(BINDIR)/phaethon_dudihc   ; $(BINDIR)/phaethon_dudihc
+run-select_method:     $(BINDIR)/select_method_dudihc ; $(BINDIR)/select_method_dudihc
+
+# ------------ utilities ------------
+help:
+	@echo "Build-only:  dudihc | phaethon_dudihc | select_method_dudihc"
+	@echo "Pipelines:   example_image | phaethon | select   (build -> run -> plot)"
+	@echo "List files:  make list"
+	@echo "Clean:       make clean   /  make distclean"
+
+list:
+	@echo "Core:   $(CORE_SOURCES)"
+	@echo "Mains:  EXAMPLE=$(EXAMPLE_SRC)  PHAETHON=$(PHAETHON_SRC)  SELECT=$(SELECT_SRC)"
+	@echo "Plots:  EXAMPLE=$(EXAMPLE_PYSCRIPT)  PHAETHON=$(PHAETHON_PYSCRIPT)"
+
+# ensure dirs
+$(BINDIR) $(MODDIR) $(RESDIR):
+	mkdir -p $@
 
 # cleaning
-clean:      ; rm -f $(MODDIR)/*.o $(MODDIR)/*.mod
-distclean:  ; rm -rf $(BINDIR) $(RESDIR)/*
+clean:
+	rm -rf $(MODDIR)/*
+distclean:
+	rm -rf $(BINDIR) $(RESDIR)/* $(MODDIR)/*
 
+# Strict warnings sweep: clean + rebuild (compile only)
+clean-warnings:
+	$(MAKE) clean
+	$(MAKE) -B all FFLAGS='$(STRICT_WARNINGS)'

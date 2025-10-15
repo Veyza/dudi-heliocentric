@@ -52,11 +52,11 @@ module DUDIhc
                 fac1 = ejection_speed_distribution(source%ud, ueject)
                 fac2 = ejection_direction_distribution(source%ejection_angle_distr, &
                        psi, psi, lambdaM, 0d0, 0d0)
-                density = source%Nparticles * fac1 * fac2 / dt
+                density = real(source%Nparticles * fac1 * fac2 / dt)
                 
-                density = density / AU**3 / (dist**2) / sin(psi)
+                density = density / real(AU**3 * (dist**2) * sin(psi))
             else
-                density = 0d0
+                density = 0.0
             endif
         
         end subroutine hc_DUDI_simple_expansion
@@ -230,10 +230,10 @@ module DUDIhc
                 endif
             endif
 !~                     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            call Integrand_delta_ejection(density, u, v, ee, psi, theta, &
-                                        point, dphi, dbeta, source, &
+            call Integrand_delta_ejection(density, u, v, psi, theta, &
+                                        point, dphi, source, &
                                         muR, dt, comet, Rast_AU)
-            density = density / sin(dphi) / point%r / source%r / AU**3
+            density = density / real(sin(dphi) * point%r * source%r * AU**3)
 
         end subroutine hc_DUDI_delta_ejection
 
@@ -248,11 +248,12 @@ module DUDIhc
             use twobody_fun
             implicit none
             real(8), intent(in) :: muR, r, r0, v, dphi
-            real(8), intent(out) :: dt = 100d0
+            real(8), intent(out) :: dt
             logical, intent(in) :: pericenter
             real(8) ee, theta, semi_major_axis
             
             semi_major_axis = (2d0 / r - v**2 / muR)**(-1)
+            dt  = 100d0
             
             if(semi_major_axis > 0d0 .and. muR > 0d0) then
                 call theta_geometry_ellipse(muR, r, r0, v, &
@@ -315,6 +316,7 @@ module DUDIhc
             
             dttmp = dt * 1d3
             v1 = vmin ; v2 = vmax
+            v = v1
             i = 0
             do while(abs(dttmp - dt) > eps .and. i < 30)
                 i = i + 1
@@ -382,15 +384,15 @@ module DUDIhc
                     do i = 1, order_v
                         vtmp = ldif * xi(i) + lsum
                         call Integrand_v_integration(term, vtmp, &
-                                                dt1, point, dphi, dbeta, &
+                                                dt1, point, dphi, &
                                                 source, tnow, muR, &
                                                 comet, Rast_AU, pericenter)
-                        density = density + ldif * wi(i) * term
+                        density = density + real(ldif * wi(i) * term)
                     enddo
                     ! factor independent on velocity and conversion to m^-3
-                    density = density / point%r / source%r / sin(dphi) / AU**3
+                    density = density / real(point%r * source%r * sin(dphi) * AU**3)
                 else
-                    density = 0d0
+                    density = 0.0
                 endif
             endif
 

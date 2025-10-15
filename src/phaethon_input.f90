@@ -46,8 +46,7 @@ contains
   ! from the asteroid moving along its orbit
   ! fname is the name of the file
   ! containing the asteroid ephemeridae (positions and velocities)
-   subroutine get_moving_sources(fname, Np, Neph, Nlin, &
-                                                  sources, comet)
+   subroutine get_moving_sources(fname, Np, Nlin, sources, comet)
       use const
       use define_types
       use help
@@ -55,7 +54,7 @@ contains
       implicit none
       integer, parameter :: Nmaps = 9
       integer, parameter :: N = 500
-      integer, intent(in) :: Np, Neph, Nlin
+      integer, intent(in) :: Np, Nlin
       ! Phaethon's radius is used as a normalization factor when 
       ! calculating the dust production rate
       real(8), parameter :: Rast = 2.9e3    
@@ -141,8 +140,7 @@ contains
    end subroutine get_moving_sources
 
 
-  subroutine get_flyby_trajectory(points, nt1, resolution, CAdist, lastrM, VVast, Vast, &
-                      firstrM, VVast1, Vast1)
+  subroutine get_flyby_trajectory(points, nt1, resolution, CAdist, lastrM, VVast, Vast)
       use const
       use define_types
       use help
@@ -151,7 +149,6 @@ contains
       real(8), intent(in) :: resolution, CAdist
       type(position_in_space), intent(out) :: points(nt1)
       real(8), intent(in) :: lastrM(3), VVast(3), Vast
-      real(8), intent(in) :: firstrM(3), VVast1(3), Vast1
       integer i
       real(8), parameter :: angle2xvec = 29d0 * deg2rad
       real(8) tmpvec(3), tmpnorm(3), CApoint(3)
@@ -253,7 +250,7 @@ contains
   ! Inputing a 2-d array of the points where the number density
   ! will be computed
    subroutine get_points(points, nt1, nt2, resolution, lastrM, &
-                                          VVast, Vast, cntrpx, cntrpy)
+                                          VVast, cntrpx, cntrpy)
       use const
       use define_types
       use help
@@ -261,7 +258,7 @@ contains
       integer, intent(in) :: nt1, nt2
       real(8), intent(in) :: resolution(2), cntrpx, cntrpy
       type(position_in_space), intent(out) :: points(nt1,nt2)
-      real(8), intent(in) :: lastrM(3), VVast(3), Vast
+      real(8), intent(in) :: lastrM(3), VVast(3)
       integer i, ii
       real(8) heldist
       real(8) tmpvec(3)

@@ -125,6 +125,7 @@ contains
    ! the jet's zenith angle (zeta) and azimuth (eta) are known
    subroutine jet_direction(betaM, zeta, eta, rrM, jetdir)
       use const
+      use nan_utils
       use help
       real(8), intent(in) :: betaM, zeta, eta, rrM(3)
       real(8), intent(out) :: jetdir(3)
