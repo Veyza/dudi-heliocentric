@@ -350,10 +350,10 @@ module help
 				use const
 				implicit none
 				real(8), intent(in) :: a(0:3)
-				complex(8), intent(out) :: x(3)
+				complex(16), intent(out) :: x(3)
 				integer k, i, ii
 				real(8) B1, B2, B3, pp, qq, phi1, phi2
-				complex(8) omega1, omega2, y(3), roots1(3), roots2(3)
+				complex(16) omega1, omega2, y(3), roots1(3), roots2(3)
 				
 				B1 = a(1) / a(0)
 				B2 = a(2) / a(0)
