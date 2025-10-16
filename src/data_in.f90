@@ -1,7 +1,7 @@
 ! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.1
+! Version 1.0.2
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 ! If you do, please cite the following paper
@@ -36,8 +36,8 @@ contains
       real(8), intent(in) :: Rast_AU
       type(source_properties), intent(out) :: sources(Np,Ns)
       type(ephemeris), intent(out) :: comet(Np)
-      integer i, ii, iii
-      real(8) moment(Np), xyz(Ns,3), tmp, tmpvec(3)
+      integer i, ii
+      real(8) moment(Np), xyz(Ns,3), tmp
       character(*), intent(in) :: fname
 
       open(200, file = fname, status = 'old')
@@ -125,6 +125,7 @@ contains
    ! the jet's zenith angle (zeta) and azimuth (eta) are known
    subroutine jet_direction(betaM, zeta, eta, rrM, jetdir)
       use const
+      use nan_utils
       use help
       real(8), intent(in) :: betaM, zeta, eta, rrM(3)
       real(8), intent(out) :: jetdir(3)
@@ -133,7 +134,7 @@ contains
 
       rtmp = rrM / norma3d(rrM)
       tmpang = 3d0 * halfpi - betaM
-      if(zeta /= 0d0) then
+      if(.not. is_zero_r8(zeta)) then
          ! rotate the CS around z-axis so that rtmp would have zero x-axis component
          call eulrot(0d0, 0d0, tmpang, rtmp(1), rtmp(2), rtmp(3), &
             xout, yout, zout, .FALSE.)

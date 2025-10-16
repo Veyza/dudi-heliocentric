@@ -1,7 +1,7 @@
 ! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.1
+! Version 1.0.2
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 ! If you do, please cite the following paper
@@ -29,10 +29,8 @@ program select_method
     implicit none
     real(8), parameter :: Rast = 0d0
     real(8), parameter :: Rast_AU = Rast / AU
-    real(8), parameter :: Rgrain = 2d-6
     real, parameter :: accuracy = 5.0 ! %
     logical, parameter :: pericenter = .FALSE.
-    character(len = 20) outformat
     integer nt1, nt2
     real(8) tnow, resolution(2), dtau
     integer i, ii, k
@@ -124,7 +122,7 @@ program select_method
     
     call matrix_out('./results/test_simple_exp_meth.dat', density_s, nt1, nt2)
     call matrix_out('./results/test_delta-eject_meth.dat', density_d, nt1, nt2)
-	call matrix_out('./results/test_v-integr_meth.dat', density_v, nt1, nt2)
+  call matrix_out('./results/test_v-integr_meth.dat', density_v, nt1, nt2)
 
     ! compute the matrix of delta-ejection solution deviations
     ! from the v-integration solution
@@ -154,7 +152,7 @@ program select_method
     else
         write(*,*) 'v-integration method is recommended'
     endif
-	! recommend the simple expansion method if the deviations are small
+  ! recommend the simple expansion method if the deviations are small
     if(sum(abs(test_s)) / dble(nt1 * nt2) < accuracy * 1e-2 &
     .and. max(abs(minval(test_s) * 100), abs(maxval(test_s) * 100)) < accuracy) then
         write(*,*) 'simple expansion method is applicable too'

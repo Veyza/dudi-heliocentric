@@ -1,7 +1,7 @@
-! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
+! This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.1
+! Version 1.0.2
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 ! If you do, please cite the following paper
@@ -10,7 +10,7 @@
 ! an atmosphereless body, 2021, A&A, 650, A186 
 
 ! File: DUDIhc.f90
-! Description: Contains ssubroutines that implement three solution methods
+! Description: Contains subroutines that implement three solution methods
 ! on a high level and auxiliary subroutines that support these methods.
 
 
@@ -36,28 +36,57 @@ module DUDIhc
             type(position_in_space), intent(in) :: point 
             type(source_properties), intent(in) :: source 
             real(8) ueject, psi, lambdaM, dist, fac1, fac2
-            real(8) uejectvec(3), tmp
+            real(8) uejectvec(3), tmp, vtmp(3)
+            ! guard cloud center norm
+            real(8) :: cnorm, sinpsi, dens8
             
-            dist = norma3d(point%rvector - cloudcentr)
+            vtmp = point%rvector - cloudcentr
+            dist = norma3d(vtmp)
+            if (dist <= tiny(1.0d0)) then
+                density = 0.0
+                return
+            end if
+
+            if (dt <= 0.0d0) then
+                density = 0.0
+                return
+            end if
+
             ueject = dist / dt
             uejectvec = (point%rvector - cloudcentr) / dist        ! unit vector
-            tmp = dot_product(uejectvec, cloudcentr) / norma3d(cloudcentr)
-            if(tmp >= 1d0 .or. tmp <= -1d0) tmp = sign(9.9999d-1, tmp)
+
+            cnorm = norma3d(cloudcentr)
+            if (cnorm <= tiny(1.0d0)) then
+                density = 0.0
+                return
+            end if
+
+            tmp = dot_product(uejectvec, cloudcentr) / cnorm
+            if (tmp >= 1d0 .or. tmp <= -1d0) tmp = sign(9.9999d-1, tmp)
             psi = acos(tmp)
-            lambdaM = azimuth(point%rvector - cloudcentr, cloudcentr)
-            
+            vtmp = point%rvector - cloudcentr
+            lambdaM = azimuth(vtmp, cloudcentr)
+
             fac1 = 0d0 ; fac2 = 0d0
-            if(source%ud%umin <= ueject &
-                               .and. ueject <= source%ud%umax) then
+            if (source%ud%umin <= ueject .and. ueject <= source%ud%umax) then
                 fac1 = ejection_speed_distribution(source%ud, ueject)
                 fac2 = ejection_direction_distribution(source%ejection_angle_distr, &
                        psi, psi, lambdaM, 0d0, 0d0)
-                density = source%Nparticles * fac1 * fac2 / dt
-                
-                density = density / AU**3 / (dist**2) / sin(psi)
+
+                ! compute in double, guard sin(psi)
+                sinpsi = sin(psi)
+                if (abs(sinpsi) <= 1.0d-15) then
+                    density = 0.0
+                    return
+                end if
+
+                dens8 = source%Nparticles * fac1 * fac2 / dt
+                dens8 = dens8 / (AU**3 * dist**2 * sinpsi)
+                density = real(dens8, kind=kind(0.0))
             else
-                density = 0d0
-            endif
+                density = 0.0
+            end if
+
         
         end subroutine hc_DUDI_simple_expansion
         
@@ -72,27 +101,27 @@ module DUDIhc
                     muR, dt, comet, Rast_AU)
             use const
             use define_types
+            use nan_utils
             use help
             use twobody_fun
             implicit none
             real(8), parameter :: eps = 1d-8
-            integer i, ii
+            integer ii
             real, intent(out) :: density
             real(8), intent(in) :: dt, muR, Rast_AU
             type(ephemeris), intent(in) :: comet
-            real(8) u, psi,  v, tmp2(2)
-            real(8) dr(3),  midval
+            real(8) u, psi,  v
             type(position_in_space), intent(in) :: point
             type(source_properties), intent(in) :: source
             real(8) dphi, dbeta
-            real(8) r2d(2), rm2d(2), ax, ux, uy, theta
+            real(8) r2d(2), rm2d(2), ux, uy, theta
             real(8)  Vastx, Vasty, discr
             real(8) rm2, rm3, rm4, rm5, rm6, rm7, rm8, rm9, rm10, rm11
             real(8) ux2, ux3, uy2, uy3, ux4, uy4, ux5, uy5
             real(8) dt2, dt3, dt4, dt5, dt6, dt7, dt8
             real(8) Ekep, hh, ee
-            real(8) coefsx(0:4), coefsy(0:3), tmpux, tmpuy
-            real(8) xcoefs(0:6), ycoefs(0:5), muR2, muR3, muR4
+            real(8) xcoefs(0:6), ycoefs(0:5), tmpux, tmpuy
+            real(8) muR2, muR3, muR4
             
             call ApuTrajectoryLight(point, dphi, dbeta, source)
             
@@ -127,7 +156,7 @@ module DUDIhc
 !~             ! x-coordinate of the comet velosity
             Vastx = dot_product(comet%Vastvec, source%rrM) / source%r
             Vasty = sqrt(comet%Vast**2 - Vastx**2)
-            if(Vastx == 0d0) Vastx = 2d5 / AUdays2SI
+            if(is_zero_r8(Vastx)) Vastx = 2d5 / AUdays2SI
             ! initial approximate solution
             tmpux = Vastx
             tmpuy = Vasty 
@@ -216,8 +245,8 @@ module DUDIhc
             theta = asin(hh / point%r / v)
             if(psi > halfpi) theta = pi - theta
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            if(theta /= theta .or. abs(theta-halfpi) < 1d-8) then
-                if(theta /= theta) write(666,*) 'delta_eject << sin(theta) =', &
+            if(is_nan_r8(theta) .or. abs(theta-halfpi) < 1d-8) then
+                if(is_nan_r8(theta)) write(666,*) 'delta_eject << sin(theta) =', &
                                         hh / point%r / v, 'corrections applied'
                 if(abs(theta-halfpi) < 1d-8) write(666,*) &
                                   'theta is close to pi/2, corrections applied'
@@ -229,10 +258,10 @@ module DUDIhc
                 endif
             endif
 !~                     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            call Integrand_delta_ejection(density, u, v, ee, psi, theta, &
-                                        point, dphi, dbeta, source, &
+            call Integrand_delta_ejection(density, u, v, psi, theta, &
+                                        point, dphi, source, &
                                         muR, dt, comet, Rast_AU)
-            density = density / sin(dphi) / point%r / source%r / AU**3
+            density = density / real(sin(dphi) * point%r * source%r * AU**3)
 
         end subroutine hc_DUDI_delta_ejection
 
@@ -252,6 +281,7 @@ module DUDIhc
             real(8) ee, theta, semi_major_axis
             
             semi_major_axis = (2d0 / r - v**2 / muR)**(-1)
+            dt  = 100d0
             
             if(semi_major_axis > 0d0 .and. muR > 0d0) then
                 call theta_geometry_ellipse(muR, r, r0, v, &
@@ -314,6 +344,7 @@ module DUDIhc
             
             dttmp = dt * 1d3
             v1 = vmin ; v2 = vmax
+            v = v1
             i = 0
             do while(abs(dttmp - dt) > eps .and. i < 30)
                 i = i + 1
@@ -381,15 +412,15 @@ module DUDIhc
                     do i = 1, order_v
                         vtmp = ldif * xi(i) + lsum
                         call Integrand_v_integration(term, vtmp, &
-                                                dt1, point, dphi, dbeta, &
+                                                dt1, point, dphi, &
                                                 source, tnow, muR, &
                                                 comet, Rast_AU, pericenter)
-                        density = density + ldif * wi(i) * term
+                        density = density + real(ldif * wi(i) * term)
                     enddo
                     ! factor independent on velocity and conversion to m^-3
-                    density = density / point%r / source%r / sin(dphi) / AU**3
+                    density = density / real(point%r * source%r * sin(dphi) * AU**3)
                 else
-                    density = 0d0
+                    density = 0.0
                 endif
             endif
 

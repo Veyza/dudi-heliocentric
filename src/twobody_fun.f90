@@ -1,7 +1,7 @@
 ! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.1
+! Version 1.0.2
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 ! If you do, please cite the following paper
@@ -60,23 +60,25 @@ module twobody_fun
 
             ! tests if the particle  re-impacted the asteroid on its way
             ! from the source to the point of interest
-            subroutine collision_check(muR, dt, coords, s, point, &
+            subroutine collision_check(muR, dt, coords, s, &
                        uejectvec, collision, Rast_AU)
                 use const
+                use nan_utils
                 use define_types
                 use help
                 implicit none
-                type(position_in_space), intent(in) :: point
                 type(source_properties), intent(in) :: s
-                integer i, ind
+                integer i
                 real(8), intent(in) :: muR, dt, Rast_AU
                 real(8), intent(in) :: coords(3), uejectvec(3)
                 real(8) rdif(3), polan, az, radast
-                real(8) da(3), dv(3), dx(3), rero, imro, tmpa(3), dd(3)
-                real(8) dda(3), ddda(3)
-                real(8) coefs(0:3), rtmp, tmp
-                complex(8) roots(3), ctmp
+                real(8) da(3), dv(3), dx(3), rero, imro, tmpa(3)
+                real(8) dda(3)
+                real(8) coefs(0:3), tmp, vtmp(3)
+                complex(8) roots(3)
                 logical, intent(out) :: collision
+                real(8), parameter :: reltol = 1d-12, abstol = 1d-16
+                logical :: root_is_real
                 
                 collision = .False.
                 ! if the grain was ejected toward the Sun
@@ -93,20 +95,27 @@ module twobody_fun
                     az = azimuth(rdif, s%rrM)
                 ! vector from the source position to the comet center
                 ! in local horizontal CS
-                    dx = Rast_AU * (/sin(polan) * cos(az), sin(polan) * sin(az), cos(polan)/)
+                    vtmp(1) = sin(polan) * cos(az)
+                    vtmp(2) = sin(polan) * sin(az)
+                    vtmp(3) = cos(polan)
+                    dx = Rast_AU * vtmp
                 ! angle between heliocentric vectors
                 ! of the source and the comet center
                     tmp = dot_product(s%rrM, -coords) / s%r / radast
                     if(abs(tmp) > 1d0) tmp = sign(1d0, tmp)
                     polan = acos(tmp)
-                    az = azimuth(-coords/radast, s%rrM)
+                    vtmp = -coords/radast
+                    az = azimuth(vtmp, s%rrM)
                 ! acceleration acting at the comet in the horizontal CS
                 ! (z pointing along the source heliocentric vector)
-                    tmpa = -GMsun / s%r**2 * (/0d0, 0d0, 1d0/)
+                    vtmp(1) = 0d0; vtmp(2) =0d0; vtmp(3) = 1d0
+                    tmpa = -GMsun / s%r**2 * vtmp
                 ! differences
-                    da = (/0d0, 0d0, -muR / s%r**2/) - tmpa
+                    vtmp(1) = 0d0; vtmp(2) = 0d0; vtmp(3) = -muR / s%r**2
+                    da = vtmp - tmpa
                     dv = uejectvec
-                    dda = (/-dv(1), -dv(2), dv(3) * 2d0/) * muR / s%r**3
+                    vtmp(1) = -dv(1); vtmp(2) = -dv(2); vtmp(3) = dv(3) * 2d0
+                    dda = vtmp * muR / s%r**3
 
                     coefs(0) = dot_product(da, da) + 4d0 * dot_product(dv, dda) / 3d0
                     coefs(1) = 4d0 * dot_product(dv, da) + 4d0 * dot_product(dx, dda) / 3d0
@@ -119,30 +128,14 @@ module twobody_fun
                     do i = 1, 3
                         rero = realpart(roots(i))
                         imro = imagpart(roots(i))
-                        dd = dx + dv * rero + da / 2d0 * rero**2
-                        rtmp = dot_product(dd, dd) - dot_product(dx, dx) &
-                        - (dot_product(dv, dv) + dot_product(dx, da)) * rero**2 &
-                        - 2d0 * dot_product(dv, dx) * rero &
-                        - dot_product(dv, da) * rero**3 &
-                        - dot_product(da, da) / 4d0 * rero**4
-                        
-                        collision = (abs(imro/ rero) < 1e-16 .and. &
-                                    rero < dt .and. rero > 0.0)
-                        if(collision) then
-                            exit
-                        endif
+
+                        ! Skip this root if either part is not finite (avoids NaN/SNaN traps in abs/compare)
+                        if (.not. is_finite_r8(rero) .or. .not. is_finite_r8(imro)) cycle
+
+                        root_is_real = abs(imro) <= max(abstol, reltol*max(1d0, abs(rero)))
+                        collision    = root_is_real .and. (rero < dt .and. rero > 0.0d0)
+                        if (collision) exit
                     enddo
-                    if(collision) then
-                        dd = dx + dv * roots(ind) + da / 2d0 * roots(ind)**2
-                        ctmp = dot_product(dd, dd) - dot_product(dx, dx) &
-                        - (dot_product(dv, dv) + dot_product(dx, da)) * roots(ind)**2 &
-                        - 2d0 * dot_product(dv, dx) * roots(ind) &
-                        - dot_product(dv, da) * roots(ind)**3 &
-                        - dot_product(da, da) / 4d0 * roots(ind)**4
-                        if(abs(ctmp) > 1d-8) then
-                            collision = .False.
-                        endif
-                    endif
                 endif
                 
             end subroutine collision_check
@@ -199,10 +192,11 @@ module twobody_fun
             ! derivative of \Delta \phi by velocity v
             function derdphidv(rr, vv, theta, mu, rrm, pericenter)
                 use const
+                use nan_utils
                 implicit none
                 real(8), intent(in) :: rr, vv, theta, mu, rrm
                 real(8) r, v, sintheta2, bracket, bracket2
-                real(8) rv, rv2, r2v2, cos2theta, mu2, v2, rv2sin, r2v2sin
+                real(8) rv, rv2, r2v2, mu2, v2, rv2sin, r2v2sin
                 real(8) derdphidv
                 real(8) dphi1, dphi2, dphi3, dphi4, delta, numder
                 real(8) Ekep
@@ -254,15 +248,15 @@ module twobody_fun
 
                 endif
                     
-                if(derdphidv /= derdphidv) then
+                if(is_nan_r8(derdphidv)) then
                     delta = 1d-4
                     dphi1 = deltaphi(theta, rr, rrm, vv+2d0*delta, mu, pericenter)
                     dphi2 = deltaphi(theta, rr, rrm, vv+delta, mu, pericenter)
                     dphi3 = deltaphi(theta, rr, rrm, vv-delta, mu, pericenter)
                     dphi4 = deltaphi(theta, rr, rrm, vv-2d0*delta, mu, pericenter)
                     numder = (-dphi1 + 8d0 * dphi2 - 8d0 * dphi3 + dphi4) / 12d0 / delta 
-                    write(666,*) 'the derivative d\Delta\phi/d\theta was obtained numerically &
-                                because the analytical expression contains numerically difficult parts'
+                    write(666,*) 'the derivative d\Delta\phi/d\theta was obtained numerically ' // &
+                                'because the analytical expression contains numerically difficult parts'
                     N_of_warnings = N_of_warnings + 1
                     if(N_of_warnings > maxNofWarnings) then
                         write(*,*) 'too many warnings have been printed to fort.666'
@@ -278,6 +272,7 @@ module twobody_fun
             function derdphidtheta(rr, vv, theta, mu, rrm, &
                                     pericenter, close2pericenter)
                 use const
+                use nan_utils
                 implicit none
                 real(8), intent(in) :: rr, vv, theta, mu, rrm
                 real(8) r, v, sintheta2, bracket, bracket2, costhx2
@@ -331,7 +326,7 @@ module twobody_fun
 
                     endif
                 endif
-                if(derdphidtheta /= derdphidtheta .or. close2pericenter .or. pericenter) then
+                if(is_nan_r8(derdphidtheta) .or. close2pericenter .or. pericenter) then
                     if(close2pericenter) then
                         delta = 3d-2
                     else
@@ -347,8 +342,8 @@ module twobody_fun
                     !numder = (dphi2 - dphi3) / 2d0 / delta 
                     !write(*,*) 'numder2', numder
                     if((.not. close2pericenter) .and. (.not. pericenter)) then
-                        write(666,*) 'the derivative d\Delta\phi/d\theta was obtained numerically &
-                                because the analytical expression contains numerically difficult parts'
+                        write(666,*) 'the derivative d\Delta\phi/d\theta was obtained numerically ' // &
+                                'because the analytical expression contains numerically difficult parts'
                         N_of_warnings = N_of_warnings + 1
                         if(N_of_warnings > maxNofWarnings) then
                             write(*,*) 'too many warnings have been printed to fort.666'
@@ -368,17 +363,17 @@ module twobody_fun
             ! (only one value of the integrand is computed for each pair 
             ! 'a source + a point of interest'
             subroutine Integrand_delta_ejection(Integrand, uu, velocity, &
-                                          ee, psi, theta, point, &
-                                         dphi, dbeta, s, muR, dt, &
+                                          psi, theta, point, &
+                                         dphi, s, muR, dt, &
                                          comet, Rast_AU)
                 use const
                 use define_types
                 use help
+                use nan_utils
                 use distributions_fun
                 implicit none
-                integer i
-                real(8), intent(in) :: uu, dphi, dbeta, psi
-                real(8), intent(in) :: velocity, theta, ee
+                real(8), intent(in) :: uu, dphi, psi
+                real(8), intent(in) :: velocity, theta
                 real(8), intent(in) :: muR, dt, Rast_AU
                 type(ephemeris), intent(in) :: comet
                 type(source_properties), intent(in) :: s
@@ -386,26 +381,32 @@ module twobody_fun
                 real(8) lambdaM, wpsi, jetdir(3)
                 real, intent(out) :: Integrand
                 real(8) ddphidtheta, ddphidv
-                real(8) fac1, fac2, fac3, Jpsi
-                real(8) sindphi, hcJpsi, Vastvechorz(3)
+                real(8) fac1, fac2, fac3
+                real(8) hcJpsi, Vastvechorz(3)
                 real(8) ueject, uejectvec(3), psieject, lambdaMeject, uvec(3)
-                real(8) ddeltatdv, ddeltatdtheta, tmp, vvec(3)
-                real(8) zvec(3), xvec(3), yvec(3)
+                real(8) ddeltatdv, ddeltatdtheta, tmp, vvec(3), vtmp(3)
                 logical collision
                 
-                Integrand = 0d0
+                Integrand = 0.0
                 collision = .FALSE.
                 wpsi = halfpi 
                 ! azimuth of the particle velocity vector at the moment of ejection
-                lambdaM = azimuth(point%rvector - s%rrM, s%rrM)
+                vtmp = point%rvector - s%rrM
+                lambdaM = azimuth(vtmp, s%rrM)
                 
                 ! particle velocity vector at the moment of ejection
-                uvec = uu * (/sin(psi) * cos(lambdaM), sin(psi) * sin(lambdaM), cos(psi)/)
+                vtmp(1) = sin(psi) * cos(lambdaM)
+                vtmp(2) = sin(psi) * sin(lambdaM)
+                vtmp(3) = cos(psi)
+                uvec = uu * vtmp
                 ! particle velocity at the point of interest expressed in the horizontal CS defined in the point of ejection
-                vvec = velocity * (/sin(theta) * cos(lambdaM), sin(theta) * sin(lambdaM), cos(theta)/)
+                vtmp(1) = sin(theta) * cos(lambdaM)
+                vtmp(2) = sin(theta) * sin(lambdaM)
+                vtmp(3) = cos(theta)
+                vvec = velocity * vtmp
                 
                 ! ejection velocity vector in the local horizontal CS
-                if(comet%Vast /= 0d0) then
+                if(.not. is_zero_r8(comet%Vast)) then
                     call find_astapex(s%rrM, s%r, comet%Vastvec, comet%Vast, Vastvechorz)
                     uejectvec = uvec - Vastvechorz
                 else
@@ -416,7 +417,7 @@ module twobody_fun
                 
                 if(Rast_AU > 0d0) then
                     call collision_check(muR, dt, comet%coords, s, &
-                            point, uejectvec, collision, Rast_AU)
+                            uejectvec, collision, Rast_AU)
                 else
                     collision = .FALSE.
                 endif
@@ -429,11 +430,13 @@ module twobody_fun
                     psieject = acos(uejectvec(3) / ueject)
 
                     lambdaMeject = atan(uejectvec(2), uejectvec(1))
-                    if(lambdaMeject /= lambdaMeject) lambdaMeject = 0d0
+                    if(is_nan_r8(lambdaMeject)) lambdaMeject = 0d0
                     if(lambdaMeject < 0d0) lambdaMeject = lambdaMeject + twopi
                     
                     ! ejection symmetry axis in the local horizontal CS
-                    jetdir = (/sin(s%zeta) * cos(s%eta), sin(s%zeta) * sin(s%eta), cos(s%zeta)/)
+                    jetdir(1) = sin(s%zeta) * cos(s%eta)
+                    jetdir(2) = sin(s%zeta) * sin(s%eta)
+                    jetdir(3) = cos(s%zeta)
                     ! angle between the ejection velocity angle and the ejection axis of symmetry
                     tmp = dot_product(jetdir, uejectvec / ueject)
                     if(abs(tmp) > 1d0) tmp = sign(1d0,tmp)
@@ -448,8 +451,8 @@ module twobody_fun
                     fac2 = ejection_direction_distribution(s%ejection_angle_distr, &
                                     wpsi, psieject, lambdaMeject, s%zeta, s%eta)
                                                     
-                    if(fac2 == 0d0) then
-                        Integrand = 0d0
+                    if(is_zero_r8(fac2)) then
+                        Integrand = 0.0
                     else
                         hcJpsi = hc_jacobian_ueject(ueject, &
                              sqrt(uejectvec(1)**2 + uejectvec(2)**2), &
@@ -464,20 +467,21 @@ module twobody_fun
                         ddphidv = derdphidv(point%r, velocity, theta, muR, s%r, .FALSE.)
                         
                         call deltat_num_derivatives(muR, velocity, theta, &
-                               point%r, s%r, uu, psi, .FALSE. , ddeltatdv, ddeltatdtheta)
+                               point%r, s%r, .FALSE. , ddeltatdv, ddeltatdtheta)
                         
                                
                         fac3 = abs(ddeltatdv * ddphidtheta - ddeltatdtheta * ddphidv)
                         
-                        Integrand = fac1 * fac2 / fac3 * s%Nparticles
+                        Integrand = real(fac1 * fac2 / fac3 * s%Nparticles)
                     endif
                 else
-                    Integrand = 0d0
+                    Integrand = 0.0
                 endif
-                if((Integrand /= Integrand .or. Integrand < 0.0d0 .or. Integrand > check_inf)) then
+                if(is_nan_r8(dble(Integrand)) .or. Integrand < 0.0d0 &
+                    .or. (.not. is_finite_r8(dble(Integrand)))) then
                     write(666,*) ' '
-                    write(666,*) 'a bad value is obtained for the integrand &
-                    in case of delta-ejection:', Integrand
+                    write(666,*) 'a bad value is obtained for the integrand ' // &
+                    'in case of delta-ejection:', Integrand
                     write(666,*) 'factor of ejection speed distribution', fac1
                     write(666,*) 'factor of ejection direction distribution', fac2
                     write(666,*) 'Jacobian', fac3
@@ -521,9 +525,9 @@ module twobody_fun
                 real(8), intent(in) :: r, r0, v, theta, mu
                 logical, intent(in) :: pericenter
                 real(8), intent(out) :: dt
-                real(8) a, meanmotion, phi, phi0, ea, ea0, e
+                real(8) a, meanmotion, ea, ea0, e
                 real(8) Ekep, h, e2, u, psi
-                real(8) one_minus_e, one_plus_e, pp, thesqrt
+                real(8) one_minus_e, one_plus_e, pp
                 real(8) tra0, tmpsin
                 logical ascend
                 
@@ -570,13 +574,13 @@ module twobody_fun
                 real(8), intent(in) :: mu, v, theta, r, r0, u, psi
                 real(8), intent(out) :: ddeltatdtheta, ddeltatdv
                 real(8) a, meanmotion, phi, phi0, ea, ea0, e
-                real(8) Ekep, h, dt1, dt0, dt2, dt3
+                real(8) Ekep, h
                 real(8) one_minus_e, one_plus_e, pp, tg05phi, tg05phi0, thesqrt
                 real(8) dadv, dedv, de0dv, dmeanmotiondv, dphidv, dphi0dv, deadv, dea0dv
                 real(8) dedtheta, de0dtheta, dphidtheta, dphi0dtheta, deadtheta, dea0dtheta
                 real(8) therel, cos05phi2, cos05phi02, e2, sqr1, sqr0
                 real(8) factor, factor0, bracket1
-                real(8) eps1, eps2, signdr
+                real(8) signdr
                 
                 signdr = sign(1d0, r - r0)
                 
@@ -721,11 +725,11 @@ module twobody_fun
             
             
             ! derivatives of the time interval \Delta t computed numerically
-            subroutine deltat_num_derivatives(mu, v, theta, r, r0, u, psi, &
+            subroutine deltat_num_derivatives(mu, v, theta, r, r0, &
                               pericenter, ddeltatdv, ddeltatdtheta)
                 use const
                 implicit none
-                real(8), intent(in) :: mu, v, theta, r, r0, u, psi
+                real(8), intent(in) :: mu, v, theta, r, r0
                 real(8), intent(out) :: ddeltatdtheta, ddeltatdv
                 logical, intent(in) :: pericenter
                 real(8) dt1, dt0, dt2, dt3
@@ -832,8 +836,16 @@ module twobody_fun
                 hh = r0 * vv * sin(theta)
                 hh2 = hh * hh
             !  eccentricity (eq 31)
-                ee1 = sqrt(1d0 + 2d0 * Ekep * (hh / muR) * (hh / muR))
-
+               ee1 = sqrt(1d0 + 2d0 * Ekep * (hh / muR) * (hh / muR))
+               if(abs(ee1 - ee) > eps) then
+                    write(666,*) 'eccentricity is incorrect:', ee, 'instead of', ee1
+                    N_of_warnings = N_of_warnings + 1
+                    if(N_of_warnings > maxNofWarnings) then
+                        write(*,*) 'THERE WERE TOO MANY WARNINGS --', N_of_warnings
+                        write(*,*) 'CHECK FILE fort.666'
+                        stop
+                    endif
+                endif
             !   delta phi (equation 32)
                 cosp = (hh2 / r0 / muR - 1d0) / ee1
                 cospm = (hh2 / rm0 / muR - 1d0) / ee1
@@ -919,10 +931,10 @@ module twobody_fun
             logical, intent(in) :: pericenter
             real(8) r, rmoon, a
             real(8) theta, deltat
-            real(8) c, x(2), y(2), xm, ym, b
-            real(8) shift(2), r2d(2), rm2d(2), angle, tangent(2), tmp(2)
-            real(8) cosf1, eanm, ean, psi, f1, f2, discr
-            real(8) one_plus_e, one_minus_e, one_minus_e2, aux, tmp1, tmp2
+            real(8) c, x(2), y(2)
+            real(8) shift(2), r2d(2), rm2d(2), angle
+            real(8) cosf1, eanm, ean, f1, f2, discr
+            real(8) one_plus_e, one_minus_e, one_minus_e2, aux
             integer i
             logical solved
             
@@ -959,13 +971,13 @@ module twobody_fun
                 angle = atan(y(i) / x(i))
                 ! vector r in the CS with its center at the center of the ellipse
                 ! and the x-axis along major axis of the ellipse                                    
-                r2d = rot2d(r2d, -angle)    
+                call rot2d_inplace(r2d, -angle)   
                 ! vector rm in the CS with its center at the center of the ellipse
                 ! and the x-axis along major axis of the ellipse                                
-                rm2d = rot2d(rm2d, -angle)    
+                call rot2d_inplace(rm2d, -angle)  
                 ! vector shift in the CS with its center at the center of the ellipse
                 ! and the x-axis along major axis of the ellipse                            
-                shift = rot2d(shift, -angle)
+                call rot2d_inplace(shift, -angle)
                 ! the hyperbola solves our problem only if r and rm lay
                 ! on the same branch and the trajectory doesn't intersect
                 ! the moon's surface (the particle doesn't pass the pericenter
@@ -1030,19 +1042,19 @@ module twobody_fun
                                         ee, theta_res, deltat_res, pericenter)
             use help
             use const
+            use nan_utils
             implicit none
             real(8), intent(in) :: r0, rm0, a0, phi,  vv, muR
             real(8), intent(out) :: ee, theta_res, deltat_res
             logical, intent(in) :: pericenter
             real(8) r, rmoon, a
             real(8) theta, deltat
-            real(8) c, x(2), y(2), xm, ym, b, vec1(2), vec2(2)
-            real(8) shift(2), r2d(2), rm2d(2), angle, tangent(2), tmp(2)
-            real(8) eanm, ean, psi, discr
-            real(8) one_plus_e, one_minus_e, one_minus_e2, aux, tmp1, tmp2
+            real(8) c, x(2), y(2), b, vec1(2), vec2(2)
+            real(8) shift(2), r2d(2), rm2d(2), angle
+            real(8) eanm, ean, discr
+            real(8) one_plus_e, one_minus_e, one_minus_e2, aux
             integer i
             logical solved
-            real(16) x1, y1, x2, r1, r2, s1(2), s2(2)
             
             solved = .FALSE.
             theta_res = -505d0
@@ -1078,13 +1090,13 @@ module twobody_fun
                 angle = atan(y(i) / x(i))
                 ! vector r in the CS with its center at the center of the hyperbola
                 ! and the x-axis along major axis of the ellipse                                    
-                r2d = rot2d(r2d, -angle)    
+                call rot2d_inplace(r2d, -angle)    
                 ! vector rm in the CS with its center at the center of the hyperbola
                 ! and the x-axis along major axis of the ellipse                                
-                rm2d = rot2d(rm2d, -angle)    
+                call rot2d_inplace(rm2d, -angle)    
                 ! vector shift in the CS with its center at the center of the hyperbola
                 ! and the x-axis along major axis of the hyperbola                            
-                shift = rot2d(shift, -angle)
+                call rot2d_inplace(shift, -angle)
                 ! the hyperbola solves our problem only if r and rm lay
                 ! on the same branch and the trajectory doesn't intersect
                 ! the moon's surface (the particle doesn't pass the pericenter
@@ -1097,8 +1109,8 @@ module twobody_fun
                     one_minus_e2 = one_plus_e * one_minus_e
                     aux = b**2 / a
                     
-                    vec1 = (/r, 0d0/)
-                    vec2 = vec1 - (/x(i), y(i)/)
+                    vec1(1) = r; vec1(2) = 0d0
+                    vec2(1) = x(i); vec2(2) = y(i)
                     theta = 0.5d0 * acos(dot_product(vec1, vec2) / r / norma2d(vec2))
                     if(r < rmoon .and. .not. pericenter) theta = pi - theta
                     ean = acosh((r / abs(a) - 1d0) / ee)
@@ -1150,16 +1162,16 @@ module twobody_fun
                                 ee_res, theta_res, deltat, pericenter)
             use help
             use const
+            use nan_utils
             implicit none
             real(8), intent(in) :: r0, rm0, a0, phi,  vv, muR
             real(8), intent(out) :: ee_res, theta_res, deltat
             logical, intent(in) :: pericenter
             real(8) r, rmoon, a, discr, theta(2)
             real(8) cc(2), x(2), y(2), ee(2)
-            real(8) r2d(2), rm2d(2), tmp(2), tmp1, tmp2
-            real(8) E1(1), f1, f2, sinf1, cosf1, ean, rtest
+            real(8) r2d(2), rm2d(2), tmp1, tmp2
+            real(8) f1, f2, cosf1, ean
             real(8) one_plus_e, one_minus_e, one_minus_e2, eanm
-            real(8) aux
             integer i
             logical solved
             
@@ -1184,7 +1196,7 @@ module twobody_fun
             cc = sqrt(x**2 + y**2)
             
             do i = 1, 2
-                if(cc(i) == cc(i)) then
+                if(.not. is_nan_r8(cc(i))) then
                     ee(i) = cc(i) / 2d0 / a
 
                     one_plus_e = 1d0 + ee(i)
@@ -1231,35 +1243,36 @@ module twobody_fun
         ! this subroutine is called `order_v´ times for each pair
         ! 'a source + a point'
         subroutine Integrand_v_integration(Integrand, velocity,  dt, &
-                                            point, dphi, dbeta, s, &
+                                            point, dphi, s, &
                                             tnow, muR, comet, &
                                             Rast_AU, pericenter)
             use const
             use define_types
             use help
+            use nan_utils
             use distributions_fun
             implicit none
-            integer i
-            real(8), intent(in) :: velocity, dphi, dbeta, tnow
+            real(8), intent(in) :: velocity, dphi, tnow
             real(8), intent(out) :: dt
             real(8), intent(in) :: muR, Rast_AU
             logical, intent(in) :: pericenter
             type(ephemeris), intent(in) :: comet
             type(source_properties), intent(in) :: s
             type(position_in_space), intent(in) :: point
-            real(8) lambdaM, sinlambdaM, coslambdaM, lambda
+            real(8) lambdaM
             real(8) hcJpsi, Vastvechorz(3), tmp, jetdir(3)
             real(8) ueject, uejectvec(3), psieject, lambdaMeject, uvec(3)
             real(8) uu, Ekep, psi, wpsi, hh
             real(8) ee, semi_major_axis, moment_of_ejection
             real(8), intent(out) :: Integrand
             real(8) theta, ddphidtheta
-            real(8) fac1, fac2, rate
+            real(8) fac1, fac2, vtmp(3)
             logical collision
 
             semi_major_axis = (2d0 / point%r - velocity**2 / muR)**(-1)
             theta = -999d0
             dt = -111d0
+            uu = -222d0
             collision = .False.
             ! find solutions for theta
             if(semi_major_axis > 0d0 .and. muR > 0d0) then
@@ -1295,13 +1308,17 @@ module twobody_fun
                 psi = asin(tmp)
                 if((theta > halfpi .and. .not. pericenter) .or. pericenter) psi = pi - psi
                 ! azimuth of the particle velocity vector at the moment of ejection
-                lambdaM = azimuth(point%rvector - s%rrM, s%rrM)
+                vtmp = point%rvector - s%rrM
+                lambdaM = azimuth(vtmp, s%rrM)
                 
                 ! particle velocity vector at the moment of ejection
-                uvec = uu * (/sin(psi) * cos(lambdaM), sin(psi) * sin(lambdaM), cos(psi)/)
+                vtmp(1) = sin(psi) * cos(lambdaM)
+                vtmp(2) = sin(psi) * sin(lambdaM)
+                vtmp(3) = cos(psi)
+                uvec = uu * vtmp
                 
                 ! ejection velocity vector in the local horizontal CS
-                if(comet%Vast /= 0d0) then
+                if(.not. is_zero_r8(comet%Vast)) then
                     call find_astapex(s%rrM, s%r, comet%Vastvec, comet%Vast, Vastvechorz)
                     uejectvec = uvec - Vastvechorz
                 else
@@ -1311,7 +1328,7 @@ module twobody_fun
                 ueject = norma3d(uejectvec)
                 
                 if(Rast_AU > 0d0) then
-                    call collision_check(muR, dt, comet%coords, s, point, &
+                    call collision_check(muR, dt, comet%coords, s, &
                            uejectvec, collision, Rast_AU)
                 else
                     collision = .False.
@@ -1324,15 +1341,17 @@ module twobody_fun
                     fac1 = velocity * fac1 / uu / uu
 
                     psieject = acos(uejectvec(3) / ueject)
-                    if(psieject /= psieject) then
+                    if(is_nan_r8(psieject)) then
                         write(*,*) uejectvec*AUdays2SI, ueject*AUdays2SI
                     endif
                     lambdaMeject = atan(uejectvec(2), uejectvec(1))
-                    if(lambdaMeject /= lambdaMeject) lambdaMeject = 0d0
+                    if(is_nan_r8(lambdaMeject)) lambdaMeject = 0d0
                     if(lambdaMeject < 0d0) lambdaMeject = lambdaMeject + twopi
                     
                     ! ejection symmetry axis in the local horizontal CS
-                    jetdir = (/sin(s%zeta) * cos(s%eta), sin(s%zeta) * sin(s%eta), cos(s%zeta)/)
+                    jetdir(1) = sin(s%zeta) * cos(s%eta)
+                    jetdir(2) = sin(s%zeta) * sin(s%eta)
+                    jetdir(3) = cos(s%zeta)
                     ! angle between the ejection velocity angle and the ejection axis of symmetry
                     tmp = dot_product(jetdir, uejectvec / ueject)
                     if(abs(tmp) > 1d0) tmp = sign(1d0,tmp)
@@ -1346,7 +1365,7 @@ module twobody_fun
                     ! and here psi is the angle between the direction of ejection and the normal to surface
                     fac2 = ejection_direction_distribution(s%ejection_angle_distr, &
                                         wpsi, psieject, lambdaMeject, s%zeta, s%eta)
-                    if(fac2 == 0d0 .or. fac1 == 0d0) then
+                    if(is_zero_r8(fac2) .or. is_zero_r8(fac1)) then
                         Integrand = 0d0
                     else
                         
@@ -1369,11 +1388,11 @@ module twobody_fun
             else
                 Integrand = 0d0
             endif
-            if(Integrand /= Integrand .or. Integrand < 0.0d0 &
-                    .or. Integrand > check_inf) then
+            if(is_nan_r8(Integrand) .or. Integrand < 0.0d0 &
+                    .or. (.not. is_finite_r8(Integrand))) then
                 write(666,*) ' '
-                write(666,*) 'a bad value is obtained for the integrand &
-                    in case of delta-ejection:', Integrand
+                write(666,*) 'a bad value is obtained for the integrand ' // &
+                    'in case of v-integration:', Integrand
                 write(666,*) 'factor of ejection speed distribution', fac1
                 write(666,*) 'factor of ejection direction distribution', fac2
                 write(666,*) 'Jacobian', 1d0 / abs(ddphidtheta)

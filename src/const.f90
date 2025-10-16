@@ -1,7 +1,7 @@
 ! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.1
+! Version 1.0.2
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 ! If you do, please cite the following paper
@@ -46,10 +46,10 @@ module const
         integer, parameter :: order_v = 20
         
         real(8), parameter :: check_inf = 9d+38  
-        integer :: N_of_warnings = 0				! warnings counter
-		integer, parameter :: maxNofWarnings = 100	! maximum number of
-		                                            ! warnings printed 
-		                                            ! out to the text file
-		                                            ! fort.666
+        integer :: N_of_warnings = 0        ! warnings counter
+    integer, parameter :: maxNofWarnings = 100  ! maximum number of
+                                                ! warnings printed 
+                                                ! out to the text file
+                                                ! fort.666
             
 end module const

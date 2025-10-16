@@ -8,3 +8,15 @@ results/
 __pycache__/
 *.pyc
 .DS_Store
+# Logs
+*.log
+
+# (optional) Build artifacts
+build/
+*.o
+*.mod
+*.a
+*.so
+*.dylib
+*.exe
+*.out

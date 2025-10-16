@@ -64,7 +64,7 @@ def integrate_over_beta():
         os.makedirs(foldername)
 
     Rgs = np.array([1e-7, 2e-7, 3e-7, 4.2e-7, 5.5e-7, 6.7e-7, 8.5e-7, 1e-6,
-                    1.2e-6, 2.5e-6, 4e-6, 6e-6, 1e-5, 1e-4])
+                    1.2e-6, 2.5e-6, 4e-6, 6e-6, 1e-5, 99e-6])
     nrg = len(Rgs)
     imname = f"{foldername}/phaethon_1AU.png"
 

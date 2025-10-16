@@ -1,7 +1,7 @@
 # This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
 # of the two-body model for the dynamics of dust ejected from an atmosphereless
 # body moving around the Sun
-# Version 1.0.1
+# Version 1.0.2
 # This is free software. You can use and redistribute it 
 # under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 # If you do, please cite the following paper
@@ -14,12 +14,26 @@
 
 # -------- compiler --------
 FC      ?= gfortran
-#FFLAGS  ?= -O3 -fimplicit-none -Wall -Wno-tabs -Wno-unused-variable
-FFLAGS ?= -O3 -fimplicit-none -Wno-tabs -Wno-unused-variable
-LDFLAGS ?=
 PYTHON  ?= python3
+LDFLAGS ?=
 
-# Guard against FC=f77 (disable on clean/list/help)
+# phony
+.PHONY: all clean distclean clean-warnings help list \
+        dudihc phaethon_dudihc select_method_dudihc \
+        example_image phaethon select \
+        run-example run-phaethon_dudihc run-select_method 
+
+# normal flags
+FFLAGS ?= -O3 -fimplicit-none -Wall -Wno-tabs -Wno-unused-variable -cpp
+FFLAGS  += -fopenmp
+LDFLAGS += -fopenmp
+
+# strict flags
+STRICT_WARNINGS = -O0 -g -fimplicit-none -Wall -Wextra -Wconversion -Wsurprising \
+                  -Warray-temporaries -Wcharacter-truncation -Wreal-q-constant \
+                  -Wtarget-lifetime -Wimplicit-interface
+
+# ---- guard against FC=f77 (disable on clean/list/help) ----
 NEEDS_FC_GUARD := $(filter-out clean distclean help list,$(MAKECMDGOALS))
 ifneq ($(NEEDS_FC_GUARD),)
   ifneq (,$(findstring f77,$(FC)))
@@ -36,9 +50,9 @@ MODDIR := build
 RESDIR := results
 
 # -------- core sources (ORDERED: providers before users) --------
-# Adjust this list to match files in src/ (delete non-existent ones).
 CORE_SOURCES := \
   $(SRCDIR)/const.f90 \
+  $(SRCDIR)/nan_utils.f90 \
   $(SRCDIR)/define_types.f90 \
   $(SRCDIR)/help.f90 \
   $(SRCDIR)/distributions_fun.f90 \
@@ -46,7 +60,7 @@ CORE_SOURCES := \
   $(SRCDIR)/data_in.f90 \
   $(SRCDIR)/data_out.f90 \
   $(SRCDIR)/DUDIhc.f90 \
-  $(SRCDIR)/phaethon_input.f90 \
+  $(SRCDIR)/phaethon_input.f90
 
 # -------- example mains --------
 EXAMPLE_SRC   ?= $(EXDIR)/example.f90
@@ -57,40 +71,40 @@ SELECT_SRC    ?= $(EXDIR)/select_method.f90
 EXAMPLE_PYSCRIPT  ?= scripts/show_image.py
 PHAETHON_PYSCRIPT ?= scripts/plot_Fig10.py
 
-.PHONY: all help list clean distclean \
-        dudihc phaethon_dudihc select_method_dudihc \
-        example_image phaethon select_method \
-        run-example run-phaethon run-select_method
+# -------- objects --------
+CORE_OBJS   := $(patsubst %.f90,$(MODDIR)/%.o,$(CORE_SOURCES))
+EXAMPLE_OBJ := $(patsubst %.f90,$(MODDIR)/%.o,$(EXAMPLE_SRC))
+PHAETHON_OBJ:= $(patsubst %.f90,$(MODDIR)/%.o,$(PHAETHON_SRC))
+SELECT_OBJ  := $(patsubst %.f90,$(MODDIR)/%.o,$(SELECT_SRC))
 
-all: dudihc
+DEPS := $(CORE_OBJS:.o=.d) $(EXAMPLE_OBJ:.o=.d) $(PHAETHON_OBJ:.o=.d) $(SELECT_OBJ:.o=.d)
+-include $(DEPS)
 
-help:
-	@echo "Build-only:  dudihc | phaethon_dudihc | select_method_dudihc"
-	@echo "Pipelines:   example_image | phaethon | select   (build -> run -> plot)"
-	@echo "List files:  make list"
-	@echo "Clean:       make clean   /  make distclean"
+# Default goal builds all binaries
+all: $(BINDIR)/dudihc $(BINDIR)/phaethon_dudihc $(BINDIR)/select_method_dudihc
 
-list:
-	@echo "Core:   $(CORE_SOURCES)"
-	@echo "Mains:  EXAMPLE=$(EXAMPLE_SRC)  PHAETHON=$(PHAETHON_SRC)  SELECT=$(SELECT_SRC)"
-	@echo "Plots:  EXAMPLE=$(EXAMPLE_PYSCRIPT)  PHAETHON=$(PHAETHON_PYSCRIPT)  SELECT=$(SELECT_PYSCRIPT)"
-
-# ensure dirs
-$(BINDIR) $(MODDIR) $(RESDIR):
-	mkdir -p $@
-
-# ------------ build-only binaries ------------
-$(BINDIR)/dudihc: $(CORE_SOURCES) $(EXAMPLE_SRC) | $(BINDIR) $(MODDIR)
-	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $(CORE_SOURCES) $(EXAMPLE_SRC) -o $@ $(LDFLAGS)
+# ------------ link steps ------------
+$(BINDIR)/dudihc: $(CORE_OBJS) $(EXAMPLE_OBJ) | $(BINDIR)
+	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $^ -o $@ $(LDFLAGS)
 dudihc: $(BINDIR)/dudihc
 
-$(BINDIR)/phaethon_dudihc: $(CORE_SOURCES) $(PHAETHON_SRC) | $(BINDIR) $(MODDIR)
-	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $(CORE_SOURCES) $(PHAETHON_SRC) -o $@ $(LDFLAGS)
+$(BINDIR)/phaethon_dudihc: $(CORE_OBJS) $(PHAETHON_OBJ) | $(BINDIR)
+	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $^ -o $@ $(LDFLAGS)
 phaethon_dudihc: $(BINDIR)/phaethon_dudihc
 
-$(BINDIR)/select_method_dudihc: $(CORE_SOURCES) $(SELECT_SRC) | $(BINDIR) $(MODDIR)
-	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $(CORE_SOURCES) $(SELECT_SRC) -o $@ $(LDFLAGS)
+$(BINDIR)/select_method_dudihc: $(CORE_OBJS) $(SELECT_OBJ) | $(BINDIR)
+	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $^ -o $@ $(LDFLAGS)
 select_method_dudihc: $(BINDIR)/select_method_dudihc
+
+# ------------ compile step (pattern rule) ------------
+$(MODDIR)/%.o: %.f90 | $(MODDIR)
+	@mkdir -p $(dir $@)
+	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) \
+	    -MMD -MP -MF $(patsubst %.o,%.d,$@) \
+	    -c $< -o $@
+
+# Suppress compare-reals ONLY for nan_utils (intentional x /= x)
+$(MODDIR)/$(SRCDIR)/nan_utils.o: FFLAGS += -Wno-compare-reals
 
 # ------------ pipelines: build -> run -> plot ------------
 example_image: $(BINDIR)/dudihc | $(RESDIR)
@@ -110,11 +124,33 @@ select: $(BINDIR)/select_method_dudihc | $(RESDIR)
 	$(BINDIR)/select_method_dudihc
 
 # run-only helpers
-run-example:  $(BINDIR)/dudihc  ; $(BINDIR)/dudihc
-run-phaethon_dudihc: $(BINDIR)/phaethon_dudihc ; $(BINDIR)/phaethon_dudihc
-run-select_method:   $(BINDIR)/select_method_dudihc   ; $(BINDIR)/select_method_dudihc
+run-example:           $(BINDIR)/dudihc            ; $(BINDIR)/dudihc
+run-phaethon_dudihc:   $(BINDIR)/phaethon_dudihc   ; $(BINDIR)/phaethon_dudihc
+run-select_method:     $(BINDIR)/select_method_dudihc ; $(BINDIR)/select_method_dudihc
+
+# ------------ utilities ------------
+help:
+	@echo "Build-only:  dudihc | phaethon_dudihc | select_method_dudihc"
+	@echo "Pipelines:   example_image | phaethon | select   (build -> run -> plot)"
+	@echo "List files:  make list"
+	@echo "Clean:       make clean   /  make distclean"
+
+list:
+	@echo "Core:   $(CORE_SOURCES)"
+	@echo "Mains:  EXAMPLE=$(EXAMPLE_SRC)  PHAETHON=$(PHAETHON_SRC)  SELECT=$(SELECT_SRC)"
+	@echo "Plots:  EXAMPLE=$(EXAMPLE_PYSCRIPT)  PHAETHON=$(PHAETHON_PYSCRIPT)"
+
+# ensure dirs
+$(BINDIR) $(MODDIR) $(RESDIR):
+	mkdir -p $@
 
 # cleaning
-clean:      ; rm -f $(MODDIR)/*.o $(MODDIR)/*.mod
-distclean:  ; rm -rf $(BINDIR) $(RESDIR)/*
+clean:
+	rm -rf $(MODDIR)/*    # or: rm -f $(MODDIR)/*.o $(MODDIR)/*.mod $(MODDIR)/**/*.d
+distclean:
+	rm -rf $(BINDIR) $(RESDIR)/* $(MODDIR)/*
 
+# Strict warnings sweep: clean + rebuild (compile only)
+clean-warnings:
+	$(MAKE) clean
+	$(MAKE) -B all FFLAGS='$(STRICT_WARNINGS)'

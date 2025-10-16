@@ -407,6 +407,20 @@ To address this:
   
   
 == 9. Latest updates
+    Version 1.0.2
+  - Codebase cleaned of unused variables and unsafe real comparisons; fixed 
+    implicit conversions.
+  - Kept standard Fortran-95. Added src/nan_utils.f90 to centralize 
+    numeric checks:
+      - is_nan_r8(x) – NaN detection (F95-friendly).
+      - is_finite_r8(x) – finite vs. Inf/NaN.
+      - is_zero_r8(x[, atol]) – zero-with-tolerance.
+      - nearly_equal_r8(a,b[, rtol, atol]) – relative/absolute tolerance equality.
+  - Makefile: new clean-warnings target to rebuild with strict warning flags for
+    code hygiene.
+  - Note: nan_utils.f90 may still emit compare-reals warnings in strict mode; 
+    these are intentional and safe
+  
     Version 1.0.1
   - Restructured repository with clear src/, examples/, scripts/, bin/, build/, and results/ folders.
   - Updated Makefile and .gitignore accordingly
