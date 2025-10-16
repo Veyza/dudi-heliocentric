@@ -1,3 +1,22 @@
+! This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
+! of the two-body model for the dynamics of dust ejected from an atmosphereless
+! body moving around the Sun
+! Version 1.0.2
+! This is free software. You can use and redistribute it 
+! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
+! If you do, please cite the following paper
+! Anastasiia Ershova and Jürgen Schmidt, 
+! Two-body model for the spatial distribution of dust ejected from
+! an atmosphereless body, 2021, A&A, 650, A186 
+
+! File: nan_utils.f90
+! Description: Contains functions performing comparisons of real(8) variables.
+! This is FORTRAN-95 way to do such operations, newer FORTRAN versions have
+! inbuilt functions for them.
+
+! Author: Anastasiia Ershova
+! E-mail: vveyzaa@gmail.com
+
 module nan_utils
   implicit none
 contains
