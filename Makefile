@@ -24,7 +24,7 @@ LDFLAGS ?=
         run-example run-phaethon_dudihc run-select_method 
 
 # normal flags
-FFLAGS ?= -O3 -fimplicit-none -Wall -Wno-tabs -Wno-unused-variable
+FFLAGS ?= -O3 -fimplicit-none -Wall -Wno-tabs -Wno-unused-variable -cpp
 FFLAGS  += -fopenmp
 LDFLAGS += -fopenmp
 
