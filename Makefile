@@ -77,6 +77,9 @@ EXAMPLE_OBJ := $(patsubst %.f90,$(MODDIR)/%.o,$(EXAMPLE_SRC))
 PHAETHON_OBJ:= $(patsubst %.f90,$(MODDIR)/%.o,$(PHAETHON_SRC))
 SELECT_OBJ  := $(patsubst %.f90,$(MODDIR)/%.o,$(SELECT_SRC))
 
+DEPS := $(CORE_OBJS:.o=.d) $(EXAMPLE_OBJ:.o=.d) $(PHAETHON_OBJ:.o=.d) $(SELECT_OBJ:.o=.d)
+-include $(DEPS)
+
 # Default goal builds all binaries
 all: $(BINDIR)/dudihc $(BINDIR)/phaethon_dudihc $(BINDIR)/select_method_dudihc
 
@@ -96,7 +99,9 @@ select_method_dudihc: $(BINDIR)/select_method_dudihc
 # ------------ compile step (pattern rule) ------------
 $(MODDIR)/%.o: %.f90 | $(MODDIR)
 	@mkdir -p $(dir $@)
-	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) -c $< -o $@
+	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) \
+	    -MMD -MP -MF $(patsubst %.o,%.d,$@) \
+	    -c $< -o $@
 
 # Suppress compare-reals ONLY for nan_utils (intentional x /= x)
 $(MODDIR)/$(SRCDIR)/nan_utils.o: FFLAGS += -Wno-compare-reals
@@ -141,7 +146,7 @@ $(BINDIR) $(MODDIR) $(RESDIR):
 
 # cleaning
 clean:
-	rm -rf $(MODDIR)/*
+	rm -rf $(MODDIR)/*    # or: rm -f $(MODDIR)/*.o $(MODDIR)/*.mod $(MODDIR)/**/*.d
 distclean:
 	rm -rf $(BINDIR) $(RESDIR)/* $(MODDIR)/*
 
