@@ -27,7 +27,7 @@ jobs:
           pip install numpy matplotlib pillow
 
       - name: Build & run & plot
-        run: make -j2 ${{ matrix.case }}
+        run: make -j1 ${{ matrix.case }}
         env: { FC: gfortran }
 
       - name: Upload results
