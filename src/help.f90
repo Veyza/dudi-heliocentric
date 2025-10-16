@@ -31,6 +31,18 @@ module help
         
       end function rot2d
       
+      ! rotation of a vector in the plain
+      pure subroutine rot2d_inplace(v, angle)
+        implicit none
+        real(8), intent(inout) :: v(2)   ! may be modified
+        real(8), intent(in)    :: angle  ! read-only
+        real(8) :: c, s, x, y
+        c = cos(angle); s = sin(angle)
+        x = v(1); y = v(2)
+        v(1) =  c*x - s*y
+        v(2) =  s*x + c*y
+      end subroutine
+      
       
     ! returns the position vector r computed for a point mass that had
     ! a position vector `r0´ and a velocity vector `v0´ `time´ ago
@@ -81,7 +93,6 @@ module help
         real(8), intent(out) :: x(2), y(2)
         real(8) sR, dx, sx, dx2, dy2, R02, R12, x1x0
         real(8) sumdifs2, sqrtshort, ybracket
-        real(8) tmp(2), eps, eps1, eps0
         
         sR = R0 + R1
         dx = x0 - x1 ; sx = x0 + x1
@@ -242,7 +253,6 @@ module help
       ! Euler's rotation
       pure subroutine eulrot(phiE, thetaE, psiE, xin, yin, zin, xout, yout, zout, inverse)
         implicit none
-        integer i
         logical, intent(in) :: inverse
         real(8), intent(in) :: phiE, thetaE, psiE, xin, yin, zin
         real(8), intent(out) :: xout, yout, zout
@@ -282,7 +292,6 @@ module help
         use define_types
         use nan_utils
         implicit none
-        integer i
         type(position_in_space), intent(in) :: point
         type(source_properties), intent(in) :: source
         real(8), intent(out) :: dphi, dbeta
@@ -348,7 +357,8 @@ module help
         ! (pointing outwards)
         testhir = vector_product(north, dirplane)
         testhir = testhir / norma3d(testhir)
-        if(norma3d(testhir - tmpr) < 1d-3) azimuth = twopi - azimuth
+        tmpd = testhir - tmpr
+        if(norma3d(tmpd) < 1d-3) azimuth = twopi - azimuth
         
       end function azimuth
       

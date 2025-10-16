@@ -36,11 +36,12 @@ module DUDIhc
             type(position_in_space), intent(in) :: point 
             type(source_properties), intent(in) :: source 
             real(8) ueject, psi, lambdaM, dist, fac1, fac2
-            real(8) uejectvec(3), tmp
+            real(8) uejectvec(3), tmp, vtmp(3)
             ! guard cloud center norm
             real(8) :: cnorm, sinpsi, dens8
             
-            dist = norma3d(point%rvector - cloudcentr)
+            vtmp = point%rvector - cloudcentr
+            dist = norma3d(vtmp)
             if (dist <= tiny(1.0d0)) then
                 density = 0.0
                 return
@@ -63,7 +64,8 @@ module DUDIhc
             tmp = dot_product(uejectvec, cloudcentr) / cnorm
             if (tmp >= 1d0 .or. tmp <= -1d0) tmp = sign(9.9999d-1, tmp)
             psi = acos(tmp)
-            lambdaM = azimuth(point%rvector - cloudcentr, cloudcentr)
+            vtmp = point%rvector - cloudcentr
+            lambdaM = azimuth(vtmp, cloudcentr)
 
             fac1 = 0d0 ; fac2 = 0d0
             if (source%ud%umin <= ueject .and. ueject <= source%ud%umax) then
@@ -104,23 +106,22 @@ module DUDIhc
             use twobody_fun
             implicit none
             real(8), parameter :: eps = 1d-8
-            integer i, ii
+            integer ii
             real, intent(out) :: density
             real(8), intent(in) :: dt, muR, Rast_AU
             type(ephemeris), intent(in) :: comet
-            real(8) u, psi,  v, tmp2(2)
-            real(8) dr(3),  midval
+            real(8) u, psi,  v
             type(position_in_space), intent(in) :: point
             type(source_properties), intent(in) :: source
             real(8) dphi, dbeta
-            real(8) r2d(2), rm2d(2), ax, ux, uy, theta
+            real(8) r2d(2), rm2d(2), ux, uy, theta
             real(8)  Vastx, Vasty, discr
             real(8) rm2, rm3, rm4, rm5, rm6, rm7, rm8, rm9, rm10, rm11
             real(8) ux2, ux3, uy2, uy3, ux4, uy4, ux5, uy5
             real(8) dt2, dt3, dt4, dt5, dt6, dt7, dt8
             real(8) Ekep, hh, ee
-            real(8) coefsx(0:4), coefsy(0:3), tmpux, tmpuy
-            real(8) xcoefs(0:6), ycoefs(0:5), muR2, muR3, muR4
+            real(8) xcoefs(0:6), ycoefs(0:5), tmpux, tmpuy
+            real(8) muR2, muR3, muR4
             
             call ApuTrajectoryLight(point, dphi, dbeta, source)
             

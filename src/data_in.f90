@@ -36,8 +36,8 @@ contains
       real(8), intent(in) :: Rast_AU
       type(source_properties), intent(out) :: sources(Np,Ns)
       type(ephemeris), intent(out) :: comet(Np)
-      integer i, ii, iii
-      real(8) moment(Np), xyz(Ns,3), tmp, tmpvec(3)
+      integer i, ii
+      real(8) moment(Np), xyz(Ns,3), tmp
       character(*), intent(in) :: fname
 
       open(200, file = fname, status = 'old')

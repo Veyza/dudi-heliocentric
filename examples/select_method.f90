@@ -29,10 +29,8 @@ program select_method
     implicit none
     real(8), parameter :: Rast = 0d0
     real(8), parameter :: Rast_AU = Rast / AU
-    real(8), parameter :: Rgrain = 2d-6
     real, parameter :: accuracy = 5.0 ! %
     logical, parameter :: pericenter = .FALSE.
-    character(len = 20) outformat
     integer nt1, nt2
     real(8) tnow, resolution(2), dtau
     integer i, ii, k

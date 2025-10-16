@@ -53,16 +53,15 @@ contains
       use distributions_fun
       implicit none
       integer, parameter :: Nmaps = 9
-      integer, parameter :: N = 500
       integer, intent(in) :: Np, Nlin
       ! Phaethon's radius is used as a normalization factor when 
       ! calculating the dust production rate
       real(8), parameter :: Rast = 2.9e3    
       type(source_properties), intent(out) :: sources(Np)
       type(ephemeris), intent(out) :: comet(Np)
-      integer i, ii, iii
+      integer i, ii
       real(8) moment(Np), dNlin
-      real(8) rates(nlons, nlats), totrate
+      real(8) totrate
       character(*), intent(in) :: fname
       character(len = 93), dimension(Nmaps) :: fnames
       real(8) rhels(Nmaps), rhel1, rhel2
@@ -260,7 +259,6 @@ contains
       type(position_in_space), intent(out) :: points(nt1,nt2)
       real(8), intent(in) :: lastrM(3)
       integer i, ii
-      real(8) heldist
       real(8) tmpvec(3)
       real(8) zvec(3), xvec(3), yvec(3)
 
@@ -297,7 +295,7 @@ contains
       real(8), intent(out) :: beta
       real(8), intent(in) :: Rg 
       integer, parameter :: N = 500
-      real(8) Rgs(N), betas(N), mass1
+      real(8) Rgs(N), betas(N)
       integer i
 
       open(300, file = "input_data_files/beta_vs_forsterite_Rg.dat", status = "old")

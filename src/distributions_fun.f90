@@ -56,14 +56,14 @@ module distributions_fun
                 integer i
                 character(len = 18) strtmp
                 character(len = 14) strtmp2
-                real(8) x, y, z
+                real(8) vtmp(3)
                 
                 open(100, file = fname, status = 'old')
                     do i = 1, 5
                         read(100,*) strtmp
                     enddo
-                    read(100,*) strtmp, x, y, z
-                    rhel = sqrt(sum((/x, y, z/)**2)) * 1d3        ! in meters
+                    read(100,*) strtmp, vtmp
+                    rhel = sqrt(sum(vtmp**2)) * 1d3        ! in meters
                     rhel = rhel / AU                        ! in AU
                     read(100,*) strtmp
                     read(100,*) strtmp2, lons
@@ -97,14 +97,14 @@ module distributions_fun
                 integer i
                 character(len = 18) strtmp
                 character(len = 14) strtmp2
-                real(8) x, y, z
+                real(8) vtmp(3)
                 
                 open(100, file = fname, status = 'old')
                     do i = 1, 5
                         read(100,*) strtmp
                     enddo
-                    read(100,*) strtmp, x, y, z
-                    rhel = sqrt(sum((/x, y, z/)**2)) * 1d3        ! in meters
+                    read(100,*) strtmp, vtmp
+                    rhel = sqrt(sum(vtmp**2)) * 1d3        ! in meters
                     rhel = rhel / AU                        ! in AU
                     read(100,*) strtmp
                     read(100,*) strtmp2, lons
@@ -140,7 +140,6 @@ module distributions_fun
         use nan_utils
         use help
         implicit none
-        integer N, i
         real(8), parameter :: normconst1 = 0.7723999d0
         real(8), parameter :: omega60 = 1.047198d0
         integer ii1, ii2, ind1, ind2
@@ -312,17 +311,14 @@ module distributions_fun
         use const
         use define_types
         implicit none
-                real(8), parameter :: Rad = 1737d0 ! km
-                real(8), parameter :: lambda = 200d0 ! km
-                real(8), parameter :: hrel = Rad / lambda
-                real(8), parameter :: lambda1 = 1d0 ! km
-                real(8), parameter :: hrel1 = Rad / lambda1
-                real(8), parameter :: uesc = 2.4d3 ! m/s
-        real(8) Rc, nu
-        real(8) urel, Rrel
+        real(8), parameter :: Rad = 1737d0 ! km
+        real(8), parameter :: lambda = 200d0 ! km
+        real(8), parameter :: hrel = Rad / lambda
+        real(8), parameter :: uesc = 2.4d3 ! m/s
+        real(8) nu
         real(8) fu
         type(ejection_speed_properties) ud
-        real(8) u, q
+        real(8) u
         
         fu  = -101d0
                 
