@@ -20,3 +20,46 @@ build/
 *.dylib
 *.exe
 *.out
+
+# --- Python basics ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+*.whl
+pip-wheel-metadata/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Testing & tooling
+.pytest_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Editors / OS junk
+.vscode/
+.idea/
+.DS_Store
+
+# --- f2py & compiled artifacts ---
+# shared libs produced by f2py builds
+*.so
+*.pyd
+*.dll
+*.dylib
+
+# f2py-generated intermediates
+*_f2py.*
+*.pyf.c
+*.pyf.src
+*.mod
+*.smod
+*.o
