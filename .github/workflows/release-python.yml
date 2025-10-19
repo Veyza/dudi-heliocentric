@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-artifacts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install system deps (gfortran + OpenMP runtime)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran libgomp1
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build
+
+      - name: Build Fortran ctypes bridge
+        run: bash python_interface/fortran_bridge/build_ctypes_bridge.sh
+
+      - name: Build wheel + sdist
+        run: python -m build
+
+      - name: Upload dist/ as workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dudi-heliocentric-dist-${{ github.ref_name }}
+          path: dist/*
+
+  github-release:
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dudi-heliocentric-dist-${{ github.ref_name }}
+          path: dist
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Optional: publish to PyPI (requires a PyPI token in repo secrets)
+  pypi-publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dudi-heliocentric-dist-${{ github.ref_name }}
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@v1.10.3
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages_dir: dist
+
