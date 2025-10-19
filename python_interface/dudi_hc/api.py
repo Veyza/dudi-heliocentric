@@ -75,7 +75,28 @@ def v_integration(
     This is a thin wrapper for Fortran `hc_DUDI_v_integration`. In this step it
     only validates inputs and raises NotImplementedError. The numerical bridge
     will be added later.
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from python_interface.dudi_hc.models import Point, Source, Comet, EjectionSpeedProperties, spherical_to_cartesian, normalize
+    >>> from python_interface.dudi_hc import api
+    >>> p = Point(1.0, 1.0, 0.5, spherical_to_cartesian(1.0, 1.0, 0.5))
+    >>> s = Source(
+    ...     r=1.0, alphaM=1.0, betaM=0.0,
+    ...     rrM=spherical_to_cartesian(1.0, 1.0, 0.0),
+    ...     zeta=0.3, eta=1.2,
+    ...     symmetry_axis=normalize(np.array([0.1, 0.2, 0.97], float)),
+    ...     ejection_angle_distr=3,
+    ...     ud=EjectionSpeedProperties(ud_shape=1, umin=0.0, umax=0.01),
+    ... )
+    >>> Vastvec = np.array([0.0001, 0.0004, 0.00003], float)
+    >>> c = Comet(coords=np.array([1.0, 0.0, 0.0], float), Vastvec=Vastvec, Vast=float(np.linalg.norm(Vastvec)))
+    >>> api.v_integration(p, s, c, muR=0.6, tnow=0.0, Rast_AU=0.0, pericenter=False)
+    Traceback (most recent call last):
+        ...
+    NotImplementedError: Fortran bridge not wired yet: hc_DUDI_v_integration
     """
+
     # --- lightweight validation (cheap & early) ---
     _check_finite_scalar(muR, "muR")
     _check_finite_scalar(tnow, "tnow")
