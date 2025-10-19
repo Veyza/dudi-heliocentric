@@ -99,12 +99,17 @@ without a Fortran compiler (on compatible platforms).
 ## Quick start (Python API)
 
 1. Build the Fortran ctypes bridge (compiles Fortran and installs `.so` into `python_interface/dudi_hc/`):
+
 bash python_interface/fortran_bridge/build_ctypes_bridge.sh
+
 2. Install (editable dev mode is convenient while developing):
+
 pip install -e .
+
 3. Run examples:
-python examples/minimal.py
-python examples/grid_sample.py
+
+python python_interface/examples/minimal.py
+python python_interface/examples/grid_sample.py
 
 ## Troubleshooting
 
