@@ -25,7 +25,10 @@ def test_source_ok():
         zeta=0.3, eta=1.2,
         symmetry_axis=axis,
         ejection_angle_distr=3,
-        ud=ud
+        ud=ud,
+        Nparticles = 1e10,
+        Tj = 0.0,
+        dtau = 0.0004
     )
     assert s.rrM.shape == (3,)
     assert np.isclose(np.linalg.norm(s.symmetry_axis), 1.0)
@@ -40,7 +43,10 @@ def test_source_rejects_non_unit_axis():
             zeta=0.3, eta=1.2,
             symmetry_axis=bad_axis,
             ejection_angle_distr=3,
-            ud=ud
+            ud=ud,
+            Nparticles = 1e10,
+            Tj = 0.0,
+             dtau = 0.0004
         )
 
 def test_ejection_speed_properties_bounds():

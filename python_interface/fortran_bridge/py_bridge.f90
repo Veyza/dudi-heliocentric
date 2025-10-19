@@ -45,7 +45,7 @@ contains
         src_Nparticles, src_Tj, src_dtau,                            &
         comet_coords, comet_vastvec, comet_vast,                     &
         muR, tnow, Rast_AU, pericenter_c, density) bind(C, name="py_hc_v_integration")
-
+	use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
     ! C boundary types
     real(c_double), value, intent(in) :: point_r, point_alpha, point_beta
     real(c_double), intent(in) :: point_rvector(3)
@@ -120,8 +120,9 @@ contains
        !   print *, "  cloudcentr, dt =", cloudcentr, dt
        density_sp = 0.0_real32
        ! return early, skip kernel call
-       density = real(density_sp, kind=real64)
-       return
+       call flush(output_unit)   ! <<--- add this
+		density = 0.0_c_double
+		return
     end if
     
     call hc_DUDI_v_integration(density_sp, point, source, real(muR,kind=real64), real(tnow,kind=real64), &
@@ -138,6 +139,7 @@ contains
         src_Nparticles, src_Tj, src_dtau,                            &
         comet_coords, comet_vastvec, comet_vast,                     &
         muR, dt, Rast_AU, density) bind(C, name="py_hc_delta_ejection")
+	use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
 
     real(c_double), value, intent(in) :: point_r, point_alpha, point_beta
     real(c_double), intent(in) :: point_rvector(3)
@@ -202,8 +204,9 @@ contains
        !   print *, "  cloudcentr, dt =", cloudcentr, dt
        density_sp = 0.0_real32
        ! return early, skip kernel call
-       density = real(density_sp, kind=real64)
-       return
+       call flush(output_unit)   ! <<--- add this
+		density = 0.0_c_double
+		return
     end if
     
     call hc_DUDI_delta_ejection(density_sp, point, source, real(muR,kind=real64), real(dt,kind=real64), &
@@ -219,6 +222,7 @@ contains
         src_axis, src_eject_distr, src_ud_shape, src_umin, src_umax, &
         src_Nparticles, src_Tj, src_dtau,                            &
         cloudcentr, dt, density) bind(C, name="py_hc_simple_expansion")
+	use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
 
     real(c_double), value, intent(in) :: point_r, point_alpha, point_beta
     real(c_double), intent(in) :: point_rvector(3)
@@ -276,8 +280,9 @@ contains
        !   print *, "  cloudcentr, dt =", cloudcentr, dt
        density_sp = 0.0_real32
        ! return early, skip kernel call
-       density = real(density_sp, kind=real64)
-       return
+        call flush(output_unit)   ! <<--- add this
+		density = 0.0_c_double
+		return
     end if   
     call hc_DUDI_simple_expansion(density_sp, source, real(dt,kind=real64), real(cloudcentr,kind=real64), point)
 

@@ -15,6 +15,9 @@ def build_ok_models():
         symmetry_axis=normalize(np.array([0.1, 0.2, 0.97], dtype=float)),
         ejection_angle_distr=3,
         ud=EjectionSpeedProperties(ud_shape=1, umin=0.0, umax=0.01),
+        Nparticles = 1e10,
+        Tj = 0.0,
+        dtau = 0.0004
     )
     Vastvec = np.array([0.0, 1.0, 0.0], dtype=float)
     c = Comet(coords=np.array([1.0, 0.0, 0.0], dtype=float), Vastvec=Vastvec, Vast=float(np.linalg.norm(Vastvec)))
