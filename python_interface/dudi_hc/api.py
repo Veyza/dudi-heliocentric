@@ -68,6 +68,9 @@ def v_integration(
     float
         Density at the point (returned as Python float).
     """
+    # Validation: pericenter must be a real boolean (avoid auto-casting ints)
+    if not isinstance(pericenter, bool):
+        raise ValueError("pericenter must be a bool.")
     return _call_v_integration(
         point_r=float(point.r),
         point_alpha=float(point.alpha),
@@ -116,6 +119,9 @@ def delta_ejection(
     float
         Density at the point (Python float).
     """
+    # Validation: dt must be non-negative
+    if float(dt) < 0.0:
+        raise ValueError("dt must be >= 0.")
     return _call_delta_ejection(
         point_r=float(point.r),
         point_alpha=float(point.alpha),
