@@ -96,3 +96,26 @@ python3 -m build
 The wheel bundles the compiled shared libraries, so end users can pip install 
 without a Fortran compiler (on compatible platforms).
 
+## Quick start (Python API)
+
+1. Build the Fortran ctypes bridge (compiles Fortran and installs `.so` into `python_interface/dudi_hc/`):
+bash python_interface/fortran_bridge/build_ctypes_bridge.sh
+2. Install (editable dev mode is convenient while developing):
+pip install -e .
+3. Run examples:
+python examples/minimal.py
+python examples/grid_sample.py
+
+## Troubleshooting
+
+**ImportError: undefined symbol**
+Rebuild the bridge so the .so matches the current Fortran sources:
+bash python_interface/fortran_bridge/build_ctypes_bridge.sh
+**No prints from Fortran DIAG mode**
+Use the environment flag and ensure Fortran output is flushed (already wired in):
+export HC_BRIDGE_DIAG=1
+python examples/minimal.py
+unset HC_BRIDGE_DIAG
+**ABI issues / segfaults**
+We fixed the scalar calling convention by using value in the bind(C) wrappers.
+If you edit py_bridge.f90, rebuild and re-run.
