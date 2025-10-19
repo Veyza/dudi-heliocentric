@@ -23,10 +23,10 @@ def build_ok_models():
     c = Comet(coords=np.array([1.0, 0.0, 0.0], dtype=float), Vastvec=Vastvec, Vast=float(np.linalg.norm(Vastvec)))
     return p, s, c
 
-def test_delta_ejection_stub_and_validation():
+def test_delta_ejection_runs_and_returns_float():
     p, s, c = build_ok_models()
-    with pytest.raises(NotImplementedError):
-        api.delta_ejection(p, s, c, muR=0.6, dt=0.1, Rast_AU=0.0)
+    y = api.delta_ejection(p, s, c, muR=0.6, dt=0.1, Rast_AU=0.0)
+    assert isinstance(y, float)
 
 def test_delta_ejection_rejects_negative_dt():
     p, s, c = build_ok_models()
