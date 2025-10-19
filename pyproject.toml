@@ -8,11 +8,14 @@ version = "0.1.0"
 description = "Python wrapper for DUDI-heliocentric (ctypes bridge over Fortran core)"
 readme = "README.md"
 requires-python = ">=3.9"
+dependencies = [
+  "numpy>=1.21",
+]
 license = {text = "MIT"}
 authors = [
-  { name = "Your Name", email = "you@example.com" }
+  { name = "Anastasiia Ershova", email = "vveyzaa@gmail.com" }
 ]
-keywords = ["comet", "dust", "heliocentric", "fortran", "ctypes"]
+keywords = ["asteroids", "comet", "dust", "heliocentric", "fortran", "ctypes"]
 classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
