@@ -68,3 +68,18 @@ htmlcov/
 python_interface/dudi_hc/libpy_dudihc_bridge.so
 python_interface/dudi_hc/_bridge*.so
 
+Wheels / build artifacts
+
+dist/
+*.egg-info/
+.build/
+build/
+pycache/
+*.pyc
+
+Fortran build intermediates
+
+*.o
+*.a
+*.mod
+python_interface/fortran_bridge/build_ctypes/

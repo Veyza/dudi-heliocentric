@@ -71,3 +71,28 @@ density = v_integration(point, source, comet, muR=..., tnow=..., Rast_AU=..., pe
 - python_interface/dudi_hc/_bridge_ctypes.py — Python ctypes loader
 - python_interface/dudi_hc/libpy_dudihc_bridge.so — built shared library (not tracked by git)
 
+## Install / Build
+
+### Prereqs (for maintainers)
+- gfortran, OpenMP runtime
+- Python 3.9+ and pip
+
+### Build Fortran ctypes bridge
+
+bash python_interface/fortran_bridge/build_ctypes_bridge.sh
+
+### Install (editable dev mode)
+
+pip install -e .
+
+### Tests
+
+python3 -m pytest -q
+
+### Build a wheel + sdist
+
+python3 -m pip install build
+python3 -m build
+The wheel bundles the compiled shared libraries, so end users can pip install 
+without a Fortran compiler (on compatible platforms).
+
