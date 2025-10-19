@@ -63,3 +63,8 @@ htmlcov/
 *.mod
 *.smod
 *.o
+
+# native bridge outputs
+python_interface/dudi_hc/libpy_dudihc_bridge.so
+python_interface/dudi_hc/_bridge*.so
+
