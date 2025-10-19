@@ -1,20 +1,23 @@
+# .github/workflows/ci-python.yml
 name: CI (Python wrapper)
 
 on:
+  workflow_dispatch: {}
   push:
-    branches: [ main ]
+    branches: [ "**" ]                # run on all branches
     paths:
       - "python_interface/**"
       - "pyproject.toml"
       - "MANIFEST.in"
       - ".github/workflows/ci-python.yml"
   pull_request:
-    branches: [ main ]
+    branches: [ "**" ]                # run on PRs from any branch
     paths:
       - "python_interface/**"
       - "pyproject.toml"
       - "MANIFEST.in"
       - ".github/workflows/ci-python.yml"
+
 
 concurrency:
   group: ci-python-${{ github.ref }}
