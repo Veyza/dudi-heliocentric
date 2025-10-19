@@ -145,3 +145,94 @@ def call_simple_expansion(
         _as_vec3(cloudcentr), float(dt), C.byref(out)
     )
     return float(out.value)
+
+# sizes
+_lib.py_get_nlats.restype = C.c_int
+_lib.py_get_nlons.restype = C.c_int
+
+def get_nlats() -> int:
+    return int(_lib.py_get_nlats())
+
+def get_nlons() -> int:
+    return int(_lib.py_get_nlons())
+
+# lon bounds
+_lib.py_set_lon_bounds.argtypes = [C.c_double, C.c_double]
+_lib.py_get_lon_bounds.argtypes = [C.POINTER(C.c_double), C.POINTER(C.c_double)]
+
+def set_lon_bounds(lonmin: float, lonmax: float) -> None:
+    _lib.py_set_lon_bounds(float(lonmin), float(lonmax))
+
+def get_lon_bounds() -> tuple[float, float]:
+    a = C.c_double(); b = C.c_double()
+    _lib.py_get_lon_bounds(C.byref(a), C.byref(b))
+    return float(a.value), float(b.value)
+
+# lats/lons (real*4)
+_lib.py_set_lats.argtypes = [C.c_int, C.POINTER(C.c_float)]
+_lib.py_set_lons.argtypes = [C.c_int, C.POINTER(C.c_float)]
+_lib.py_get_lats.argtypes = [C.c_int, C.POINTER(C.c_float)]
+_lib.py_get_lons.argtypes = [C.c_int, C.POINTER(C.c_float)]
+
+def set_lats(arr) -> None:
+    arr = np.asarray(arr, dtype=np.float32, order="C")
+    n = arr.size
+    _lib.py_set_lats(int(n), arr.ctypes.data_as(C.POINTER(C.c_float)))
+
+def set_lons(arr) -> None:
+    arr = np.asarray(arr, dtype=np.float32, order="C")
+    n = arr.size
+    _lib.py_set_lons(int(n), arr.ctypes.data_as(C.POINTER(C.c_float)))
+
+def get_lats() -> np.ndarray:
+    n = get_nlats()
+    out = np.empty(n, dtype=np.float32, order="C")
+    _lib.py_get_lats(int(n), out.ctypes.data_as(C.POINTER(C.c_float)))
+    return out
+
+def get_lons() -> np.ndarray:
+    n = get_nlons()
+    out = np.empty(n, dtype=np.float32, order="C")
+    _lib.py_get_lons(int(n), out.ctypes.data_as(C.POINTER(C.c_float)))
+    return out
+
+# maps (real*8), shape (nlons, nlats), Fortran-order preferred
+_lib.py_set_rmap1.argtypes  = [C.c_int, C.c_int, C.POINTER(C.c_double)]
+_lib.py_set_rmap2.argtypes  = [C.c_int, C.c_int, C.POINTER(C.c_double)]
+_lib.py_set_ratemap.argtypes = [C.c_int, C.c_int, C.POINTER(C.c_double)]
+
+def _as_f64_fortran_2d(a, nx, ny):
+    a = np.asarray(a, dtype=np.float64, order="F")
+    if a.shape != (nx, ny):
+        raise ValueError(f"array must have shape {(nx, ny)} (got {a.shape})")
+    return a
+
+def set_rmap1(A) -> None:
+    nx, ny = get_nlons(), get_nlats()
+    A = _as_f64_fortran_2d(A, nx, ny)
+    _lib.py_set_rmap1(nx, ny, A.ctypes.data_as(C.POINTER(C.c_double)))
+
+def set_rmap2(A) -> None:
+    nx, ny = get_nlons(), get_nlats()
+    A = _as_f64_fortran_2d(A, nx, ny)
+    _lib.py_set_rmap2(nx, ny, A.ctypes.data_as(C.POINTER(C.c_double)))
+
+def set_ratemap(A) -> None:
+    nx, ny = get_nlons(), get_nlats()
+    A = _as_f64_fortran_2d(A, nx, ny)
+    _lib.py_set_ratemap(nx, ny, A.ctypes.data_as(C.POINTER(C.c_double)))
+
+# rMtmp (real*8, len=3)
+_lib.py_set_rmtmp.argtypes = [C.POINTER(C.c_double)]
+_lib.py_get_rmtmp.argtypes = [C.POINTER(C.c_double)]
+
+def set_rmtmp(v3) -> None:
+    v = np.asarray(v3, dtype=np.float64, order="C")
+    if v.size != 3:
+        raise ValueError("rMtmp expects length-3 vector.")
+    _lib.py_set_rmtmp(v.ctypes.data_as(C.POINTER(C.c_double)))
+
+def get_rmtmp() -> np.ndarray:
+    out = np.empty(3, dtype=np.float64)
+    _lib.py_get_rmtmp(out.ctypes.data_as(C.POINTER(C.c_double)))
+    return out

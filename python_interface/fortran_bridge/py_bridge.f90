@@ -18,6 +18,8 @@ module py_dudihc_bridge
        hc_DUDI_v_integration, &
        hc_DUDI_delta_ejection, &
        hc_DUDI_simple_expansion
+  use distributions_fun, only: nlats, nlons, lonmax, lonmin, &
+                         lats, lons, rmap1, rmap2, ratemap, rMtmp
   implicit none
 
 
@@ -45,7 +47,7 @@ contains
         src_Nparticles, src_Tj, src_dtau,                            &
         comet_coords, comet_vastvec, comet_vast,                     &
         muR, tnow, Rast_AU, pericenter_c, density) bind(C, name="py_hc_v_integration")
-	use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
+    use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
     ! C boundary types
     real(c_double), value, intent(in) :: point_r, point_alpha, point_beta
     real(c_double), intent(in) :: point_rvector(3)
@@ -103,7 +105,7 @@ contains
 
     pericenter = (pericenter_c /= 0)
 
-	if (env_enabled("HC_BRIDGE_DIAG")) then
+    if (env_enabled("HC_BRIDGE_DIAG")) then
        print *, "[py_bridge] DIAG enabled in py_hc_v_integration"
        print *, "  point: r, alpha, beta =", point%r, point%alpha, point%beta
        print *, "  point: rvector        =", point%rvector
@@ -121,8 +123,8 @@ contains
        density_sp = 0.0_real32
        ! return early, skip kernel call
        call flush(output_unit)   ! <<--- add this
-		density = 0.0_c_double
-		return
+        density = 0.0_c_double
+        return
     end if
     
     call hc_DUDI_v_integration(density_sp, point, source, real(muR,kind=real64), real(tnow,kind=real64), &
@@ -139,7 +141,7 @@ contains
         src_Nparticles, src_Tj, src_dtau,                            &
         comet_coords, comet_vastvec, comet_vast,                     &
         muR, dt, Rast_AU, density) bind(C, name="py_hc_delta_ejection")
-	use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
+    use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
 
     real(c_double), value, intent(in) :: point_r, point_alpha, point_beta
     real(c_double), intent(in) :: point_rvector(3)
@@ -187,7 +189,7 @@ contains
     comet%Vastvec = real(comet_vastvec, kind=real64)
     comet%Vast    = real(comet_vast,    kind=real64)
 
-	if (env_enabled("HC_BRIDGE_DIAG")) then
+    if (env_enabled("HC_BRIDGE_DIAG")) then
        print *, "[py_bridge] DIAG enabled in py_hc_delta_ejection"
        print *, "  point: r, alpha, beta =", point%r, point%alpha, point%beta
        print *, "  point: rvector        =", point%rvector
@@ -205,8 +207,8 @@ contains
        density_sp = 0.0_real32
        ! return early, skip kernel call
        call flush(output_unit)   ! <<--- add this
-		density = 0.0_c_double
-		return
+        density = 0.0_c_double
+        return
     end if
     
     call hc_DUDI_delta_ejection(density_sp, point, source, real(muR,kind=real64), real(dt,kind=real64), &
@@ -222,7 +224,7 @@ contains
         src_axis, src_eject_distr, src_ud_shape, src_umin, src_umax, &
         src_Nparticles, src_Tj, src_dtau,                            &
         cloudcentr, dt, density) bind(C, name="py_hc_simple_expansion")
-	use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
+    use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
 
     real(c_double), value, intent(in) :: point_r, point_alpha, point_beta
     real(c_double), intent(in) :: point_rvector(3)
@@ -263,7 +265,7 @@ contains
     source%Tj         = real(src_Tj,         kind=real64)
     source%dtau       = real(src_dtau,       kind=real64)
  
-	if (env_enabled("HC_BRIDGE_DIAG")) then
+    if (env_enabled("HC_BRIDGE_DIAG")) then
        print *, "[py_bridge] DIAG enabled in py_hc_simple_expansion"
        print *, "  point: r, alpha, beta =", point%r, point%alpha, point%beta
        print *, "  point: rvector        =", point%rvector
@@ -281,12 +283,115 @@ contains
        density_sp = 0.0_real32
        ! return early, skip kernel call
         call flush(output_unit)   ! <<--- add this
-		density = 0.0_c_double
-		return
+        density = 0.0_c_double
+        return
     end if   
     call hc_DUDI_simple_expansion(density_sp, source, real(dt,kind=real64), real(cloudcentr,kind=real64), point)
 
     density = real(density_sp, kind=real64)
   end subroutine py_hc_simple_expansion
+  
+      !===================== getters for sizes =====================
+    integer(c_int) function py_get_nlats() bind(C, name="py_get_nlats")
+      use, intrinsic :: iso_c_binding, only: c_int
+      py_get_nlats = nlats
+    end function
+
+    integer(c_int) function py_get_nlons() bind(C, name="py_get_nlons")
+      use, intrinsic :: iso_c_binding, only: c_int
+      py_get_nlons = nlons
+    end function
+
+    !===================== lon bounds ============================
+    subroutine py_set_lon_bounds(lonmin_in, lonmax_in) bind(C, name="py_set_lon_bounds")
+      use, intrinsic :: iso_c_binding, only: c_double
+      real(c_double), value :: lonmin_in, lonmax_in
+      lonmin = lonmin_in
+      lonmax = lonmax_in
+    end subroutine
+
+    subroutine py_get_lon_bounds(lonmin_out, lonmax_out) bind(C, name="py_get_lon_bounds")
+      use, intrinsic :: iso_c_binding, only: c_double
+      real(c_double) :: lonmin_out, lonmax_out
+      lonmin_out = lonmin
+      lonmax_out = lonmax
+    end subroutine
+
+    !===================== 1D arrays (REAL(4)) ===================
+    subroutine py_set_lats(n, arr) bind(C, name="py_set_lats")
+      use, intrinsic :: iso_c_binding, only: c_int, c_float
+      integer(c_int), value :: n
+      real(c_float)         :: arr(n)
+      if (n /= nlats) return
+      lats(1:n) = arr(1:n)
+    end subroutine
+
+    subroutine py_set_lons(n, arr) bind(C, name="py_set_lons")
+      use, intrinsic :: iso_c_binding, only: c_int, c_float
+      integer(c_int), value :: n
+      real(c_float)         :: arr(n)
+      if (n /= nlons) return
+      lons(1:n) = arr(1:n)
+    end subroutine
+
+    ! Optional getters (handy for tests/validation)
+    subroutine py_get_lats(n, arr) bind(C, name="py_get_lats")
+      use, intrinsic :: iso_c_binding, only: c_int, c_float
+      integer(c_int), value :: n
+      real(c_float)         :: arr(n)
+      integer               :: k, m
+      m = min(n, nlats)
+      do k = 1, m
+        arr(k) = lats(k)
+      end do
+    end subroutine
+
+    subroutine py_get_lons(n, arr) bind(C, name="py_get_lons")
+      use, intrinsic :: iso_c_binding, only: c_int, c_float
+      integer(c_int), value :: n
+      real(c_float)         :: arr(n)
+      integer               :: k, m
+      m = min(n, nlons)
+      do k = 1, m
+        arr(k) = lons(k)
+      end do
+    end subroutine
+
+    !===================== 2D maps (REAL(8)) =====================
+    ! NOTE: arrays are (nlons, nlats) in Fortran column-major.
+    subroutine py_set_rmap1(nx, ny, A) bind(C, name="py_set_rmap1")
+      use, intrinsic :: iso_c_binding, only: c_int, c_double
+      integer(c_int), value :: nx, ny
+      real(c_double)        :: A(nx, ny)
+      if (nx==nlons .and. ny==nlats) rmap1(:,:) = A(:,:)
+    end subroutine
+
+    subroutine py_set_rmap2(nx, ny, A) bind(C, name="py_set_rmap2")
+      use, intrinsic :: iso_c_binding, only: c_int, c_double
+      integer(c_int), value :: nx, ny
+      real(c_double)        :: A(nx, ny)
+      if (nx==nlons .and. ny==nlats) rmap2(:,:) = A(:,:)
+    end subroutine
+
+    subroutine py_set_ratemap(nx, ny, A) bind(C, name="py_set_ratemap")
+      use, intrinsic :: iso_c_binding, only: c_int, c_double
+      integer(c_int), value :: nx, ny
+      real(c_double)        :: A(nx, ny)
+      if (nx==nlons .and. ny==nlats) ratemap(:,:) = A(:,:)
+    end subroutine
+
+    !===================== rMtmp (REAL(8), len=3) ================
+    subroutine py_set_rmtmp(v) bind(C, name="py_set_rmtmp")
+      use, intrinsic :: iso_c_binding, only: c_double
+      real(c_double) :: v(3)
+      rMtmp(1:3) = v(1:3)
+    end subroutine
+
+    subroutine py_get_rmtmp(v) bind(C, name="py_get_rmtmp")
+      use, intrinsic :: iso_c_binding, only: c_double
+      real(c_double) :: v(3)
+      v(1:3) = rMtmp(1:3)
+    end subroutine
+
 
 end module py_dudihc_bridge

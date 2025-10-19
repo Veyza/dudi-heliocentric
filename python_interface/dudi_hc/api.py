@@ -24,6 +24,13 @@ from ._bridge_ctypes import (
     call_delta_ejection as _call_delta_ejection,
     call_simple_expansion as _call_simple_expansion,
 )
+from ._bridge_ctypes import (
+    get_nlats, get_nlons,
+    set_lon_bounds, get_lon_bounds,
+    set_lats, set_lons, get_lats, get_lons,
+    set_rmap1, set_rmap2, set_ratemap,
+    set_rmtmp, get_rmtmp,
+)
 
 
 def _vec3(x: Iterable[float]) -> np.ndarray:
