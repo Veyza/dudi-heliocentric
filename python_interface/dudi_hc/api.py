@@ -1,39 +1,37 @@
+# python_interface/dudi_hc/api.py
 from __future__ import annotations
 
 """
-Public API for DUDI-heliocentric (thin, stable surface).
+Thin, stable Python API for DUDI-hc.
 
-This module exposes three functions that mirror the core Fortran entry points.
-They validate inputs and define a stable interface for downstream users. The
-actual numerical work will be wired in a later step via an f2py bridge.
+This module maps your typed Python dataclasses (Point, Source, Comet)
+to the flat, C-compatible arguments expected by the ctypes bridge,
+and returns plain Python floats.
 
-Mappings
---------
-v_integration   -> Fortran: hc_DUDI_v_integration
-delta_ejection  -> Fortran: hc_DUDI_delta_ejection
-simple_expansion-> Fortran: hc_DUDI_simple_expansion
+Functions
+---------
+v_integration(point, source, comet, muR, tnow, Rast_AU, pericenter) -> float
+delta_ejection(point, source, comet, muR, dt, Rast_AU) -> float
+simple_expansion(point, source, cloudcentr, dt) -> float
 """
 
-from typing import Final
-import math
+from typing import Iterable
 import numpy as np
 
-from .typing import Vec3
-from .models import Point, Source, Comet, as_vec3
+from .models import Point, Source, Comet
+from ._bridge_ctypes import (
+    call_v_integration as _call_v_integration,
+    call_delta_ejection as _call_delta_ejection,
+    call_simple_expansion as _call_simple_expansion,
+)
 
-__all__ = ["v_integration", "delta_ejection", "simple_expansion"]
 
-
-def _check_finite_scalar(x: float, name: str) -> None:
-    if not (isinstance(x, (int, float)) and math.isfinite(float(x))):
-        raise ValueError(f"{name} must be a finite float.")
-def _check_nonneg_scalar(x: float, name: str) -> None:
-    _check_finite_scalar(x, name)
-    if float(x) < 0.0:
-        raise ValueError(f"{name} must be >= 0.")
-def _check_bool(b: bool, name: str) -> None:
-    if not isinstance(b, (bool, np.bool_)):
-        raise ValueError(f"{name} must be a boolean.")
+def _vec3(x: Iterable[float]) -> np.ndarray:
+    """Return x as contiguous float64 vector of shape (3,)."""
+    arr = np.asarray(x, dtype=np.float64)
+    if arr.shape != (3,):
+        raise ValueError(f"Expected a 3-vector (shape (3,)), got shape {arr.shape}")
+    return np.ascontiguousarray(arr)
 
 
 def v_integration(
@@ -46,71 +44,60 @@ def v_integration(
     pericenter: bool,
 ) -> float:
     """
-    Compute dust number density using the v-integration method.
+    Compute dust density via velocity integration at a point.
 
     Parameters
     ----------
     point : Point
-        Position where density is evaluated. Requires `rvector` (AU).
+        Observer point (spherical r, alpha, beta + cartesian rvector).
     source : Source
-        Dust source definition. Requires `rrM` (AU) and `symmetry_axis` (unit 3-vector).
+        Dust source parameters (geometry, ejection distribution & speeds).
     comet : Comet
-        State of the dust-emitting body at ejection.
+        Ephemeris snapshot (coords, Vastvec, Vast).
     muR : float
-        Reduced gravitational parameter [AU^3/day^2].
+        Reduced gravitational parameter (code units, matches Fortran).
     tnow : float
-        Absolute time at which density is evaluated [day].
+        Epoch offset used by the HC kernel (matches Fortran).
     Rast_AU : float
-        Radius of the source body [AU]. May be 0 if re-collisions are neglected.
+        Scaling (AU) used by the kernel.
     pericenter : bool
-        Whether particles have passed perihelion in their orbit from source to point.
+        Whether pericenter branch is used inside HC kernel.
 
     Returns
     -------
     float
-        Number density at `point` (units per the model; typically 1/AU^3).
-
-    Notes
-    -----
-    This is a thin wrapper for Fortran `hc_DUDI_v_integration`. In this step it
-    only validates inputs and raises NotImplementedError. The numerical bridge
-    will be added later.
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from python_interface.dudi_hc.models import Point, Source, Comet, EjectionSpeedProperties, spherical_to_cartesian, normalize
-    >>> from python_interface.dudi_hc import api
-    >>> p = Point(1.0, 1.0, 0.5, spherical_to_cartesian(1.0, 1.0, 0.5))
-    >>> s = Source(
-    ...     r=1.0, alphaM=1.0, betaM=0.0,
-    ...     rrM=spherical_to_cartesian(1.0, 1.0, 0.0),
-    ...     zeta=0.3, eta=1.2,
-    ...     symmetry_axis=normalize(np.array([0.1, 0.2, 0.97], float)),
-    ...     ejection_angle_distr=3,
-    ...     ud=EjectionSpeedProperties(ud_shape=1, umin=0.0, umax=0.01),
-    ... )
-    >>> Vastvec = np.array([0.0001, 0.0004, 0.00003], float)
-    >>> c = Comet(coords=np.array([1.0, 0.0, 0.0], float), Vastvec=Vastvec, Vast=float(np.linalg.norm(Vastvec)))
-    >>> api.v_integration(p, s, c, muR=0.6, tnow=0.0, Rast_AU=0.0, pericenter=False)
-    Traceback (most recent call last):
-        ...
-    NotImplementedError: Fortran bridge not wired yet: hc_DUDI_v_integration
+        Density at the point (returned as Python float).
     """
+    return _call_v_integration(
+        point_r=float(point.r),
+        point_alpha=float(point.alpha),
+        point_beta=float(point.beta),
+        point_rvector=_vec3(point.rvector),
 
-    # --- lightweight validation (cheap & early) ---
-    _check_finite_scalar(muR, "muR")
-    _check_finite_scalar(tnow, "tnow")
-    _check_nonneg_scalar(Rast_AU, "Rast_AU")
-    _check_bool(pericenter, "pericenter")
+        src_r=float(source.r),
+        src_alphaM=float(source.alphaM),
+        src_betaM=float(source.betaM),
+        src_rrM=_vec3(source.rrM),
+        src_zeta=float(source.zeta),
+        src_eta=float(source.eta),
+        src_axis=_vec3(source.symmetry_axis),
+        src_eject_distr=int(source.ejection_angle_distr),
+        src_ud_shape=int(source.ud.ud_shape),
+        src_umin=float(source.ud.umin),
+        src_umax=float(source.ud.umax),
+        src_Nparticles=float(source.Nparticles),
+        src_Tj=float(source.Tj),
+        src_dtau=float(source.dtau),
 
-    # Ensure stored vectors are correct shape; do not modify them
-    as_vec3(point.rvector, name="point.rvector")
-    as_vec3(source.rrM, name="source.rrM")
-    as_vec3(source.symmetry_axis, name="source.symmetry_axis")
-    as_vec3(comet.coords, name="comet.coords")
-    as_vec3(comet.Vastvec, name="comet.Vastvec")
+        comet_coords=_vec3(comet.coords),
+        comet_vastvec=_vec3(comet.Vastvec),
+        comet_vast=float(comet.Vast),
 
-    raise NotImplementedError("Fortran bridge not wired yet: hc_DUDI_v_integration")
+        muR=float(muR),
+        tnow=float(tnow),
+        Rast_AU=float(Rast_AU),
+        pericenter=bool(pericenter),
+    )
 
 
 def delta_ejection(
@@ -122,78 +109,84 @@ def delta_ejection(
     Rast_AU: float,
 ) -> float:
     """
-    Compute dust number density using the delta-ejection method.
-
-    Parameters
-    ----------
-    point : Point
-        Position where density is evaluated. Requires `rvector` (AU).
-    source : Source
-        Dust source definition. Requires `rrM` (AU) and `symmetry_axis` (unit 3-vector).
-    comet : Comet
-        State of the dust-emitting body at ejection.
-    muR : float
-        Reduced gravitational parameter [AU^3/day^2].
-    dt : float
-        Time elapsed since dust ejection [day], dt >= 0.
-    Rast_AU : float
-        Radius of the source body [AU]. May be 0 if re-collisions are neglected.
+    Compute density for a delta-function ejection at time offset dt.
 
     Returns
     -------
     float
-        Number density at `point` (units per the model; typically 1/AU^3).
-
-    Notes
-    -----
-    Thin wrapper for Fortran `hc_DUDI_delta_ejection`. Stub for now.
+        Density at the point (Python float).
     """
-    _check_finite_scalar(muR, "muR")
-    _check_nonneg_scalar(dt, "dt")
-    _check_nonneg_scalar(Rast_AU, "Rast_AU")
+    return _call_delta_ejection(
+        point_r=float(point.r),
+        point_alpha=float(point.alpha),
+        point_beta=float(point.beta),
+        point_rvector=_vec3(point.rvector),
 
-    as_vec3(point.rvector, name="point.rvector")
-    as_vec3(source.rrM, name="source.rrM")
-    as_vec3(source.symmetry_axis, name="source.symmetry_axis")
-    as_vec3(comet.coords, name="comet.coords")
-    as_vec3(comet.Vastvec, name="comet.Vastvec")
+        src_r=float(source.r),
+        src_alphaM=float(source.alphaM),
+        src_betaM=float(source.betaM),
+        src_rrM=_vec3(source.rrM),
+        src_zeta=float(source.zeta),
+        src_eta=float(source.eta),
+        src_axis=_vec3(source.symmetry_axis),
+        src_eject_distr=int(source.ejection_angle_distr),
+        src_ud_shape=int(source.ud.ud_shape),
+        src_umin=float(source.ud.umin),
+        src_umax=float(source.ud.umax),
+        src_Nparticles=float(source.Nparticles),
+        src_Tj=float(source.Tj),
+        src_dtau=float(source.dtau),
 
-    raise NotImplementedError("Fortran bridge not wired yet: hc_DUDI_delta_ejection")
+        comet_coords=_vec3(comet.coords),
+        comet_vastvec=_vec3(comet.Vastvec),
+        comet_vast=float(comet.Vast),
+
+        muR=float(muR),
+        dt=float(dt),
+        Rast_AU=float(Rast_AU),
+    )
 
 
 def simple_expansion(
     point: Point,
     source: Source,
-    cloudcentr: Vec3,
+    cloudcentr: Iterable[float],
     dt: float,
 ) -> float:
     """
-    Compute dust number density using the simple expansion method.
+    Compute density in a simple expanding cloud centered at `cloudcentr`.
 
     Parameters
     ----------
-    point : Point
-        Position where density is evaluated. Requires `rvector` (AU).
-    source : Source
-        Dust source definition. Requires `rrM` (AU) and `symmetry_axis` (unit 3-vector).
-    cloudcentr : Vec3
-        Heliocentric position of the prime cloud center [AU], shape (3,).
-    dt : float
-        Time elapsed since dust ejection [day], dt >= 0.
+    cloudcentr : (3,) array-like
+        Cloud center vector (float64, shape (3,)).
 
     Returns
     -------
     float
-        Number density at `point` (units per the model; typically 1/AU^3).
-
-    Notes
-    -----
-    Thin wrapper for Fortran `hc_DUDI_simple_expansion`. Stub for now.
+        Density at the point (Python float).
     """
-    _check_nonneg_scalar(dt, "dt")
-    as_vec3(point.rvector, name="point.rvector")
-    as_vec3(source.rrM, name="source.rrM")
-    as_vec3(source.symmetry_axis, name="source.symmetry_axis")
-    as_vec3(cloudcentr, name="cloudcentr")
+    return _call_simple_expansion(
+        point_r=float(point.r),
+        point_alpha=float(point.alpha),
+        point_beta=float(point.beta),
+        point_rvector=_vec3(point.rvector),
 
-    raise NotImplementedError("Fortran bridge not wired yet: hc_DUDI_simple_expansion")
+        src_r=float(source.r),
+        src_alphaM=float(source.alphaM),
+        src_betaM=float(source.betaM),
+        src_rrM=_vec3(source.rrM),
+        src_zeta=float(source.zeta),
+        src_eta=float(source.eta),
+        src_axis=_vec3(source.symmetry_axis),
+        src_eject_distr=int(source.ejection_angle_distr),
+        src_ud_shape=int(source.ud.ud_shape),
+        src_umin=float(source.ud.umin),
+        src_umax=float(source.ud.umax),
+        src_Nparticles=float(source.Nparticles),
+        src_Tj=float(source.Tj),
+        src_dtau=float(source.dtau),
+
+        cloudcentr=_vec3(cloudcentr),
+        dt=float(dt),
+    )

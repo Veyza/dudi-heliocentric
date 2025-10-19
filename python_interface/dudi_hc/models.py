@@ -128,8 +128,11 @@ class Source:
     zeta: float        # rad
     eta: float         # rad
     symmetry_axis: Vec3
-    ejection_angle_distr: int
-    ud: EjectionSpeedProperties
+    ejection_angle_distr : int
+    ud : EjectionSpeedProperties
+    Nparticles : float  # particles
+    Tj : float          # days
+    dtau : float        # days
     def __post_init__(self):
         if not (math.isfinite(self.r) and self.r >= 0.0):
             raise ValueError("Source.r must be finite and >= 0.")
@@ -174,3 +177,11 @@ class Comet:
         if not (math.isfinite(self.Vast) and self.Vast >= 0.0):
             raise ValueError("Comet.Vast must be finite and >= 0.")
         # Optional: don't enforce Vast == ||Vastvec||, but document expectation.
+
+def __post_init__(self):
+        if not (math.isfinite(self.Nparticles) and self.Nparticles > 0.0):
+            raise ValueError("Source.Nparticles must be finite and > 0.")
+        if not math.isfinite(self.Tj):
+            raise ValueError("Source.Tj must be finite.")
+        if not (math.isfinite(self.dtau) and self.dtau >= 0.0):
+            raise ValueError("Source.dtau must be finite and >= 0.")

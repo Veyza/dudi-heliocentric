@@ -31,28 +31,51 @@ def _c_int(b: bool | int) -> int:
 #   double comet_coords[3], double comet_vvec[3], double comet_v,
 #   double muR, double tnow, double Rast_AU, int pericenter, double* density_out)
 _lib.py_hc_v_integration.argtypes = [
+    # point
     C.c_double, C.c_double, C.c_double, Vec3d,
+    # source core
     C.c_double, C.c_double, C.c_double, Vec3d, C.c_double, C.c_double,
     Vec3d, C.c_int, C.c_int, C.c_double, C.c_double,
+    # source extras
+    C.c_double, C.c_double, C.c_double,    # Nparticles, Tj, dtau
+    # comet
     Vec3d, Vec3d, C.c_double,
-    C.c_double, C.c_double, C.c_double, C.c_int, C.POINTER(C.c_double)
+    # scalars
+    C.c_double, C.c_double, C.c_double, C.c_int,
+    # out
+    C.POINTER(C.c_double)
 ]
 _lib.py_hc_v_integration.restype = None
 
 _lib.py_hc_delta_ejection.argtypes = [
+    # point
     C.c_double, C.c_double, C.c_double, Vec3d,
+    # source core
     C.c_double, C.c_double, C.c_double, Vec3d, C.c_double, C.c_double,
     Vec3d, C.c_int, C.c_int, C.c_double, C.c_double,
+    # source extras
+    C.c_double, C.c_double, C.c_double,    # Nparticles, Tj, dtau
+    # comet
     Vec3d, Vec3d, C.c_double,
-    C.c_double, C.c_double, C.c_double, C.POINTER(C.c_double)
+    # scalars
+    C.c_double, C.c_double, C.c_double,
+    # out
+    C.POINTER(C.c_double)
 ]
 _lib.py_hc_delta_ejection.restype = None
 
 _lib.py_hc_simple_expansion.argtypes = [
+    # point
     C.c_double, C.c_double, C.c_double, Vec3d,
+    # source core
     C.c_double, C.c_double, C.c_double, Vec3d, C.c_double, C.c_double,
     Vec3d, C.c_int, C.c_int, C.c_double, C.c_double,
-    Vec3d, C.c_double, C.POINTER(C.c_double)
+    # source extras
+    C.c_double, C.c_double, C.c_double,    # Nparticles, Tj, dtau
+    # cloud & scalar
+    Vec3d, C.c_double,
+    # out
+    C.POINTER(C.c_double)
 ]
 _lib.py_hc_simple_expansion.restype = None
 
@@ -64,6 +87,7 @@ def call_v_integration(
     src_r: float, src_alphaM: float, src_betaM: float, src_rrM,
     src_zeta: float, src_eta: float, src_axis, src_eject_distr: int,
     src_ud_shape: int, src_umin: float, src_umax: float,
+    src_Nparticles: float, src_Tj: float, src_dtau: float,
     comet_coords, comet_vastvec, comet_vast: float,
     muR: float, tnow: float, Rast_AU: float, pericenter: bool
 ) -> float:
@@ -73,6 +97,7 @@ def call_v_integration(
         float(src_r), float(src_alphaM), float(src_betaM), _as_vec3(src_rrM),
         float(src_zeta), float(src_eta), _as_vec3(src_axis),
         int(src_eject_distr), int(src_ud_shape), float(src_umin), float(src_umax),
+        float(src_Nparticles), float(src_Tj), float(src_dtau),
         _as_vec3(comet_coords), _as_vec3(comet_vastvec), float(comet_vast),
         float(muR), float(tnow), float(Rast_AU), _c_int(pericenter),
         C.byref(out)
@@ -84,7 +109,8 @@ def call_delta_ejection(
     point_r: float, point_alpha: float, point_beta: float, point_rvector,
     src_r: float, src_alphaM: float, src_betaM: float, src_rrM,
     src_zeta: float, src_eta: float, src_axis, src_eject_distr: int,
-    src_ud_shape: int, src_umin: float, src_umax: float,
+    src_ud_shape: int, src_umin: float, src_umax: float,    
+    src_Nparticles: float, src_Tj: float, src_dtau: float,
     comet_coords, comet_vastvec, comet_vast: float,
     muR: float, dt: float, Rast_AU: float
 ) -> float:
@@ -94,6 +120,7 @@ def call_delta_ejection(
         float(src_r), float(src_alphaM), float(src_betaM), _as_vec3(src_rrM),
         float(src_zeta), float(src_eta), _as_vec3(src_axis),
         int(src_eject_distr), int(src_ud_shape), float(src_umin), float(src_umax),
+        float(src_Nparticles), float(src_Tj), float(src_dtau),
         _as_vec3(comet_coords), _as_vec3(comet_vastvec), float(comet_vast),
         float(muR), float(dt), float(Rast_AU), C.byref(out)
     )
@@ -105,6 +132,7 @@ def call_simple_expansion(
     src_r: float, src_alphaM: float, src_betaM: float, src_rrM,
     src_zeta: float, src_eta: float, src_axis, src_eject_distr: int,
     src_ud_shape: int, src_umin: float, src_umax: float,
+    src_Nparticles: float, src_Tj: float, src_dtau: float,
     cloudcentr, dt: float
 ) -> float:
     out = C.c_double()
@@ -113,6 +141,7 @@ def call_simple_expansion(
         float(src_r), float(src_alphaM), float(src_betaM), _as_vec3(src_rrM),
         float(src_zeta), float(src_eta), _as_vec3(src_axis),
         int(src_eject_distr), int(src_ud_shape), float(src_umin), float(src_umax),
+        float(src_Nparticles), float(src_Tj), float(src_dtau),
         _as_vec3(cloudcentr), float(dt), C.byref(out)
     )
     return float(out.value)

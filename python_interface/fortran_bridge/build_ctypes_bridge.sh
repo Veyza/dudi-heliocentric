@@ -17,9 +17,19 @@ mkdir -p "${BUILD_DIR}" "${PKG_DIR}"
 export LC_ALL=${LC_ALL:-C.UTF-8}
 export LANG=${LANG:-C.UTF-8}
 
+# Default: optimized build
 FC=${FC:-gfortran}
-FFLAGS=${FFLAGS:-"-O2 -fPIC -fopenmp"}
-LDFLAGS=${LDFLAGS:-"-shared -fopenmp"}
+debug=${DEBUG:-0}
+
+if [[ "$debug" == "1" ]]; then
+  echo "• DEBUG build: bounds/undefined checks enabled"
+  FFLAGS="-O0 -g -fPIC -fopenmp -fcheck=all -finit-real=snan -finit-local-zero -fbacktrace"
+  LDFLAGS="-shared -fopenmp -g"
+else
+  FFLAGS=${FFLAGS:-"-O2 -fPIC -fopenmp"}
+  LDFLAGS=${LDFLAGS:-"-shared -fopenmp"}
+fi
+
 
 # Compile order matters for .mod files
 FILES_IN_ORDER=(
