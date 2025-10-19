@@ -1,0 +1,7 @@
+# MANIFEST.in
+include README.md
+recursive-include python_interface/dudi_hc *.so
+recursive-include python_interface/fortran_bridge *.f90 *.sh
+recursive-include python_interface/tests *.py
+global-exclude *.o *.a *.mod *.pyc __pycache__/*
+
