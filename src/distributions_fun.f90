@@ -159,7 +159,7 @@ module distributions_fun
             fpsi = 0.25d0 / pi
           case(1)
           ! pseudo Gaussian distribution of polar angle, uniform distribution of azimuth
-            if(wpsi < pi) then
+            if(wpsi <= pi) then
               fpsi = Exp(-(psi)**2 / 2d0 / omega60 / omega60)
               ! this factor is normalization due to the fact that fpsi
               ! domain is from 0 to pi and not from -infinity to +infinity
