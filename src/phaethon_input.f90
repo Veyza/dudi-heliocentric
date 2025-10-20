@@ -284,6 +284,71 @@ contains
       enddo
 
    end subroutine get_points
+   
+
+    !===============================================================
+    ! Build a 3-D grid of evaluation points in the orbital frame
+    ! analogous to get_points (2-D), but with a third axis.
+    !---------------------------------------------------------------
+    ! points(nx,ny,nz)  : output positions (type(position_in_space))
+    ! nx,ny,nz          : node counts along x,y,z grid axes
+    ! resolution(1:3)   : spacing along x,y,z [meters]
+    ! lastrM(3)         : reference position (last comet position) [AU]
+    ! cntrpx,cntrpy,cntrpz : fractional position of the grid origin
+    !                        inside the box (0..1, like centerpositionx/y)
+    !===============================================================
+    subroutine get_points_3d(points, nx, ny, nz, resolution, lastrM, &
+                             cntrpx, cntrpy, cntrpz)
+       use const
+       use define_types
+       use help
+       implicit none
+       integer, intent(in) :: nx, ny, nz
+       real(8), intent(in) :: resolution(3), cntrpx, cntrpy, cntrpz
+       type(position_in_space), intent(out) :: points(nx,ny,nz)
+       real(8), intent(in) :: lastrM(3)
+
+       integer :: i, j, k
+       real(8) :: xvec(3), yvec(3), zvec(3), tmpvec(3)
+
+       ! Start with ecliptic Z
+       zvec = (/0d0, 0d0, 1d0/)
+
+       ! x̂: projection of lastrM onto the ecliptic plane, normalized
+       xvec = lastrM
+       xvec = xvec - zvec * dot_product(xvec, zvec)
+       if (norma3d(xvec) == 0d0) then
+          ! Fallback if lastrM || ẑ: choose arbitrary x̂ in plane
+          xvec = (/1d0, 0d0, 0d0/)
+       else
+          xvec = xvec / norma3d(xvec)
+       end if
+
+       ! Make ẑ orthogonal to x̂, normalize; then ŷ = ẑ × x̂
+       zvec = zvec - xvec * dot_product(xvec, zvec)
+       zvec = zvec / norma3d(zvec)
+       yvec = vector_product(zvec, xvec)
+
+       ! Scale step vectors by physical spacing (meters → AU)
+       xvec = xvec * (resolution(1) / AU)
+       yvec = yvec * (resolution(2) / AU)
+       zvec = zvec * (resolution(3) / AU)
+
+       ! Lower-front-left corner (according to cntrp*) in AU
+       tmpvec = lastrM - nx * xvec * cntrpx - ny * yvec * cntrpy - nz * zvec * cntrpz
+
+       do k = 1, nz
+          do j = 1, ny
+             do i = 1, nx
+                points(i,j,k)%rvector = tmpvec + i*xvec + j*yvec + k*zvec
+                points(i,j,k)%r       = norma3d(points(i,j,k)%rvector)
+                points(i,j,k)%alpha   = acos(points(i,j,k)%rvector(3) / points(i,j,k)%r)
+                points(i,j,k)%beta    = atan(points(i,j,k)%rvector(2), points(i,j,k)%rvector(1))
+             end do
+          end do
+       end do
+    end subroutine get_points_3d
+
 
   
   ! From the given table of particle radii and corresponding beta
