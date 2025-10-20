@@ -196,7 +196,10 @@ contains
       zvec = vector_product(comet%Vastvec, comet%coords)
       zvec = zvec / norma3d(zvec)
       ! x-axis points along the asteroid heliocentric radius at the moment tnow
-      xvec = comet%coords / norma3d(comet%coords)
+      xvec = comet%coords
+      xvec(1) = xvec(1) * 0.95  ! to avoid bad geometry
+      tmpvec = xvec
+      xvec = xvec / norma3d(tmpvec)
       yvec = vector_product(zvec, xvec)
 
       xvec = xvec * resolution(1) / AU

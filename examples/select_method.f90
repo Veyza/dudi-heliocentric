@@ -20,6 +20,7 @@
 program select_method
     use const
     use help
+    use nan_utils
     use define_types
     use data_in
     use DUDIhc
