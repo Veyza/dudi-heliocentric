@@ -264,6 +264,28 @@ def orbital_plane_grid(nt1: int, nt2: int, resolution_m: tuple[float, float],
             pts[i, j] = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
     return pts
 
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import os
+
+def _eval_row(j, NT1, origin, xstep, ystep,
+              source, comet, muR, tnow, Rast_AU, PERICENTER, cloud_center):
+    # Compute one row (fixed j) of densities
+    row_d = np.empty(NT1, dtype=float)
+    row_v = np.empty(NT1, dtype=float)
+    row_s = np.empty(NT1, dtype=float)
+
+    for i in range(NT1):
+        rvec = origin + (i + 1) * xstep + (j + 1) * ystep
+        r, alpha, beta = _cart_to_spherical(rvec)
+        pt = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
+
+        row_d[i] = delta_ejection(pt, source, comet, muR=muR, dt=tnow, Rast_AU=Rast_AU)
+        row_v[i] = v_integration(pt, source, comet, muR=muR, tnow=tnow, Rast_AU=Rast_AU, pericenter=PERICENTER)
+        row_s[i] = simple_expansion(pt, source, cloudcentr=cloud_center, dt=tnow)
+
+    return j, row_d, row_v, row_s
+
+
 
 
 def main() -> int:
@@ -318,17 +340,49 @@ def main() -> int:
     )
     points = orbital_plane_grid(NT1, NT2, resolution_m, comet, cloud_center)
 
+        # --- Parallel evaluation over rows with ProcessPool ---
+    # Recreate the same orbital-plane frame as in orbital_plane_grid:
+    #   z = V x R; normalize
+    zvec = np.cross(comet.Vastvec, comet.coords)
+    nz = np.linalg.norm(zvec)
+    zvec = zvec / nz if (np.isfinite(nz) and nz > 1e-15) else np.array([0.0, 0.0, 1.0])
+
+    #   x = R; x[0]*=0.95; normalize (same degeneracy-avoidance as Fortran)
+    xvec = comet.coords.copy()
+    xvec[0] *= 0.95
+    nx = np.linalg.norm(xvec)
+    xvec = xvec / nx if (np.isfinite(nx) and nx > 1e-15) else np.array([1.0, 0.0, 0.0])
+
+    #   y = z × x
+    yvec = np.cross(zvec, xvec)
+
+    # Step vectors from your existing resolution (meters) -> AU
+    xstep = xvec * (resolution_m[0] / AU_M)
+    ystep = yvec * (resolution_m[1] / AU_M)
+
+    # Lower-left corner
+    origin = cloud_center - NT1 * xstep * 0.5 - NT2 * ystep * 0.5
+
     dens_s = np.zeros((NT1, NT2), dtype=float)
     dens_d = np.zeros_like(dens_s)
     dens_v = np.zeros_like(dens_s)
 
-    for j in range(NT2):
-        for i in range(NT1):
-            pt = points[i, j]
-            dens_d[i, j] = delta_ejection(pt, source, comet, muR=muR, dt=tnow, Rast_AU=Rast_AU)
-            dens_v[i, j] = v_integration(pt, source, comet, muR=muR, tnow=tnow, Rast_AU=Rast_AU, pericenter=PERICENTER)
-            dens_s[i, j] = simple_expansion(pt, source, cloudcentr=cloud_center, dt=tnow)
-           # print((dens_d[i,j], dens_v[i,j], dens_s[i,j]))
+    max_workers = min(os.cpu_count() or 1, NT2)
+    with ProcessPoolExecutor(max_workers=max_workers) as ex:
+        futures = [
+            ex.submit(
+                _eval_row, j, NT1, origin, xstep, ystep,
+                source, comet, muR, tnow, Rast_AU, PERICENTER, cloud_center
+            )
+            for j in range(NT2)
+        ]
+        for fut in as_completed(futures):
+            j, row_d, row_v, row_s = fut.result()
+            dens_d[:, j] = row_d
+            dens_v[:, j] = row_v
+            dens_s[:, j] = row_s
+
+
     # Exclude the center (consistent with Fortran)
     dx_AU = resolution_m[0] / AU_M
     cx, cy = NT1 // 2, NT2 // 2
