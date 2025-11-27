@@ -63,35 +63,44 @@ contains
         select case (method_id)
 
         case (METHOD_SIMPLE_EXPANSION)
-            !!$omp parallel do default(shared) private(i) schedule(dynamic)
+            !$OMP PARALLEL PRIVATE(i) &
+			!$OMP SHARED(points, source, density, muR, comet, dt, cloudcentr)
+			!$OMP DO
             do i = 1, n_points
                 ! hc_DUDI_simple_expansion(density, source, dt, cloudcentr, point)
                 call hc_DUDI_simple_expansion( density(i), source, dt, &
                                                cloudcentr, points(i) )
             end do
-            !!$omp end parallel do
+			!$OMP END DO
+			!$OMP END PARALLEL
 
         case (METHOD_DELTA_EJECTION)
-            !!$omp parallel do default(shared) private(i) schedule(dynamic)
+            !$OMP PARALLEL PRIVATE(i) &
+			!$OMP SHARED(points, source, density, muR, comet, dt, Rast_AU)
+			!$OMP DO
             do i = 1, n_points
                 ! hc_DUDI_delta_ejection(density, point, source, muR, dt, comet, Rast_AU)
                 call hc_DUDI_delta_ejection( density(i), points(i), source, &
                                              muR, dt, comet, Rast_AU )
             end do
-            !!$omp end parallel do
+			!$OMP END DO
+			!$OMP END PARALLEL
 
         case (METHOD_V_INTEGRATION)
-            !!$omp parallel do default(shared) private(i) schedule(dynamic)
+            !$OMP PARALLEL PRIVATE(i) &
+			!$OMP SHARED(points, source, density, muR, comet, dt, tnow, Rast_AU, pericenter)
+			!$OMP DO
             do i = 1, n_points
                 ! hc_DUDI_v_integration(density, point, source, muR, tnow, comet, Rast_AU, pericenter)
                 call hc_DUDI_v_integration( density(i), points(i), source, &
                                             muR, tnow, comet, Rast_AU, pericenter )
             end do
-            !!$omp end parallel do
+			!$OMP END DO
+			!$OMP END PARALLEL
 
         case default
-            ! Unknown method: set all densities to zero (or handle differently if you prefer)
-            density(:) = 0.0
+            ! Unknown method: set all densities to negative
+            density(:) = -10.0
 
         end select
 
@@ -129,31 +138,31 @@ contains
         select case (method_id)
 
         case (METHOD_SIMPLE_EXPANSION)
-            !!$omp parallel do default(shared) private(i) schedule(dynamic)
+            !$omp parallel do default(shared) private(i) schedule(dynamic)
             do i = 1, n_sources
                 ! hc_DUDI_simple_expansion(density, source, dt, cloudcentr, point)
                 call hc_DUDI_simple_expansion( density(i), sources(i), dt, &
                                                cloudcentr, point )
             end do
-            !!$omp end parallel do
+            !$omp end parallel do
 
         case (METHOD_DELTA_EJECTION)
-            !!$omp parallel do default(shared) private(i) schedule(dynamic)
+            !$omp parallel do default(shared) private(i) schedule(dynamic)
             do i = 1, n_sources
                 ! hc_DUDI_delta_ejection(density, point, source, muR, dt, comet, Rast_AU)
                 call hc_DUDI_delta_ejection( density(i), point, sources(i), &
                                              muR, dt, comet, Rast_AU )
             end do
-            !!$omp end parallel do
+            !$omp end parallel do
 
         case (METHOD_V_INTEGRATION)
-            !!$omp parallel do default(shared) private(i) schedule(dynamic)
+            !$omp parallel do default(shared) private(i) schedule(dynamic)
             do i = 1, n_sources
                 ! hc_DUDI_v_integration(density, point, source, muR, tnow, comet, Rast_AU, pericenter)
                 call hc_DUDI_v_integration( density(i), point, sources(i), &
                                             muR, tnow, comet, Rast_AU, pericenter )
             end do
-            !!$omp end parallel do
+            !$omp end parallel do
 
         case default
             density(:) = 0.0

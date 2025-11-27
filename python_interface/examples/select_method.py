@@ -22,7 +22,7 @@ from pathlib import Path
 import numpy as np
 
 # Import the thin Python API and datamodels
-from python_interface.dudi_hc.api import v_integration, delta_ejection, simple_expansion
+from python_interface.dudi_hc.api import v_integration, delta_ejection, simple_expansion, batch_over_points
 from python_interface.dudi_hc.models import Point, Source, Comet, EjectionSpeedProperties
 
 # ---- physical constants (SI unless noted) ----
@@ -264,30 +264,6 @@ def orbital_plane_grid(nt1: int, nt2: int, resolution_m: tuple[float, float],
             pts[i, j] = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
     return pts
 
-from concurrent.futures import ProcessPoolExecutor, as_completed
-import os
-
-def _eval_row(j, NT1, origin, xstep, ystep,
-              source, comet, muR, tnow, Rast_AU, PERICENTER, cloud_center):
-    # Compute one row (fixed j) of densities
-    row_d = np.empty(NT1, dtype=float)
-    row_v = np.empty(NT1, dtype=float)
-    row_s = np.empty(NT1, dtype=float)
-
-    for i in range(NT1):
-        rvec = origin + (i + 1) * xstep + (j + 1) * ystep
-        r, alpha, beta = _cart_to_spherical(rvec)
-        pt = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
-
-        row_d[i] = delta_ejection(pt, source, comet, muR=muR, dt=tnow, Rast_AU=Rast_AU)
-        row_v[i] = v_integration(pt, source, comet, muR=muR, tnow=tnow, Rast_AU=Rast_AU, pericenter=PERICENTER)
-        row_s[i] = simple_expansion(pt, source, cloudcentr=cloud_center, dt=tnow)
-
-    return j, row_d, row_v, row_s
-
-
-
-
 def main() -> int:
     # Resolve repository root from this file location
     here = Path(__file__).resolve()
@@ -330,7 +306,9 @@ def main() -> int:
 
     # Plane through the middle of the cloud.
     # Fortran uses runge_kutta_point_position; here we approximate:
-    cloud_center, _ = propagate_two_body(coords, vastvec, mu=muR, time=tnow, prefer_scipy=False)
+    cloud_center, _ = propagate_two_body(
+        coords, vastvec, mu=muR, time=tnow, prefer_scipy=False
+    )
 
     # --- build orbital-plane grid around the cloud center and compute densities ---
     # Resolution in *meters* (matches Fortran): umax [AU/day] * tnow [day] -> [AU], then * AU_M -> [m]
@@ -338,10 +316,8 @@ def main() -> int:
         float(source.ud.umax * tnow * AU_M) / NT1,
         float(source.ud.umax * tnow * AU_M) / NT2,
     )
-    points = orbital_plane_grid(NT1, NT2, resolution_m, comet, cloud_center)
 
-        # --- Parallel evaluation over rows with ProcessPool ---
-    # Recreate the same orbital-plane frame as in orbital_plane_grid:
+    # Recreate the same orbital-plane frame as in Fortran:
     #   z = V x R; normalize
     zvec = np.cross(comet.Vastvec, comet.coords)
     nz = np.linalg.norm(zvec)
@@ -363,25 +339,75 @@ def main() -> int:
     # Lower-left corner
     origin = cloud_center - NT1 * xstep * 0.5 - NT2 * ystep * 0.5
 
+    # ------------------------------------------------------------------
+    # Build all Points in the grid, then call batch_over_points
+    # ------------------------------------------------------------------
+    points: list[Point] = []
+    for j in range(NT2):
+        for i in range(NT1):
+            rvec = origin + (i + 1) * xstep + (j + 1) * ystep
+            r, alpha, beta = _cart_to_spherical(rvec)
+            pt = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
+            points.append(pt)
+
+    # Single dt argument: for this test we use dt=tnow for delta-ejection
+    # and simple expansion; passing it also to v_integration is harmless.
+    dt = tnow
+
+    # v-integration
+    dens_v_flat = batch_over_points(
+        points=points,
+        source=source,
+        comet=comet,
+        muR=muR,
+        tnow=tnow,
+        dt=dt,
+        Rast_AU=Rast_AU,
+        pericenter=PERICENTER,
+        cloudcentr=cloud_center,
+        method="v_integration",
+    )
+
+    # delta-ejection
+    dens_d_flat = batch_over_points(
+        points=points,
+        source=source,
+        comet=comet,
+        muR=muR,
+        tnow=tnow,
+        dt=dt,
+        Rast_AU=Rast_AU,
+        pericenter=PERICENTER,
+        cloudcentr=cloud_center,
+        method="delta_ejection",
+    )
+
+    # simple expansion
+    dens_s_flat = batch_over_points(
+        points=points,
+        source=source,
+        comet=comet,
+        muR=muR,
+        tnow=tnow,
+        dt=dt,
+        Rast_AU=Rast_AU,
+        pericenter=PERICENTER,
+        cloudcentr=cloud_center,
+        method="simple_expansion",
+    )
+
+    # Reshape back into (NT1, NT2) arrays.
     dens_s = np.zeros((NT1, NT2), dtype=float)
     dens_d = np.zeros_like(dens_s)
     dens_v = np.zeros_like(dens_s)
 
-    max_workers = min(os.cpu_count() or 1, NT2)
-    with ProcessPoolExecutor(max_workers=max_workers) as ex:
-        futures = [
-            ex.submit(
-                _eval_row, j, NT1, origin, xstep, ystep,
-                source, comet, muR, tnow, Rast_AU, PERICENTER, cloud_center
-            )
-            for j in range(NT2)
-        ]
-        for fut in as_completed(futures):
-            j, row_d, row_v, row_s = fut.result()
-            dens_d[:, j] = row_d
-            dens_v[:, j] = row_v
-            dens_s[:, j] = row_s
-
+    idx = 0
+    for j in range(NT2):
+        for i in range(NT1):
+            dens_d[i, j] = dens_d_flat[idx]
+            dens_v[i, j] = dens_v_flat[idx]
+            dens_s[i, j] = dens_s_flat[idx]
+            idx += 1
 
     # Exclude the center (consistent with Fortran)
     dx_AU = resolution_m[0] / AU_M
@@ -401,8 +427,7 @@ def main() -> int:
     _save_matrix(results_dir / "py_test_delta-eject_meth.dat", dens_d)
     _save_matrix(results_dir / "py_test_v-integr_meth.dat", dens_v)
 
-    # Discrepancies
-        # Discrepancies & stats (now also print detailed min/max in % as in Fortran)
+    # Discrepancies & stats
     with np.errstate(divide="ignore", invalid="ignore"):
         test_d = dens_d / dens_v - 1.0   # delta-ejection vs v-integration
         test_s = dens_s / dens_d - 1.0   # simple expansion vs delta-ejection
@@ -440,6 +465,9 @@ def main() -> int:
         print(" simple expansion method is applicable too")
     else:
         print(" simple expansion method is NOT recommended")
+
+    return 0
+
 
 
 

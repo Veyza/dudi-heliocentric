@@ -22,7 +22,7 @@ import os
 import time
 
 # ---- import your thin API and dataclasses ----
-from python_interface.dudi_hc.api import delta_ejection
+from python_interface.dudi_hc.api import delta_ejection, batch_over_points, batch_over_sources
 from python_interface.dudi_hc.models import Point, Source, Comet, EjectionSpeedProperties
 
 # ---- constants (match const.f90) ----
@@ -190,18 +190,6 @@ def _cart_to_spherical_vec(rvec):
     return r, alpha, beta
 
 
-def _eval_row_delta(j, nt1, origin, xstep, ystep, source, comet, muR, dt, Rast_AU):
-    """Compute one row (fixed j) of delta_ejection for a given source."""
-    row = np.empty(nt1, dtype=float)
-    for i in range(nt1):
-        rvec = origin + (i + 1) * xstep + (j + 1) * ystep
-        r, alpha, beta = _cart_to_spherical_vec(rvec)
-        pt = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
-        row[i] = delta_ejection(pt, source, comet, muR=muR, dt=dt, Rast_AU=Rast_AU)
-    return j, row
-
-
-# ---- main (mirrors example.f90) ----
 def main() -> int:
     # repo root = ../../ from this file
     here = Path(__file__).resolve()
@@ -210,8 +198,8 @@ def main() -> int:
     out_path = repo_root / "results" / "result.dat"
 
     # parameters from the Fortran example
-    Np = 41
-    Ns = 50
+    Np = 2#41
+    Ns = 2#50
     Rast_m = 5e3
     Rast_AU = Rast_m / AU_M
     Qpr = 0.5
@@ -225,27 +213,27 @@ def main() -> int:
     # ephemeris & sources
     sources, comet = get_sources(ephem_path, Np, Ns, Rast_AU)
 
-    # grid centered at the last comet position
-    points = orbital_plane_grid(nt1, nt2, resolution_m, comet[-1], comet[-1].coords)
-
     # time now = moment at last ephemeris row
     tnow = sources[-1][0].Tj
 
     density = np.zeros((nt1, nt2), dtype=float)
 
-    # Reconstruct the same plane frame used by orbital_plane_grid(points,...)
+    # Reconstruct the same plane frame used by orbital_plane_grid
     R = np.asarray(comet[-1].coords, dtype=float)
     V = np.asarray(comet[-1].Vastvec, dtype=float)
 
+    # z = V × R (normal to orbital plane)
     zvec = np.cross(V, R)
     nz = np.linalg.norm(zvec)
     zvec = zvec / nz if (np.isfinite(nz) and nz > 1e-15) else np.array([0.0, 0.0, 1.0])
 
+    # x = R, tweak x[0]*=0.95 to avoid degeneracy (same as Fortran)
     xvec = R.copy()
-    xvec[0] *= 0.95   # same tweak to avoid the ill-conditioned geometry
+    xvec[0] *= 0.95
     nx = np.linalg.norm(xvec)
     xvec = xvec / nx if (np.isfinite(nx) and nx > 1e-15) else np.array([1.0, 0.0, 0.0])
 
+    # y = z × x
     yvec = np.cross(zvec, xvec)
 
     # Step vectors (meters -> AU)
@@ -255,37 +243,59 @@ def main() -> int:
     # Lower-left corner of the grid (same as in orbital_plane_grid)
     origin = comet[-1].coords - nt1 * xstep * 0.5 - nt2 * ystep * 0.5
 
-    max_workers = min(os.cpu_count() or 1, nt2)
-    total = (Np - 1) * Ns * nt2
+    # ------------------------------------------------------------------
+    # Build the full grid of Points once
+    # ------------------------------------------------------------------
+    points: list[Point] = []
+    for j in range(nt2):
+        for i in range(nt1):
+            rvec = origin + (i + 1) * xstep + (j + 1) * ystep
+            r, alpha, beta = _cart_to_spherical_vec(rvec)
+            pt = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
+            points.append(pt)
+
+    # ------------------------------------------------------------------
+    # Accumulate density from all sources using batched delta-ejection
+    # ------------------------------------------------------------------
+    total = (Np - 1) * Ns
     completed = 0
     last_print = time.time()
-    with ProcessPoolExecutor(max_workers=max_workers) as ex:
-        for ip in range(0, Np - 1):
-            dt = tnow - sources[ip][0].Tj
-            for is_ in range(Ns):
-                futures = [
-                    ex.submit(
-                        _eval_row_delta, j, nt1, origin, xstep, ystep,
-                        sources[ip][is_], comet[ip], muR, dt, Rast_AU
-                    )
-                    for j in range(nt2)
-                ]
-                for fut in as_completed(futures):
-                    j, row = fut.result()
-                    density[:, j] += row
 
-                    # progress
-                    completed += 1
-                    now = time.time()
-                    if (now - last_print) >= 1.0 or completed == total:
-                        pct = 100.0 * completed / total
-                        print(f"[example] row-tasks done: {completed}/{total}  ({pct:5.1f}%)")
-                        last_print = now
+    for ip in range(0, Np - 1):
+        dt = tnow - sources[ip][0].Tj
+        for i_s in range(Ns):
+            dens_flat = batch_over_points(
+                points=points,
+                source=sources[ip][i_s],
+                comet=comet[ip],
+                muR=muR,
+                tnow=tnow,
+                dt=dt,
+                Rast_AU=Rast_AU,
+                pericenter=False,              # not used by delta_ejection
+                cloudcentr=comet[ip].coords,    # dummy for this method
+                method="delta_ejection",
+            )
 
+            # reshape and accumulate
+            idx = 0
+            for j in range(nt2):
+                for i in range(nt1):
+                    density[i, j] += dens_flat[idx]
+                    idx += 1
+
+            # # progress
+            # completed += 1
+            # now = time.time()
+            # if (now - last_print) >= 1.0 or completed == total:
+            #     pct = 100.0 * completed / total
+            #     print(f"[example] source-tasks done: {completed}/{total}  ({pct:5.1f}%)")
+            #     last_print = now
 
     matrix_out(out_path, density)
     print(f"Wrote {out_path}")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
