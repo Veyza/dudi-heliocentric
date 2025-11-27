@@ -9,6 +9,7 @@
 module py_dudihc_bridge
   use iso_c_binding, only: c_int, c_double
   use iso_fortran_env, only: real32, real64
+  use batching, only: hc_DUDI_batch_points, hc_DUDI_batch_sources
   use define_types, only: &
        position_in_space, &
        source_properties, &
@@ -290,6 +291,284 @@ contains
 
     density = real(density_sp, kind=real64)
   end subroutine py_hc_simple_expansion
+
+
+  !===================================================================
+  !  Batched wrappers: over points (fixed source) and over sources
+  !  (fixed point). These are C-interoperable entry points that
+  !  reconstruct derived types and call hc_DUDI_batch_*.
+  !
+  !  NOTE:
+  !    - Fortran LOGICAL is replaced by INTEGER(C_INT) at C boundary.
+  !    - DUDIhc returns REAL (single); we convert to REAL(C_DOUBLE).
+  !===================================================================
+
+  subroutine py_hc_batch_points( &
+       n_points, density,                                           &
+       point_r, point_alpha, point_beta, point_rvector,             &
+       src_r, src_alphaM, src_betaM, src_rrM, src_zeta, src_eta,    &
+       src_axis, src_eject_distr, src_ud_shape, src_umin, src_umax, &
+       src_Nparticles, src_Tj, src_dtau,                            &
+       comet_coords, comet_vastvec, comet_vast,                     &
+       muR, tnow, dt, Rast_AU, pericenter_c,                        &
+       cloudcentr, method_id)                                       &
+       bind(C, name="py_hc_batch_points")
+
+    use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
+    use iso_c_binding, only: c_int, c_double
+    use define_types, only: position_in_space, source_properties, ejection_speed_properties, ephemeris
+    use batching,      only: hc_DUDI_batch_points
+
+    ! sizes
+    integer(c_int), value, intent(in) :: n_points
+
+    ! C-side outputs
+    real(c_double), intent(out) :: density(n_points)
+
+    ! C-side point arrays
+    real(c_double), intent(in) :: point_r(n_points)
+    real(c_double), intent(in) :: point_alpha(n_points)
+    real(c_double), intent(in) :: point_beta(n_points)
+    ! flattened or 2D; here we assume (3, n_points) layout
+    real(c_double), intent(in) :: point_rvector(3, n_points)
+
+    ! C-side source (scalars, same for all points)
+    real(c_double), value, intent(in) :: src_r, src_alphaM, src_betaM, src_zeta, src_eta
+    real(c_double),        intent(in) :: src_rrM(3), src_axis(3)
+    integer(c_int), value, intent(in) :: src_eject_distr, src_ud_shape
+    real(c_double), value, intent(in) :: src_umin, src_umax
+    real(c_double), value, intent(in) :: src_Nparticles, src_Tj, src_dtau
+
+    ! C-side comet (same for all points)
+    real(c_double), intent(in) :: comet_coords(3), comet_vastvec(3)
+    real(c_double), value, intent(in) :: comet_vast
+
+    ! scalars / flags
+    real(c_double), value, intent(in) :: muR, tnow, dt, Rast_AU
+    integer(c_int), value, intent(in) :: pericenter_c
+    real(c_double), intent(in) :: cloudcentr(3)
+    integer(c_int), value, intent(in) :: method_id
+
+    ! Local derived types
+    type(position_in_space)        :: points(n_points)
+    type(source_properties)        :: source
+    type(ejection_speed_properties):: ud
+    type(ephemeris)                :: comet
+    logical                        :: pericenter
+    integer                        :: i, method_f
+
+    ! internal single-precision densities
+    real(real32) :: density_sp(n_points)
+
+    !--------------------------------------------
+    ! diagnostic mode: just print and return zero
+    !--------------------------------------------
+    if (env_enabled("HC_BRIDGE_DIAG")) then
+       print *, "[py_bridge] DIAG enabled in py_hc_batch_points"
+       print *, "  n_points =", n_points
+       print *, "  method_id =", method_id
+       call flush(output_unit)
+       density(:) = 0.0_c_double
+       return
+    end if
+
+    !--------------------------------------------
+    ! Build POINT array
+    !--------------------------------------------
+    do i = 1, n_points
+       points(i)%r       = real(point_r(i),      kind=real64)
+       points(i)%alpha   = real(point_alpha(i),  kind=real64)
+       points(i)%beta    = real(point_beta(i),   kind=real64)
+       points(i)%rvector = real(point_rvector(:, i), kind=real64)
+    end do
+
+    !--------------------------------------------
+    ! Build SOURCE (same for all points)
+    !--------------------------------------------
+    source%r      = real(src_r,      kind=real64)
+    source%alphaM = real(src_alphaM, kind=real64)
+    source%betaM  = real(src_betaM,  kind=real64)
+    source%rrM    = real(src_rrM,    kind=real64)
+    source%zeta   = real(src_zeta,   kind=real64)
+    source%eta    = real(src_eta,    kind=real64)
+    source%symmetry_axis        = real(src_axis, kind=real64)
+    source%ejection_angle_distr = int(src_eject_distr, kind=kind(source%ejection_angle_distr))
+    ud%ud_shape   = int(src_ud_shape, kind=kind(ud%ud_shape))
+    ud%umin       = real(src_umin, kind=real64)
+    ud%umax       = real(src_umax, kind=real64)
+    source%ud     = ud
+    source%Nparticles = real(src_Nparticles, kind=real64)
+    source%Tj         = real(src_Tj,         kind=real64)
+    source%dtau       = real(src_dtau,       kind=real64)
+
+    !--------------------------------------------
+    ! Build COMET (same for all points)
+    !--------------------------------------------
+    comet%coords  = real(comet_coords,  kind=real64)
+    comet%Vastvec = real(comet_vastvec, kind=real64)
+    comet%Vast    = real(comet_vast,    kind=real64)
+
+    pericenter = (pericenter_c /= 0_c_int)
+    method_f   = int(method_id, kind=kind(method_f))
+
+    !--------------------------------------------
+    ! Call batched kernel (single precision density)
+    !--------------------------------------------
+    call hc_DUDI_batch_points( n_points, density_sp, points, source, &
+                               real(muR,    kind=real64),           &
+                               real(tnow,   kind=real64),           &
+                               real(dt,     kind=real64),           &
+                               comet,                                &
+                               real(Rast_AU, kind=real64),          &
+                               pericenter,                           &
+                               real(cloudcentr, kind=real64),       &
+                               method_f )
+
+    !--------------------------------------------
+    ! Convert to REAL(C_DOUBLE) for C boundary
+    !--------------------------------------------
+    do i = 1, n_points
+       density(i) = real(density_sp(i), kind=real64)
+    end do
+
+  end subroutine py_hc_batch_points
+
+
+  subroutine py_hc_batch_sources( &
+       n_sources, density,                                           &
+       point_r, point_alpha, point_beta, point_rvector,              &
+       src_r, src_alphaM, src_betaM, src_rrM, src_zeta, src_eta,     &
+       src_axis, src_eject_distr, src_ud_shape, src_umin, src_umax,  &
+       src_Nparticles, src_Tj, src_dtau,                             &
+       comet_coords, comet_vastvec, comet_vast,                      &
+       muR, tnow, dt, Rast_AU, pericenter_c,                         &
+       cloudcentr, method_id)                                        &
+       bind(C, name="py_hc_batch_sources")
+
+    use, intrinsic :: iso_fortran_env, only: real64, real32, output_unit
+    use iso_c_binding, only: c_int, c_double
+    use define_types, only: position_in_space, source_properties, ejection_speed_properties, ephemeris
+    use batching,      only: hc_DUDI_batch_sources
+
+    ! sizes
+    integer(c_int), value, intent(in) :: n_sources
+
+    ! C-side outputs
+    real(c_double), intent(out) :: density(n_sources)
+
+    ! C-side point (single)
+    real(c_double), value, intent(in) :: point_r, point_alpha, point_beta
+    real(c_double),       intent(in) :: point_rvector(3)
+
+    ! C-side source arrays (vary over sources)
+    real(c_double), intent(in) :: src_r(n_sources)
+    real(c_double), intent(in) :: src_alphaM(n_sources)
+    real(c_double), intent(in) :: src_betaM(n_sources)
+    real(c_double), intent(in) :: src_rrM(3, n_sources)
+    real(c_double), intent(in) :: src_zeta(n_sources)
+    real(c_double), intent(in) :: src_eta(n_sources)
+    real(c_double), intent(in) :: src_axis(3, n_sources)
+    integer(c_int), intent(in) :: src_eject_distr(n_sources)
+    integer(c_int), intent(in) :: src_ud_shape(n_sources)
+    real(c_double), intent(in) :: src_umin(n_sources)
+    real(c_double), intent(in) :: src_umax(n_sources)
+    real(c_double), intent(in) :: src_Nparticles(n_sources)
+    real(c_double), intent(in) :: src_Tj(n_sources)
+    real(c_double), intent(in) :: src_dtau(n_sources)
+
+    ! C-side comet (same for all sources)
+    real(c_double), intent(in) :: comet_coords(3), comet_vastvec(3)
+    real(c_double), value, intent(in) :: comet_vast
+
+    ! scalars / flags
+    real(c_double), value, intent(in) :: muR, tnow, dt, Rast_AU
+    integer(c_int), value, intent(in) :: pericenter_c
+    real(c_double), intent(in) :: cloudcentr(3)
+    integer(c_int), value, intent(in) :: method_id
+
+    ! Local derived types
+    type(position_in_space)         :: point
+    type(source_properties)         :: sources(n_sources)
+    type(ejection_speed_properties) :: ud
+    type(ephemeris)                 :: comet
+    logical                         :: pericenter
+    integer                         :: i, method_f
+
+    ! internal single-precision densities
+    real(real32) :: density_sp(n_sources)
+
+    !--------------------------------------------
+    ! diagnostic mode: just print and return zero
+    !--------------------------------------------
+    if (env_enabled("HC_BRIDGE_DIAG")) then
+       print *, "[py_bridge] DIAG enabled in py_hc_batch_sources"
+       print *, "  n_sources =", n_sources
+       print *, "  method_id =", method_id
+       call flush(output_unit)
+       density(:) = 0.0_c_double
+       return
+    end if
+
+    !--------------------------------------------
+    ! Build POINT (single)
+    !--------------------------------------------
+    point%r       = real(point_r,      kind=real64)
+    point%alpha   = real(point_alpha,  kind=real64)
+    point%beta    = real(point_beta,   kind=real64)
+    point%rvector = real(point_rvector, kind=real64)
+
+    !--------------------------------------------
+    ! Build SOURCES array
+    !--------------------------------------------
+    do i = 1, n_sources
+       sources(i)%r      = real(src_r(i),      kind=real64)
+       sources(i)%alphaM = real(src_alphaM(i), kind=real64)
+       sources(i)%betaM  = real(src_betaM(i),  kind=real64)
+       sources(i)%rrM    = real(src_rrM(:, i), kind=real64)
+       sources(i)%zeta   = real(src_zeta(i),   kind=real64)
+       sources(i)%eta    = real(src_eta(i),    kind=real64)
+       sources(i)%symmetry_axis        = real(src_axis(:, i), kind=real64)
+       sources(i)%ejection_angle_distr = int(src_eject_distr(i), kind=kind(sources(i)%ejection_angle_distr))
+       ud%ud_shape   = int(src_ud_shape(i), kind=kind(ud%ud_shape))
+       ud%umin       = real(src_umin(i), kind=real64)
+       ud%umax       = real(src_umax(i), kind=real64)
+       sources(i)%ud  = ud
+       sources(i)%Nparticles = real(src_Nparticles(i), kind=real64)
+       sources(i)%Tj         = real(src_Tj(i),         kind=real64)
+       sources(i)%dtau       = real(src_dtau(i),       kind=real64)
+    end do
+
+    !--------------------------------------------
+    ! Build COMET (same for all sources)
+    !--------------------------------------------
+    comet%coords  = real(comet_coords,  kind=real64)
+    comet%Vastvec = real(comet_vastvec, kind=real64)
+    comet%Vast    = real(comet_vast,    kind=real64)
+
+    pericenter = (pericenter_c /= 0_c_int)
+    method_f   = int(method_id, kind=kind(method_f))
+
+    !--------------------------------------------
+    ! Call batched kernel
+    !--------------------------------------------
+    call hc_DUDI_batch_sources( n_sources, density_sp, point, sources, &
+                                real(muR,    kind=real64),           &
+                                real(tnow,   kind=real64),           &
+                                real(dt,     kind=real64),           &
+                                comet,                                &
+                                real(Rast_AU, kind=real64),          &
+                                pericenter,                           &
+                                real(cloudcentr, kind=real64),       &
+                                method_f )
+
+    !--------------------------------------------
+    ! Convert to REAL(C_DOUBLE) for C boundary
+    !--------------------------------------------
+    do i = 1, n_sources
+       density(i) = real(density_sp(i), kind=real64)
+    end do
+
+  end subroutine py_hc_batch_sources
   
       !===================== getters for sizes =====================
     integer(c_int) function py_get_nlats() bind(C, name="py_get_nlats")

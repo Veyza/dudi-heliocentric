@@ -34,13 +34,14 @@ fi
 # Compile order matters for .mod files
 FILES_IN_ORDER=(
   "const.f90"
-  "nan_utils.f90"         # if present
+  "nan_utils.f90"         
   "define_types.f90"
-  "help.f90"              # if present
+  "help.f90"              
   "distributions_fun.f90"
-  "twobody_fun.f90"       # if present
+  "twobody_fun.f90"       
   "data_in.f90"
   "DUDIhc.f90"
+  "batching.f90"
 )
 
 echo "• Building Fortran core + C-bind bridge → ${LIB_OUT}"
