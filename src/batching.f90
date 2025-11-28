@@ -21,6 +21,7 @@
 
 module batching
     use define_types
+    use help
     use DUDIhc
     implicit none
 
@@ -30,6 +31,106 @@ module batching
     integer, parameter :: METHOD_V_INTEGRATION    = 3
 
 contains
+    !==================================================================
+    !> General batched computation over:
+    !>   - n_points observation points
+    !>   - Nt time steps
+    !>   - Ns sources active at each time
+    !>
+    !>  sources(Nt, Ns) : all sources, grouped by time
+    !>  comets(Nt)      : comet ephemeris at each time
+    !>
+    !>  For each time i_t:
+    !>     dt = tnow - sources(i_t,1)%Tj
+    !>     (simple-expansion only) cloudcentr = propagated comet position
+    !>
+    !>  Then contributions from all sources at all times are summed:
+    !>
+    !>      density(i_point) = sum_{t,s} method(point_i, source_{t,s}, ...)
+    !>
+    !>  method_id:
+    !>    = METHOD_SIMPLE_EXPANSION : hc_DUDI_simple_expansion
+    !>    = METHOD_DELTA_EJECTION   : hc_DUDI_delta_ejection
+    !>    = METHOD_V_INTEGRATION    : hc_DUDI_v_integration
+    !==================================================================
+    subroutine hc_DUDI_batch_sources_points( &
+        n_points, Nt, Ns, density, points, sources, &
+        muR, tnow, comets, Rast_AU, pericenter, method_id )
+
+        implicit none
+
+        integer, intent(in) :: n_points, Nt, Ns
+        real,    intent(out) :: density(n_points)
+        type(position_in_space), intent(in) :: points(n_points)
+        type(source_properties), intent(in) :: sources(Nt, Ns)
+        real(8), intent(in) :: muR, tnow, Rast_AU
+        type(ephemeris), intent(in) :: comets(Nt)
+        logical, intent(in) :: pericenter
+        integer, intent(in) :: method_id
+
+        integer :: i_t, i_s, i
+        real(8) :: dt
+        real(8) :: cloudcentr(3)
+        real    :: tmp
+
+        density(:) = 0.0
+
+        do i_t = 1, Nt
+           ! dt for this time slice (all Ns sources share same ejection time)
+           dt = tnow - sources(i_t, 1)%Tj
+
+           select case (method_id)
+
+           case (METHOD_SIMPLE_EXPANSION)
+              ! Compute cloud center for this time
+              call runge_kutta_point_position( comets(i_t)%coords, &
+                                               comets(i_t)%Vastvec, &
+                                               muR, dt, cloudcentr )
+
+              !!$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
+              do i_s = 1, Ns
+                 do i = 1, n_points
+                    call hc_DUDI_simple_expansion( tmp, sources(i_t, i_s), dt, &
+                                                   cloudcentr, points(i) )
+                    !!$omp atomic
+                    density(i) = density(i) + tmp
+                 end do
+              end do
+              !!$omp end parallel do
+
+           case (METHOD_DELTA_EJECTION)
+              !!$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
+              do i_s = 1, Ns
+                 do i = 1, n_points
+                    call hc_DUDI_delta_ejection( tmp, points(i), sources(i_t, i_s), &
+                                                 muR, dt, comets(i_t), Rast_AU )
+                    !!$omp atomic
+                    density(i) = density(i) + tmp
+                 end do
+              end do
+              !!$omp end parallel do
+
+           case (METHOD_V_INTEGRATION)
+              !!$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
+              do i_s = 1, Ns
+                 do i = 1, n_points
+                    call hc_DUDI_v_integration( tmp, points(i), sources(i_t, i_s), &
+                                                muR, tnow, comets(i_t), Rast_AU, pericenter )
+                    !!$omp atomic
+                    density(i) = density(i) + tmp
+                 end do
+              end do
+              !!$omp end parallel do
+
+           case default
+              ! do nothing, density already zeroed
+
+           end select
+        end do
+
+    end subroutine hc_DUDI_batch_sources_points
+
+
 
     !==================================================================
     !> Batched computation over an array of points for a single source.

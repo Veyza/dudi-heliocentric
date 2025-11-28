@@ -9,7 +9,8 @@
 module py_dudihc_bridge
   use iso_c_binding, only: c_int, c_double
   use iso_fortran_env, only: real32, real64
-  use batching, only: hc_DUDI_batch_points, hc_DUDI_batch_sources
+  use batching, only: hc_DUDI_batch_points, hc_DUDI_batch_sources, &
+                      hc_DUDI_batch_sources_points
   use define_types, only: &
        position_in_space, &
        source_properties, &
@@ -569,6 +570,167 @@ contains
     end do
 
   end subroutine py_hc_batch_sources
+  
+  
+  !===================================================================
+  !  C-interoperable wrapper for the general time×sources×points batch.
+  !
+  !  Layout expectations at C/Python side:
+  !
+  !   - n_points, Nt, Ns: sizes
+  !   - point_*: length n_points
+  !   - point_rvector: length 3*n_points   (flattened [x0,y0,z0,x1,y1,z1,...])
+  !
+  !   - src_*: length Nt*Ns, flattened with time-major order:
+  !       idx = i_t * Ns + i_s   (0-based)
+  !
+  !   - src_rrM, src_axis: length 3*Nt*Ns, layout like:
+  !       [x(t0,s0),y(t0,s0),z(t0,s0), x(t0,s1),..., x(t1,s0),...]
+  !
+  !   - comet_coords, comet_vastvec: length 3*Nt (coords per time)
+  !   - comet_vast: length Nt
+  !
+  !===================================================================
+  subroutine py_hc_batch_sources_points( &
+       n_points, Nt, Ns, density,                    &
+       point_r, point_alpha, point_beta,             &
+       point_rvector,                               &
+       src_r, src_alphaM, src_betaM,                &
+       src_rrM, src_zeta, src_eta,                  &
+       src_axis, src_eject_distr, src_ud_shape,     &
+       src_umin, src_umax,                          &
+       src_Nparticles, src_Tj, src_dtau,            &
+       comet_coords, comet_vastvec, comet_vast,     &
+       muR, tnow, Rast_AU, pericenter_c,            &
+       method_id)                                    &
+       bind(C, name="py_hc_batch_sources_points")
+
+    use, intrinsic :: iso_fortran_env, only: real64
+    use iso_c_binding, only: c_int, c_double
+    use define_types, only: position_in_space, source_properties, ejection_speed_properties, ephemeris
+    use batching,      only: hc_DUDI_batch_sources_points
+
+    integer(c_int), value, intent(in) :: n_points, Nt, Ns
+    real(c_double), intent(out) :: density(n_points)
+
+    ! points
+    real(c_double), intent(in) :: point_r(n_points)
+    real(c_double), intent(in) :: point_alpha(n_points)
+    real(c_double), intent(in) :: point_beta(n_points)
+    real(c_double), intent(in) :: point_rvector(3*n_points)
+
+    ! sources (flattened Nt*Ns and 3*Nt*Ns)
+    real(c_double), intent(in) :: src_r(Nt*Ns)
+    real(c_double), intent(in) :: src_alphaM(Nt*Ns)
+    real(c_double), intent(in) :: src_betaM(Nt*Ns)
+    real(c_double), intent(in) :: src_rrM(3*Nt*Ns)
+    real(c_double), intent(in) :: src_zeta(Nt*Ns)
+    real(c_double), intent(in) :: src_eta(Nt*Ns)
+    real(c_double), intent(in) :: src_axis(3*Nt*Ns)
+    integer(c_int), intent(in) :: src_eject_distr(Nt*Ns)
+    integer(c_int), intent(in) :: src_ud_shape(Nt*Ns)
+    real(c_double), intent(in) :: src_umin(Nt*Ns)
+    real(c_double), intent(in) :: src_umax(Nt*Ns)
+    real(c_double), intent(in) :: src_Nparticles(Nt*Ns)
+    real(c_double), intent(in) :: src_Tj(Nt*Ns)
+    real(c_double), intent(in) :: src_dtau(Nt*Ns)
+
+    ! comets: coords, vvec, Vast per time
+    real(c_double), intent(in) :: comet_coords(3*Nt)
+    real(c_double), intent(in) :: comet_vastvec(3*Nt)
+    real(c_double), intent(in) :: comet_vast(Nt)
+
+    ! scalars
+    real(c_double), value, intent(in) :: muR, tnow, Rast_AU
+    integer(c_int), value, intent(in) :: pericenter_c
+    integer(c_int), value, intent(in) :: method_id
+
+    ! local derived types
+    type(position_in_space)         :: points(n_points)
+    type(source_properties)         :: sources(Nt, Ns)
+    type(ejection_speed_properties) :: ud
+    type(ephemeris)                 :: comets(Nt)
+    logical                         :: pericenter
+    integer                         :: i, i_t, i_s, idx
+    integer                         :: method_f
+    integer                         :: k0
+
+    real(real32) :: dens_sp(n_points)
+
+    !----- build points -----
+    do i = 1, n_points
+       points(i)%r     = real(point_r(i),     kind=real64)
+       points(i)%alpha = real(point_alpha(i), kind=real64)
+       points(i)%beta  = real(point_beta(i),  kind=real64)
+       k0 = 3*(i-1)
+       points(i)%rvector(1) = real(point_rvector(k0+1), kind=real64)
+       points(i)%rvector(2) = real(point_rvector(k0+2), kind=real64)
+       points(i)%rvector(3) = real(point_rvector(k0+3), kind=real64)
+    end do
+
+    !----- build sources(Nt,Ns) -----
+    do i_t = 1, Nt
+       do i_s = 1, Ns
+          idx = (i_t-1)*Ns + i_s   ! matches C-order flattening
+          sources(i_t, i_s)%r      = real(src_r(idx),      kind=real64)
+          sources(i_t, i_s)%alphaM = real(src_alphaM(idx), kind=real64)
+          sources(i_t, i_s)%betaM  = real(src_betaM(idx),  kind=real64)
+
+          k0 = 3*(idx-1)
+          sources(i_t, i_s)%rrM(1) = real(src_rrM(k0+1), kind=real64)
+          sources(i_t, i_s)%rrM(2) = real(src_rrM(k0+2), kind=real64)
+          sources(i_t, i_s)%rrM(3) = real(src_rrM(k0+3), kind=real64)
+
+          sources(i_t, i_s)%zeta = real(src_zeta(idx), kind=real64)
+          sources(i_t, i_s)%eta  = real(src_eta(idx),  kind=real64)
+
+          sources(i_t, i_s)%symmetry_axis(1) = real(src_axis(k0+1), kind=real64)
+          sources(i_t, i_s)%symmetry_axis(2) = real(src_axis(k0+2), kind=real64)
+          sources(i_t, i_s)%symmetry_axis(3) = real(src_axis(k0+3), kind=real64)
+
+          sources(i_t, i_s)%ejection_angle_distr = int(src_eject_distr(idx), kind=kind(sources(i_t,i_s)%ejection_angle_distr))
+
+          ud%ud_shape = int(src_ud_shape(idx), kind=kind(ud%ud_shape))
+          ud%umin     = real(src_umin(idx), kind=real64)
+          ud%umax     = real(src_umax(idx), kind=real64)
+          sources(i_t, i_s)%ud = ud
+
+          sources(i_t, i_s)%Nparticles = real(src_Nparticles(idx), kind=real64)
+          sources(i_t, i_s)%Tj         = real(src_Tj(idx),         kind=real64)
+          sources(i_t, i_s)%dtau       = real(src_dtau(idx),       kind=real64)
+       end do
+    end do
+
+    !----- build comets(Nt) -----
+    do i_t = 1, Nt
+       k0 = 3*(i_t-1)
+       comets(i_t)%coords(1)  = real(comet_coords(k0+1),  kind=real64)
+       comets(i_t)%coords(2)  = real(comet_coords(k0+2),  kind=real64)
+       comets(i_t)%coords(3)  = real(comet_coords(k0+3),  kind=real64)
+       comets(i_t)%Vastvec(1) = real(comet_vastvec(k0+1), kind=real64)
+       comets(i_t)%Vastvec(2) = real(comet_vastvec(k0+2), kind=real64)
+       comets(i_t)%Vastvec(3) = real(comet_vastvec(k0+3), kind=real64)
+       comets(i_t)%Vast       = real(comet_vast(i_t),     kind=real64)
+    end do
+
+    pericenter = (pericenter_c /= 0_c_int)
+    method_f   = int(method_id, kind=kind(method_f))
+
+    call hc_DUDI_batch_sources_points( n_points, Nt, Ns, dens_sp, points, sources, &
+                                       real(muR,   kind=real64), &
+                                       real(tnow,  kind=real64), &
+                                       comets,                    &
+                                       real(Rast_AU, kind=real64), &
+                                       pericenter, method_f )
+
+    do i = 1, n_points
+       density(i) = real(dens_sp(i), kind=real64)
+    end do
+
+  end subroutine py_hc_batch_sources_points
+
+
+
   
       !===================== getters for sizes =====================
     integer(c_int) function py_get_nlats() bind(C, name="py_get_nlats")

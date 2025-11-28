@@ -251,6 +251,42 @@ _lib.py_hc_batch_sources.argtypes = [
 ]
 _lib.py_hc_batch_sources.restype = None
 
+# void py_hc_batch_sources_points(
+#   int n_points, int Nt, int Ns,
+#   double density[n_points],
+#   double point_r[n_points], point_alpha[n_points], point_beta[n_points],
+#   double point_rvector[3*n_points],
+#   double src_r[Nt*Ns], src_alphaM[Nt*Ns], src_betaM[Nt*Ns],
+#   double src_rrM[3*Nt*Ns], double src_zeta[Nt*Ns], double src_eta[Nt*Ns],
+#   double src_axis[3*Nt*Ns],
+#   int src_eject_distr[Nt*Ns], int src_ud_shape[Nt*Ns],
+#   double src_umin[Nt*Ns], double src_umax[Nt*Ns],
+#   double src_Nparticles[Nt*Ns], double src_Tj[Nt*Ns], double src_dtau[Nt*Ns],
+#   double comet_coords[3*Nt], double comet_vvec[3*Nt], double comet_vast[Nt],
+#   double muR, double tnow, double Rast_AU, int pericenter, int method_id)
+_lib.py_hc_batch_sources_points.argtypes = [
+    C.c_int,  # n_points
+    C.c_int,  # Nt
+    C.c_int,  # Ns
+    Vec1d,    # density_out
+    # points
+    Vec1d, Vec1d, Vec1d,  # point_r, alpha, beta
+    Vec1d,                # point_rvector_flat (3*n_points)
+    # sources
+    Vec1d, Vec1d, Vec1d,  # src_r, src_alphaM, src_betaM
+    Vec1d, Vec1d, Vec1d,  # src_rrM_flat, src_zeta, src_eta
+    Vec1d, Int1d, Int1d,  # src_axis_flat, eject_distr, ud_shape
+    Vec1d, Vec1d,         # src_umin, src_umax
+    Vec1d, Vec1d, Vec1d,  # Nparticles, Tj, dtau
+    # comets
+    Vec1d, Vec1d, Vec1d,  # comet_coords_flat, comet_vvec_flat, comet_vast
+    # scalars
+    C.c_double, C.c_double, C.c_double, C.c_int, C.c_int,
+]
+_lib.py_hc_batch_sources_points.restype = None
+
+
+
 
 # ======================================================================
 #  batched thin wrappers (return numpy arrays)
@@ -402,6 +438,153 @@ def call_batch_sources(
         _as_vec3(cloudcentr), int(method_id),
     )
     return density
+
+def call_batch_sources_points(
+    *,
+    point_r,
+    point_alpha,
+    point_beta,
+    point_rvector,
+    src_r,
+    src_alphaM,
+    src_betaM,
+    src_rrM,
+    src_zeta,
+    src_eta,
+    src_axis,
+    src_eject_distr,
+    src_ud_shape,
+    src_umin,
+    src_umax,
+    src_Nparticles,
+    src_Tj,
+    src_dtau,
+    comet_coords,
+    comet_vastvec,
+    comet_vast,
+    muR: float,
+    tnow: float,
+    Rast_AU: float,
+    pericenter: bool,
+    method_id: int,
+) -> np.ndarray:
+    """
+    Low-level wrapper for hc_DUDI_batch_sources_points (time × sources × points).
+
+    Parameters
+    ----------
+    point_* : arrays over points (length n_points)
+    src_*   : arrays over flattened (Nt, Ns) with C-order:
+              idx = it * Ns + is
+    src_rrM, src_axis : arrays of length 3*Nt*Ns, similarly flattened
+    comet_coords, comet_vastvec : arrays of shape (Nt, 3)
+    comet_vast : array of length Nt
+
+    Returns
+    -------
+    density : ndarray, shape (n_points,)
+        Total density per point (sum over times and sources).
+    """
+    # points
+    r = _as_1d_f64(point_r, "point_r")
+    alpha = _as_1d_f64(point_alpha, "point_alpha")
+    beta = _as_1d_f64(point_beta, "point_beta")
+    if not (r.size == alpha.size == beta.size):
+        raise ValueError("point_r, point_alpha, point_beta must have same length")
+    n_points = int(r.size)
+
+    rvec2d = _as_2d_f64(point_rvector, "point_rvector")
+    if rvec2d.shape != (n_points, 3):
+        raise ValueError(f"point_rvector must have shape (N_points,3), got {rvec2d.shape}")
+    rvec_flat = np.ascontiguousarray(rvec2d.reshape(-1))
+
+    # sources: src_* expected as 2D (Nt, Ns) or 3D (Nt, Ns, 3)
+    src_r_2d      = _as_2d_f64(src_r, "src_r")
+    src_alpha_2d  = _as_2d_f64(src_alphaM, "src_alphaM")
+    src_beta_2d   = _as_2d_f64(src_betaM, "src_betaM")
+    Nt, Ns = src_r_2d.shape
+    if src_alpha_2d.shape != (Nt, Ns) or src_beta_2d.shape != (Nt, Ns):
+        raise ValueError("src_r, src_alphaM, src_betaM must all have shape (Nt,Ns)")
+
+    src_rrM_3d = np.asarray(src_rrM, dtype=np.float64)
+    if src_rrM_3d.ndim != 3 or src_rrM_3d.shape != (Nt, Ns, 3):
+        raise ValueError(f"src_rrM must have shape (Nt,Ns,3), got {src_rrM_3d.shape}")
+    src_axis_3d = np.asarray(src_axis, dtype=np.float64)
+    if src_axis_3d.ndim != 3 or src_axis_3d.shape != (Nt, Ns, 3):
+        raise ValueError(f"src_axis must have shape (Nt,Ns,3), got {src_axis_3d.shape}")
+
+    src_zeta_2d = _as_2d_f64(src_zeta, "src_zeta")
+    src_eta_2d  = _as_2d_f64(src_eta, "src_eta")
+    if src_zeta_2d.shape != (Nt, Ns) or src_eta_2d.shape != (Nt, Ns):
+        raise ValueError("src_zeta and src_eta must have shape (Nt,Ns)")
+
+    eject = _as_1d_i32(src_eject_distr, "src_eject_distr")
+    udsh  = _as_1d_i32(src_ud_shape, "src_ud_shape")
+    if eject.size != Nt * Ns or udsh.size != Nt * Ns:
+        raise ValueError("src_eject_distr and src_ud_shape must have length Nt*Ns")
+
+    src_umin_2d  = _as_2d_f64(src_umin, "src_umin")
+    src_umax_2d  = _as_2d_f64(src_umax, "src_umax")
+    src_Np_2d    = _as_2d_f64(src_Nparticles, "src_Nparticles")
+    src_Tj_2d    = _as_2d_f64(src_Tj, "src_Tj")
+    src_dtau_2d  = _as_2d_f64(src_dtau, "src_dtau")
+    for name, arr2d in [
+        ("src_umin", src_umin_2d),
+        ("src_umax", src_umax_2d),
+        ("src_Nparticles", src_Np_2d),
+        ("src_Tj", src_Tj_2d),
+        ("src_dtau", src_dtau_2d),
+    ]:
+        if arr2d.shape != (Nt, Ns):
+            raise ValueError(f"{name} must have shape (Nt,Ns)")
+
+    # flatten with C-order -> idx = it*Ns + is
+    src_r_flat      = np.ascontiguousarray(src_r_2d.reshape(-1))
+    src_alpha_flat  = np.ascontiguousarray(src_alpha_2d.reshape(-1))
+    src_beta_flat   = np.ascontiguousarray(src_beta_2d.reshape(-1))
+    src_rrM_flat    = np.ascontiguousarray(src_rrM_3d.reshape(-1))
+    src_zeta_flat   = np.ascontiguousarray(src_zeta_2d.reshape(-1))
+    src_eta_flat    = np.ascontiguousarray(src_eta_2d.reshape(-1))
+    src_axis_flat   = np.ascontiguousarray(src_axis_3d.reshape(-1))
+    src_umin_flat   = np.ascontiguousarray(src_umin_2d.reshape(-1))
+    src_umax_flat   = np.ascontiguousarray(src_umax_2d.reshape(-1))
+    src_Np_flat     = np.ascontiguousarray(src_Np_2d.reshape(-1))
+    src_Tj_flat     = np.ascontiguousarray(src_Tj_2d.reshape(-1))
+    src_dtau_flat   = np.ascontiguousarray(src_dtau_2d.reshape(-1))
+
+    # comets: coords, vvec: (Nt,3), vast: (Nt,)
+    comet_coords_2d = _as_2d_f64(comet_coords, "comet_coords")
+    comet_vvec_2d   = _as_2d_f64(comet_vastvec, "comet_vastvec")
+    if comet_coords_2d.shape != (Nt, 3) or comet_vvec_2d.shape != (Nt, 3):
+        raise ValueError("comet_coords and comet_vastvec must have shape (Nt,3)")
+    comet_coords_flat = np.ascontiguousarray(comet_coords_2d.reshape(-1))
+    comet_vvec_flat   = np.ascontiguousarray(comet_vvec_2d.reshape(-1))
+
+    comet_vast_arr = _as_1d_f64(comet_vast, "comet_vast")
+    if comet_vast_arr.size != Nt:
+        raise ValueError("comet_vast must have length Nt")
+
+    density = np.empty(n_points, dtype=np.float64)
+
+    _lib.py_hc_batch_sources_points(
+        int(n_points),
+        int(Nt),
+        int(Ns),
+        density,
+        r, alpha, beta,
+        rvec_flat,
+        src_r_flat, src_alpha_flat, src_beta_flat,
+        src_rrM_flat, src_zeta_flat, src_eta_flat,
+        src_axis_flat, eject, udsh,
+        src_umin_flat, src_umax_flat,
+        src_Np_flat, src_Tj_flat, src_dtau_flat,
+        comet_coords_flat, comet_vvec_flat, comet_vast_arr,
+        float(muR), float(tnow), float(Rast_AU),
+        _c_int(pericenter),
+        int(method_id),
+    )
+    return density
+
 
 
 # ======================================================================
