@@ -22,7 +22,7 @@ import os
 import time
 
 # ---- import your thin API and dataclasses ----
-from python_interface.dudi_hc.api import delta_ejection, batch_over_points, batch_over_sources
+from python_interface.dudi_hc.api import delta_ejection, batch_over_points, batch_over_sources, batch_over_points_sources
 from python_interface.dudi_hc.models import Point, Source, Comet, EjectionSpeedProperties
 
 # ---- constants (match const.f90) ----
@@ -198,8 +198,8 @@ def main() -> int:
     out_path = repo_root / "results" / "result.dat"
 
     # parameters from the Fortran example
-    Np = 2#41
-    Ns = 2#50
+    Nt = 41          # number of time steps (was Np)
+    Ns = 50          # number of sources per time
     Rast_m = 5e3
     Rast_AU = Rast_m / AU_M
     Qpr = 0.5
@@ -211,12 +211,10 @@ def main() -> int:
     muR = reduced_gravitational_parameter(Rg_m, Qpr)
 
     # ephemeris & sources
-    sources, comet = get_sources(ephem_path, Np, Ns, Rast_AU)
+    sources, comet = get_sources(ephem_path, Nt, Ns, Rast_AU)
 
     # time now = moment at last ephemeris row
     tnow = sources[-1][0].Tj
-
-    density = np.zeros((nt1, nt2), dtype=float)
 
     # Reconstruct the same plane frame used by orbital_plane_grid
     R = np.asarray(comet[-1].coords, dtype=float)
@@ -255,46 +253,30 @@ def main() -> int:
             points.append(pt)
 
     # ------------------------------------------------------------------
-    # Accumulate density from all sources using batched delta-ejection
+    # Use the new time×sources×points batching (delta-ejection)
+    # We mimic the old behaviour: i_t = 0..Nt-2 (exclude last row where dt=0)
     # ------------------------------------------------------------------
-    total = (Np - 1) * Ns
-    completed = 0
-    last_print = time.time()
+    sources_by_time = sources[: Nt - 1]   # shape (Nt-1, Ns)
+    comets_by_time = comet[: Nt - 1]      # length Nt-1
 
-    for ip in range(0, Np - 1):
-        dt = tnow - sources[ip][0].Tj
-        for i_s in range(Ns):
-            dens_flat = batch_over_points(
-                points=points,
-                source=sources[ip][i_s],
-                comet=comet[ip],
-                muR=muR,
-                tnow=tnow,
-                dt=dt,
-                Rast_AU=Rast_AU,
-                pericenter=False,              # not used by delta_ejection
-                cloudcentr=comet[ip].coords,    # dummy for this method
-                method="delta_ejection",
-            )
+    dens_flat = batch_over_points_sources(
+        points=points,
+        sources_by_time=sources_by_time,
+        comets_by_time=comets_by_time,
+        muR=muR,
+        tnow=tnow,
+        Rast_AU=Rast_AU,
+        pericenter=False,          # not used by delta_ejection
+        method="delta_ejection",
+    )
 
-            # reshape and accumulate
-            idx = 0
-            for j in range(nt2):
-                for i in range(nt1):
-                    density[i, j] += dens_flat[idx]
-                    idx += 1
-
-            # # progress
-            # completed += 1
-            # now = time.time()
-            # if (now - last_print) >= 1.0 or completed == total:
-            #     pct = 100.0 * completed / total
-            #     print(f"[example] source-tasks done: {completed}/{total}  ({pct:5.1f}%)")
-            #     last_print = now
+    # reshape into (nt1, nt2)
+    density = dens_flat.reshape(nt1, nt2)
 
     matrix_out(out_path, density)
     print(f"Wrote {out_path}")
     return 0
+
 
 
 if __name__ == "__main__":

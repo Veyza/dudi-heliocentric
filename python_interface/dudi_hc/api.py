@@ -509,7 +509,7 @@ def batch_over_points_sources(
     if not isinstance(pericenter, bool):
         raise ValueError("pericenter must be a bool.")
 
-    densities = _call_batch_sources_points_times(
+    densities = _call_batch_sources_points(
         point_r=point_r,
         point_alpha=point_alpha,
         point_beta=point_beta,

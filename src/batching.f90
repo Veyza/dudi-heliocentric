@@ -87,40 +87,40 @@ contains
                                                comets(i_t)%Vastvec, &
                                                muR, dt, cloudcentr )
 
-              !!$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
+              !$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
               do i_s = 1, Ns
                  do i = 1, n_points
                     call hc_DUDI_simple_expansion( tmp, sources(i_t, i_s), dt, &
                                                    cloudcentr, points(i) )
-                    !!$omp atomic
+                    !$omp atomic
                     density(i) = density(i) + tmp
                  end do
               end do
-              !!$omp end parallel do
+              !$omp end parallel do
 
            case (METHOD_DELTA_EJECTION)
-              !!$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
+              !$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
               do i_s = 1, Ns
                  do i = 1, n_points
                     call hc_DUDI_delta_ejection( tmp, points(i), sources(i_t, i_s), &
                                                  muR, dt, comets(i_t), Rast_AU )
-                    !!$omp atomic
+                    !$omp atomic
                     density(i) = density(i) + tmp
                  end do
               end do
-              !!$omp end parallel do
+              !$omp end parallel do
 
            case (METHOD_V_INTEGRATION)
-              !!$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
+              !$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
               do i_s = 1, Ns
                  do i = 1, n_points
                     call hc_DUDI_v_integration( tmp, points(i), sources(i_t, i_s), &
                                                 muR, tnow, comets(i_t), Rast_AU, pericenter )
-                    !!$omp atomic
+                    !$omp atomic
                     density(i) = density(i) + tmp
                  end do
               end do
-              !!$omp end parallel do
+              !$omp end parallel do
 
            case default
               ! do nothing, density already zeroed
