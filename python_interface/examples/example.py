@@ -37,44 +37,45 @@ Lsun = 3.828e26                # W
 rho = 2.5e3                    # kg/m^3
 
 # ---- reuse the same orbital-plane grid you implemented for select_method.py ----
-def orbital_plane_grid(nt1: int, nt2: int, resolution_m: tuple[float, float],
-                       comet, center: np.ndarray):
-    AU_M = 1.495978707e11
+def orbital_plane_grid(n1: int, n2: int, resolution_m: tuple[float, float],
+                       comet: np.ndarray):
 
+    # Reconstruct the same plane frame used by orbital_plane_grid
     R = np.asarray(comet.coords, dtype=float)
     V = np.asarray(comet.Vastvec, dtype=float)
 
+    # z = V × R (normal to orbital plane)
     zvec = np.cross(V, R)
     nz = np.linalg.norm(zvec)
     zvec = zvec / nz if (np.isfinite(nz) and nz > 1e-15) else np.array([0.0, 0.0, 1.0])
 
     xvec = R.copy()
-    xvec[0] *= 0.95  # avoid bad geometry (exactly like your Fortran)
     nx = np.linalg.norm(xvec)
     xvec = xvec / nx if (np.isfinite(nx) and nx > 1e-15) else np.array([1.0, 0.0, 0.0])
 
+    # y = z × x
     yvec = np.cross(zvec, xvec)
 
+    # Step vectors (meters -> AU)
     xstep = xvec * (resolution_m[0] / AU_M)
     ystep = yvec * (resolution_m[1] / AU_M)
-    origin = center - nt1 * xstep * 0.5 - nt2 * ystep * 0.5
 
-    def cart_to_spherical(rv):
-        x, y, z = map(float, rv)
-        r = math.sqrt(x*x + y*y + z*z)
-        if r == 0.0:
-            return 0.0, 0.0, 0.0
-        alpha = math.acos(z / r)
-        beta = math.atan2(y, x)
-        return r, alpha, beta
+    # Lower-left corner of the grid (same as in orbital_plane_grid)
+    origin = comet.coords - n1 * xstep * 0.5 - n2 * ystep * 0.5
 
-    pts = np.empty((nt1, nt2), dtype=object)
-    for j in range(nt2):
-        for i in range(nt1):
+    # ------------------------------------------------------------------
+    # Build the full grid of Points once
+    # ------------------------------------------------------------------
+    points: list[Point] = []
+    for j in range(n2):
+        for i in range(n1):
             rvec = origin + (i + 1) * xstep + (j + 1) * ystep
-            r, alpha, beta = cart_to_spherical(rvec)
-            pts[i, j] = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
-    return pts
+            r, alpha, beta = _cart_to_spherical_vec(rvec)
+            pt = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
+            points.append(pt)
+
+    return points
+
 
 # ---- helpers that mirror your Fortran subroutines ----
 def reduced_gravitational_parameter(Rg_m: float, Qpr: float) -> float:
@@ -90,27 +91,13 @@ def reduced_gravitational_parameter(Rg_m: float, Qpr: float) -> float:
     return mu_AU_day2
 
 def _uniform_points_on_unit_sphere(N: int) -> np.ndarray:
-    # # Marsaglia (1972)
-    # u = np.random.uniform(-1.0, 1.0, size=N)
-    # theta = np.random.uniform(0.0, 2.0 * PI, size=N)
-    # s = np.sqrt(1.0 - u**2)
-    #
-    # pts = np.stack([s * np.cos(theta), s * np.sin(theta), u], axis=1)
-    #
-    # # Write to file before returning
-    # outpath = "/home/veyza/dudi-heliocentric/input_data_files/uniform_sphere_points.dat"
-    # np.savetxt(outpath, pts, fmt="%.18e")
-    #
-    # return pts
-
-    # *** New behavior: read from file instead ***
-    inpath = "/home/veyza/dudi-heliocentric/input_data_files/uniform_sphere_points.dat"
-    # Load only the first N lines
-    with open(inpath, "r") as f:
-        lines = [next(f) for _ in range(N)]
-
-    pts = np.loadtxt(lines)
-
+    # Marsaglia (1972)
+    u = np.random.uniform(-1.0, 1.0, size=N)
+    theta = np.random.uniform(0.0, 2.0 * PI, size=N)
+    s = np.sqrt(1.0 - u**2)
+    
+    pts = np.stack([s * np.cos(theta), s * np.sin(theta), u], axis=1)
+        
     return pts
 
 def _clamp(x, lo=-1.0, hi=1.0):
@@ -246,45 +233,6 @@ def main() -> int:
     # time now = moment at last ephemeris row
     tnow = sources[-1][0].Tj
 
-    # Reconstruct the same plane frame used by orbital_plane_grid
-    R = np.asarray(comet[-1].coords, dtype=float)
-    V = np.asarray(comet[-1].Vastvec, dtype=float)
-
-    # z = V × R (normal to orbital plane)
-    zvec = np.cross(V, R)
-    nz = np.linalg.norm(zvec)
-    zvec = zvec / nz if (np.isfinite(nz) and nz > 1e-15) else np.array([0.0, 0.0, 1.0])
-
-    # x = R, tweak x[0]*=0.95 to avoid degeneracy (same as Fortran)
-    xvec = R.copy()
-    #xvec[0] *= 0.95
-    nx = np.linalg.norm(xvec)
-    xvec = xvec / nx if (np.isfinite(nx) and nx > 1e-15) else np.array([1.0, 0.0, 0.0])
-
-    # y = z × x
-    yvec = np.cross(zvec, xvec)
-
-    # Step vectors (meters -> AU)
-    xstep = xvec * (resolution_m[0] / AU_M)
-    ystep = yvec * (resolution_m[1] / AU_M)
-
-    # Lower-left corner of the grid (same as in orbital_plane_grid)
-    origin = comet[-1].coords - n1 * xstep * 0.5 - n2 * ystep * 0.5
-
-    # ------------------------------------------------------------------
-    # Build the full grid of Points once
-    # ------------------------------------------------------------------
-    points: list[Point] = []
-    jj = 0
-    for j in range(n2):
-        for i in range(n1):
-            rvec = origin + (i + 1) * xstep + (j + 1) * ystep
-            r, alpha, beta = _cart_to_spherical_vec(rvec)
-            pt = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
-            points.append(pt)
-            jj += 1
-            if jj == 902:
-                print(jj, j, i)
 
     # ------------------------------------------------------------------
     # Use the new time×sources×points batching (delta-ejection)
@@ -292,14 +240,12 @@ def main() -> int:
     # ------------------------------------------------------------------
     sources_by_time = sources[: Nt - 1]   # shape (Nt-1, Ns)
     comets_by_time = comet[: Nt - 1]      # length Nt-1
-
-    all_sources_by_time = sources_by_time      # full data from earlier
-    all_comets_by_time = comets_by_time
+    points = orbital_plane_grid(n1, n2, resolution_m, comet[-1])
 
     dens_flat = batch_over_points_sources(
         points=points,
-        sources_by_time=sources_by_time,#[[all_sources_by_time[1][1]]],  # Nt = 1, Ns = 1
-        comets_by_time=comets_by_time,#[all_comets_by_time[1]],         # Nt = 1
+        sources_by_time=sources_by_time,
+        comets_by_time=comets_by_time,
         muR=muR,
         tnow=tnow,
         Rast_AU=Rast_AU,
