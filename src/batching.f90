@@ -71,7 +71,7 @@ contains
         integer :: i_t, i_s, i
         real(8) :: dt
         real(8) :: cloudcentr(3)
-        real    :: tmp
+        real    :: tmp(n_points)
 
         density(:) = 0.0
 
@@ -87,40 +87,43 @@ contains
                                                comets(i_t)%Vastvec, &
                                                muR, dt, cloudcentr )
 
-              !$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
               do i_s = 1, Ns
+            !$OMP PARALLEL PRIVATE(i) &
+			!$OMP SHARED(points, sources, density, muR, comets, dt, i_t, i_s, tmp)
+			!$OMP DO
                  do i = 1, n_points
-                    call hc_DUDI_simple_expansion( tmp, sources(i_t, i_s), dt, &
-                                                   cloudcentr, points(i) )
-                    !$omp atomic
-                    density(i) = density(i) + tmp
+                    call hc_DUDI_simple_expansion(tmp(i), sources(i_t, i_s), dt, &
+                                                   cloudcentr, points(i))
                  end do
+              !$OMP END DO
+			  !$OMP END PARALLEL
+              density = density + tmp
               end do
-              !$omp end parallel do
 
            case (METHOD_DELTA_EJECTION)
-              !$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
               do i_s = 1, Ns
+            !$OMP PARALLEL PRIVATE(i) &
+			!$OMP SHARED(points, sources, density, muR, comets, dt, i_t, tmp)
+			!$OMP DO
                  do i = 1, n_points
-                    call hc_DUDI_delta_ejection( tmp, points(i), sources(i_t, i_s), &
+                    call hc_DUDI_delta_ejection( tmp(i), points(i), sources(i_t, i_s), &
                                                  muR, dt, comets(i_t), Rast_AU )
-                    !$omp atomic
-                    density(i) = density(i) + tmp
                  end do
+              !$OMP END DO
+			  !$OMP END PARALLEL
+              density = density + tmp
               end do
-              !$omp end parallel do
 
            case (METHOD_V_INTEGRATION)
-              !$omp parallel do collapse(2) default(shared) private(i_s, i, tmp) schedule(static)
               do i_s = 1, Ns
+              !$omp parallel do default(shared) private(i) schedule(static)
                  do i = 1, n_points
-                    call hc_DUDI_v_integration( tmp, points(i), sources(i_t, i_s), &
+                    call hc_DUDI_v_integration( tmp(i), points(i), sources(i_t, i_s), &
                                                 muR, tnow, comets(i_t), Rast_AU, pericenter )
-                    !$omp atomic
-                    density(i) = density(i) + tmp
                  end do
-              end do
               !$omp end parallel do
+              density = density + tmp
+              end do
 
            case default
               ! do nothing, density already zeroed

@@ -90,30 +90,62 @@ def reduced_gravitational_parameter(Rg_m: float, Qpr: float) -> float:
     return mu_AU_day2
 
 def _uniform_points_on_unit_sphere(N: int) -> np.ndarray:
-    # Marsaglia (1972)
-    u = np.random.uniform(-1.0, 1.0, size=N)
-    theta = np.random.uniform(0.0, 2.0 * PI, size=N)
-    s = np.sqrt(1.0 - u**2)
-    return np.stack([s * np.cos(theta), s * np.sin(theta), u], axis=1)
+    # # Marsaglia (1972)
+    # u = np.random.uniform(-1.0, 1.0, size=N)
+    # theta = np.random.uniform(0.0, 2.0 * PI, size=N)
+    # s = np.sqrt(1.0 - u**2)
+    #
+    # pts = np.stack([s * np.cos(theta), s * np.sin(theta), u], axis=1)
+    #
+    # # Write to file before returning
+    # outpath = "/home/veyza/dudi-heliocentric/input_data_files/uniform_sphere_points.dat"
+    # np.savetxt(outpath, pts, fmt="%.18e")
+    #
+    # return pts
+
+    # *** New behavior: read from file instead ***
+    inpath = "/home/veyza/dudi-heliocentric/input_data_files/uniform_sphere_points.dat"
+    # Load only the first N lines
+    with open(inpath, "r") as f:
+        lines = [next(f) for _ in range(N)]
+
+    pts = np.loadtxt(lines)
+
+    return pts
 
 def _clamp(x, lo=-1.0, hi=1.0):
     return max(lo, min(hi, x))
 
-def _eta_azimuth(sym_axis: np.ndarray, rrM_vec: np.ndarray) -> float:
-    """
-    A consistent azimuth around r̂ = rrM/|rrM|.
-    """
-    rhat = rrM_vec / np.linalg.norm(rrM_vec)
-    # choose a stable "north" to build a local basis
-    z = np.array([0.0, 0.0, 1.0])
-    if abs(np.dot(z, rhat)) > 0.99:
-        z = np.array([1.0, 0.0, 0.0])
-    e_theta = z - np.dot(z, rhat) * rhat
-    e_theta /= np.linalg.norm(e_theta)
-    e_phi = np.cross(rhat, e_theta)
-    comp_theta = float(np.dot(sym_axis, e_theta))
-    comp_phi = float(np.dot(sym_axis, e_phi))
-    return math.atan2(comp_phi, comp_theta)
+TWOPI = 2.0 * np.pi
+def _eta_azimuth(direction: np.ndarray, location: np.ndarray) -> float:
+    zvec = np.array([0.0, 0.0, 1.0])
+
+    # local normal
+    tmpr = location / np.linalg.norm(location)
+
+    # local north (projection of z-axis)
+    north = zvec - tmpr * np.dot(zvec, tmpr)
+    north /= np.linalg.norm(north)
+
+    # normalized direction
+    tmpd = direction / np.linalg.norm(direction)
+
+    # projection of direction into tangent plane
+    dirplane = tmpd - tmpr * np.dot(tmpd, tmpr)
+    dirplane /= np.linalg.norm(dirplane)
+
+    # angle between north and dirplane
+    dotpr = np.dot(dirplane, north)
+    dotpr = np.clip(dotpr, -1.0, 1.0)
+    azimuth = np.arccos(dotpr)  # ∈ [0, π]
+
+    # side test: compare cross(north, dirplane) to tmpr
+    testhir = np.cross(north, dirplane)
+    testhir /= np.linalg.norm(testhir)
+    if np.linalg.norm(testhir - tmpr) < 1e-3:
+        azimuth = TWOPI - azimuth
+
+    return azimuth
 
 def get_sources(ephem_path: Path, Np: int, Ns: int, Rast_AU: float):
     """
@@ -144,7 +176,7 @@ def get_sources(ephem_path: Path, Np: int, Ns: int, Rast_AU: float):
         # uniform points on sphere (unit vectors)
         xyz = _uniform_points_on_unit_sphere(Ns)
         for ii in range(Ns):
-            axis = xyz[Ns - 1 - ii]  # mirror the Fortran Ns+1-ii order
+            axis = xyz[ii]  # mirror the Fortran Ns+1-ii order
             rrM = comet[i].coords + axis * Rast_AU
             r = float(np.linalg.norm(rrM))
             alphaM = 0.0 if r == 0.0 else math.acos(float(rrM[2]) / r)
@@ -163,8 +195,6 @@ def get_sources(ephem_path: Path, Np: int, Ns: int, Rast_AU: float):
             Tj = float(data[i, 0])                 # moment [day]
             dtau = 1e-2 / DAY_S                    # days
             Nparticles = 1e5
-            if comet[i].Vast > 0.0:
-                Nparticles += 1e5 * float(np.dot(comet[i].Vastvec, axis)) / comet[i].Vast
 
             sources[i][ii] = Source(
                 r=r, alphaM=alphaM, betaM=betaM,
@@ -204,7 +234,7 @@ def main() -> int:
     Rast_AU = Rast_m / AU_M
     Qpr = 0.5
     Rg_m = 0.29e-6
-    nt1, nt2 = 200, 200
+    n1, n2 = 200, 200
     resolution_m = (2e3, 2e3)
 
     # μ_R (AU^3/day^2)
@@ -227,7 +257,7 @@ def main() -> int:
 
     # x = R, tweak x[0]*=0.95 to avoid degeneracy (same as Fortran)
     xvec = R.copy()
-    xvec[0] *= 0.95
+    #xvec[0] *= 0.95
     nx = np.linalg.norm(xvec)
     xvec = xvec / nx if (np.isfinite(nx) and nx > 1e-15) else np.array([1.0, 0.0, 0.0])
 
@@ -239,18 +269,22 @@ def main() -> int:
     ystep = yvec * (resolution_m[1] / AU_M)
 
     # Lower-left corner of the grid (same as in orbital_plane_grid)
-    origin = comet[-1].coords - nt1 * xstep * 0.5 - nt2 * ystep * 0.5
+    origin = comet[-1].coords - n1 * xstep * 0.5 - n2 * ystep * 0.5
 
     # ------------------------------------------------------------------
     # Build the full grid of Points once
     # ------------------------------------------------------------------
     points: list[Point] = []
-    for j in range(nt2):
-        for i in range(nt1):
+    jj = 0
+    for j in range(n2):
+        for i in range(n1):
             rvec = origin + (i + 1) * xstep + (j + 1) * ystep
             r, alpha, beta = _cart_to_spherical_vec(rvec)
             pt = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
             points.append(pt)
+            jj += 1
+            if jj == 902:
+                print(jj, j, i)
 
     # ------------------------------------------------------------------
     # Use the new time×sources×points batching (delta-ejection)
@@ -259,10 +293,13 @@ def main() -> int:
     sources_by_time = sources[: Nt - 1]   # shape (Nt-1, Ns)
     comets_by_time = comet[: Nt - 1]      # length Nt-1
 
+    all_sources_by_time = sources_by_time      # full data from earlier
+    all_comets_by_time = comets_by_time
+
     dens_flat = batch_over_points_sources(
         points=points,
-        sources_by_time=sources_by_time,
-        comets_by_time=comets_by_time,
+        sources_by_time=sources_by_time,#[[all_sources_by_time[1][1]]],  # Nt = 1, Ns = 1
+        comets_by_time=comets_by_time,#[all_comets_by_time[1]],         # Nt = 1
         muR=muR,
         tnow=tnow,
         Rast_AU=Rast_AU,
@@ -270,8 +307,8 @@ def main() -> int:
         method="delta_ejection",
     )
 
-    # reshape into (nt1, nt2)
-    density = dens_flat.reshape(nt1, nt2)
+    # reshape into (n1, n2)
+    density = dens_flat.reshape(n2, n1).T
 
     matrix_out(out_path, density)
     print(f"Wrote {out_path}")
