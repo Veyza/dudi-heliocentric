@@ -453,6 +453,8 @@ def batch_over_points_sources(
         return np.empty(len(pts), dtype=np.float64)
 
     if len(comets_by_time) != Nt:
+        print(len(comets_by_time))
+        print(Nt)
         raise ValueError("comets_by_time must have the same length Nt as sources_by_time")
 
     Ns = len(sources_by_time[0])

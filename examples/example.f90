@@ -35,17 +35,17 @@ program example
     USE OMP_LIB
     implicit none
     ! number of points along the asteroid trajectory from which dust is ejected
-    integer, parameter :: Nt = 4
+    integer, parameter :: Nt = 41
     ! number of sources representing the asteroid at each point
-    integer, parameter :: Ns = 5
+    integer, parameter :: Ns = 50
     real(8), parameter :: Rast = 5d3            ! asteroid radius, meters
     real(8), parameter :: Rast_AU = Rast / AU   ! asteroid radius, AU
     ! the values of Qpr = 0.5 and Rg = 0.29 are set purposefully
     ! to obtain \beta = 0.4
     real(8), parameter :: Qpr = 0.5d0           ! radiation pressure efficiency
     real(8), parameter :: Rg = 0.29d-6          ! dust grain radius, meters
-    integer, parameter :: n1 = 40
-    integer, parameter :: n2 = 40
+    integer, parameter :: n1 = 200
+    integer, parameter :: n2 = 200
     ! distance between the grid nodes, meters
     real(8) :: resolution(2) = (/2d3, 2d3/)     
     integer i_t, i_s, i, ii
@@ -76,26 +76,20 @@ program example
     
     ! the sources with the index Nt were active 0 seconds before tnow,
     ! so we do not calculate number density of dust from them
-    do i_t = 2, 2!Nt-1
+    do i_t = 1, Nt-1
         ! the time passed from the ejection by the sources with the index `i_t´
         dt = tnow - sources(i_t,1)%Tj
-        do i_s = 2, 2!1, Ns
+		
+        do i_s = 1, Ns
         !$OMP PARALLEL PRIVATE(i,ii) &
         !$OMP SHARED(points, sources, density, muR, comet)
         !$OMP DO
-            do ii = 23, 23!1, n2
-            do i = 22, 23!1, n1
+            do ii = 1, n2
+            do i = 1, n1
         ! for our example case delta-ejection method has a sufficient accuracy
                 call hc_DUDI_delta_ejection(tmpres(i,ii), points(i,ii), &
                         sources(i_t,i_s), muR, dt, &
                         comet(i_t), Rast_AU)
-                 write(*,*) 'fortran program:'
-                 write(*,*) sources(i_t, i_s)
-                 write(*,*) muR, dt
-                 write(*,*) comet(i_t)
-                 write(*,*) Rast_AU
-                 write(*,*) points(i,ii)
-                 write(*,*) i, ii, tmpres(i,ii)
             enddo
             enddo
             !$OMP END DO

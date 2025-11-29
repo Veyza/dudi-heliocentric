@@ -53,7 +53,7 @@ contains
          ! generating Ns points uniformly distributed over a unit sphere
          call uniform_random_sphere(Ns, xyz)
          do ii = 1, Ns
-            sources(i,ii)%symmetry_axis = xyz(Ns+1-ii,:)
+            sources(i,ii)%symmetry_axis = xyz(ii,:)
             sources(i,ii)%rrM = comet(i)%coords &
                 + sources(i,ii)%symmetry_axis * Rast_AU
             sources(i,ii)%r = norma3d(sources(i,ii)%rrM)
@@ -81,9 +81,8 @@ contains
             sources(i,ii)%ejection_angle_distr = 2
             sources(i,ii)%Tj = moment(i)
             sources(i,ii)%dtau = 1d-2 / s_in_day
-            sources(i,ii)%Nparticles = 1d5 + 1d5 &
-             * dot_product(comet(i)%Vastvec, sources(i,ii)%symmetry_axis) &
-               / comet(i)%Vast
+            sources(i,ii)%Nparticles = 1d5
+            
          enddo
       enddo
 

@@ -89,7 +89,7 @@ contains
 
               do i_s = 1, Ns
             !$OMP PARALLEL PRIVATE(i) &
-			!$OMP SHARED(points, sources, density, muR, comets, dt, i_t, i_s, tmp)
+			!$OMP SHARED(points, sources, density, muR, comets, dt, i_t, i_s, tmp, cloudcentr)
 			!$OMP DO
                  do i = 1, n_points
                     call hc_DUDI_simple_expansion(tmp(i), sources(i_t, i_s), dt, &
@@ -116,17 +116,21 @@ contains
 
            case (METHOD_V_INTEGRATION)
               do i_s = 1, Ns
-              !$omp parallel do default(shared) private(i) schedule(static)
+            !$OMP PARALLEL PRIVATE(i) &
+			!$OMP SHARED(points, sources, density, muR, comets, dt, i_t, tmp, pericenter)
+			!$OMP DO
                  do i = 1, n_points
                     call hc_DUDI_v_integration( tmp(i), points(i), sources(i_t, i_s), &
                                                 muR, tnow, comets(i_t), Rast_AU, pericenter )
                  end do
-              !$omp end parallel do
+              !$OMP END DO
+			  !$OMP END PARALLEL
               density = density + tmp
               end do
 
            case default
-              ! do nothing, density already zeroed
+            ! Unknown method: set all densities to negative
+            density(:) = -10.0
 
            end select
         end do
