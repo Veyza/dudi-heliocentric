@@ -32,8 +32,8 @@ MPS_to_AU_PER_DAY = DAY_S / AU_M      # convert m/s -> AU/day
 GMSUN_AU3_PER_DAY2 = (0.01720209895 ** 2)  # Gaussian gravitational constant squared
 
 ACCURACY_PERCENT = 5.0                # Fortran: real, parameter :: accuracy = 5.0
-NT1 = 200
-NT2 = 200
+n1 = 200
+n2 = 200
 PERICENTER = False                    # Fortran: pericenter = .FALSE.
 
 
@@ -202,67 +202,52 @@ def _orthonormal_basis(normal: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     return u, v
 
 
-def _cart_to_spherical(rvec: np.ndarray) -> tuple[float, float, float]:
-    """Return (r, alpha, beta) for vector rvec (AU).
-    alpha: polar angle (0..pi), beta: eastern longitude (-pi..pi)."""
-    x, y, z = map(float, rvec)
+def _cart_to_spherical_vec(rvec):
+    x, y, z = float(rvec[0]), float(rvec[1]), float(rvec[2])
     r = math.sqrt(x*x + y*y + z*z)
     if r == 0.0:
-        alpha = 0.0; beta = 0.0
-    else:
-        alpha = math.acos(z / r)
-        beta  = math.atan2(y, x)
+        return 0.0, 0.0, 0.0
+    alpha = math.acos(z / r)
+    beta = math.atan2(y, x)
     return r, alpha, beta
 
 
-def orbital_plane_grid(nt1: int, nt2: int, resolution_m: tuple[float, float],
-                       comet, center: np.ndarray):
-    """
-    Fortran-equivalent grid with the '0.95 on x-component' tweak:
-      zvec = cross(V, R); zvec = zvec / |zvec|
-      xvec = R; xvec(1) = xvec(1) * 0.95; tmpvec = xvec; xvec = xvec / |tmpvec|
-      yvec = cross(zvec, xvec)
-    """
-    AU_M = 1.495978707e11
-
+def orbital_plane_grid(
+    n1: int,
+    n2: int,
+    resolution_m: tuple[float, float],
+    comet: Comet,
+    cloud_center: np.ndarray,
+) -> list[Point]:
     R = np.asarray(comet.coords, dtype=float)
     V = np.asarray(comet.Vastvec, dtype=float)
 
-    # z-axis normal to orbital plane: z = V × R, then normalize
     zvec = np.cross(V, R)
     nz = np.linalg.norm(zvec)
-    if not np.isfinite(nz) or nz < 1e-15:
-        zvec = np.array([0.0, 0.0, 1.0], float)
-    else:
-        zvec = zvec / nz
+    zvec = zvec / nz if (np.isfinite(nz) and nz > 1e-15) else np.array([0.0, 0.0, 1.0])
 
-    # x-axis ~ along heliocentric radius but with a small x-tweak to avoid bad geometry
     xvec = R.copy()
-    xvec[0] *= 0.95  # same tweak as your Fortran: xvec(1) = xvec(1) * 0.95
-    tmpvec = xvec.copy()
-    nx = np.linalg.norm(tmpvec)
-    if not np.isfinite(nx) or nx < 1e-15:
-        xvec = np.array([1.0, 0.0, 0.0], float)
-    else:
-        xvec = xvec / nx
+    xvec[0] *= 0.95    # see next section
+    nx = np.linalg.norm(xvec)
+    xvec = xvec / nx if (np.isfinite(nx) and nx > 1e-15) else np.array([1.0, 0.0, 0.0])
 
-    # y-axis completes the right-handed triad
     yvec = np.cross(zvec, xvec)
 
-    # Convert resolution from meters to AU for step vectors
     xstep = xvec * (resolution_m[0] / AU_M)
     ystep = yvec * (resolution_m[1] / AU_M)
 
-    # Lower-left corner (Fortran: center - nt1*xstep/2 - nt2*ystep/2)
-    origin = center - nt1 * xstep * 0.5 - nt2 * ystep * 0.5
+    origin = cloud_center - n1 * xstep * 0.5 - n2 * ystep * 0.5
 
-    pts = np.empty((nt1, nt2), dtype=object)
-    for j in range(nt2):          # ii = 1..nt2
-        for i in range(nt1):      #  i = 1..nt1
+    points: list[Point] = []
+    for j in range(n2):
+        for i in range(n1):
             rvec = origin + (i + 1) * xstep + (j + 1) * ystep
-            r, alpha, beta = _cart_to_spherical(rvec)
-            pts[i, j] = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
-    return pts
+            r, alpha, beta = _cart_to_spherical_vec(rvec)
+            points.append(Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float)))
+
+    return points
+
+
 
 def main() -> int:
     # Resolve repository root from this file location
@@ -313,42 +298,11 @@ def main() -> int:
     # --- build orbital-plane grid around the cloud center and compute densities ---
     # Resolution in *meters* (matches Fortran): umax [AU/day] * tnow [day] -> [AU], then * AU_M -> [m]
     resolution_m = (
-        float(source.ud.umax * tnow * AU_M) / NT1,
-        float(source.ud.umax * tnow * AU_M) / NT2,
+        float(source.ud.umax * tnow * AU_M) / n1,
+        float(source.ud.umax * tnow * AU_M) / n2,
     )
 
-    # Recreate the same orbital-plane frame as in Fortran:
-    #   z = V x R; normalize
-    zvec = np.cross(comet.Vastvec, comet.coords)
-    nz = np.linalg.norm(zvec)
-    zvec = zvec / nz if (np.isfinite(nz) and nz > 1e-15) else np.array([0.0, 0.0, 1.0])
-
-    #   x = R; x[0]*=0.95; normalize (same degeneracy-avoidance as Fortran)
-    xvec = comet.coords.copy()
-    xvec[0] *= 0.95
-    nx = np.linalg.norm(xvec)
-    xvec = xvec / nx if (np.isfinite(nx) and nx > 1e-15) else np.array([1.0, 0.0, 0.0])
-
-    #   y = z × x
-    yvec = np.cross(zvec, xvec)
-
-    # Step vectors from your existing resolution (meters) -> AU
-    xstep = xvec * (resolution_m[0] / AU_M)
-    ystep = yvec * (resolution_m[1] / AU_M)
-
-    # Lower-left corner
-    origin = cloud_center - NT1 * xstep * 0.5 - NT2 * ystep * 0.5
-
-    # ------------------------------------------------------------------
-    # Build all Points in the grid, then call batch_over_points
-    # ------------------------------------------------------------------
-    points: list[Point] = []
-    for j in range(NT2):
-        for i in range(NT1):
-            rvec = origin + (i + 1) * xstep + (j + 1) * ystep
-            r, alpha, beta = _cart_to_spherical(rvec)
-            pt = Point(r=r, alpha=alpha, beta=beta, rvector=rvec.astype(float))
-            points.append(pt)
+    points = orbital_plane_grid(n1, n2, resolution_m, comet, cloud_center)
 
     # Single dt argument: for this test we use dt=tnow for delta-ejection
     # and simple expansion; passing it also to v_integration is harmless.
@@ -396,14 +350,14 @@ def main() -> int:
         method="simple_expansion",
     )
 
-    # Reshape back into (NT1, NT2) arrays.
-    dens_s = np.zeros((NT1, NT2), dtype=float)
+    # Reshape back into (N1, N2) arrays.
+    dens_s = np.zeros((n1, n2), dtype=float)
     dens_d = np.zeros_like(dens_s)
     dens_v = np.zeros_like(dens_s)
 
     idx = 0
-    for j in range(NT2):
-        for i in range(NT1):
+    for j in range(n2):
+        for i in range(n1):
             dens_d[i, j] = dens_d_flat[idx]
             dens_v[i, j] = dens_v_flat[idx]
             dens_s[i, j] = dens_s_flat[idx]
@@ -411,10 +365,10 @@ def main() -> int:
 
     # Exclude the center (consistent with Fortran)
     dx_AU = resolution_m[0] / AU_M
-    cx, cy = NT1 // 2, NT2 // 2
+    cx, cy = n1 // 2, n2 // 2
     k = int(source.ud.umin * tnow / dx_AU) + 1
-    x0 = max(0, cx - k); x1 = min(NT1, cx + k + 1)
-    y0 = max(0, cy - k); y1 = min(NT2, cy + k + 1)
+    x0 = max(0, cx - k); x1 = min(n1, cx + k + 1)
+    y0 = max(0, cy - k); y1 = min(n2, cy + k + 1)
     dens_d[x0:x1, y0:y1] = 1.0
     dens_v[x0:x1, y0:y1] = 1.0
     dens_s[x0:x1, y0:y1] = 1.0
