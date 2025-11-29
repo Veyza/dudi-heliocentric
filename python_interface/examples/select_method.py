@@ -22,7 +22,7 @@ from pathlib import Path
 import numpy as np
 
 # Import the thin Python API and datamodels
-from python_interface.dudi_hc.api import v_integration, delta_ejection, simple_expansion, batch_over_points
+from python_interface.dudi_hc.api import v_integration, delta_ejection, simple_expansion, batch_over_points, batch_over_points_sources
 from python_interface.dudi_hc.models import Point, Source, Comet, EjectionSpeedProperties
 
 # ---- physical constants (SI unless noted) ----
@@ -249,6 +249,180 @@ def orbital_plane_grid(
 
 
 
+# def main() -> int:
+#     # Resolve repository root from this file location
+#     here = Path(__file__).resolve()
+#     repo_root = here.parents[2]  # .../ (root)
+#     input_path = repo_root / "input_data_files" / "orbit_and_time_test.dat"
+#     results_dir = repo_root / "results"
+#     results_dir.mkdir(parents=True, exist_ok=True)
+
+#     # Read test parameters
+#     coords, vastvec, tnow, dtau_s = _read_test_input(input_path)
+#     vast = float(np.linalg.norm(vastvec))
+
+#     # Source and comet (mirrors Fortran block)
+#     r = float(np.linalg.norm(coords))
+#     alphaM = math.acos(float(coords[2]) / r)
+#     betaM = math.atan2(float(coords[1]), float(coords[0]))
+#     axis = coords / r
+
+#     ud = EjectionSpeedProperties(
+#         ud_shape=0,                         # uniform speed PDF
+#         umin=0.5 * MPS_to_AU_PER_DAY,       # 0.5 m/s
+#         umax=50.0 * MPS_to_AU_PER_DAY,      # 50 m/s
+#     )
+#     source = Source(
+#         r=r, alphaM=alphaM, betaM=betaM,
+#         rrM=coords,
+#         zeta=0.0, eta=0.0,
+#         symmetry_axis=axis,
+#         ejection_angle_distr=1,
+#         ud=ud,
+#         Nparticles=1.0e10,
+#         Tj=0.0,
+#         dtau=2.0 * (dtau_s / DAY_S),        # Fortran: 2*dtau / s_in_day
+#     )
+#     comet = Comet(coords=coords, Vastvec=vastvec, Vast=vast)
+#     print(comet)
+
+#     muR = GMSUN_AU3_PER_DAY2
+#     Rast_AU = 0.0
+
+#     # Plane through the middle of the cloud.
+#     # Fortran uses runge_kutta_point_position; here we approximate:
+#     cloud_center, _ = propagate_two_body(
+#         coords, vastvec, mu=muR, time=tnow, prefer_scipy=False
+#     )
+
+#     # --- build orbital-plane grid around the cloud center and compute densities ---
+#     # Resolution in *meters* (matches Fortran): umax [AU/day] * tnow [day] -> [AU], then * AU_M -> [m]
+#     resolution_m = (
+#         float(source.ud.umax * tnow * AU_M) / n1,
+#         float(source.ud.umax * tnow * AU_M) / n2,
+#     )
+
+#     points = orbital_plane_grid(n1, n2, resolution_m, comet, cloud_center)
+
+#     # Single dt argument: for this test we use dt=tnow for delta-ejection
+#     # and simple expansion; passing it also to v_integration is harmless.
+#     dt = tnow
+
+#     # v-integration
+#     dens_v_flat = batch_over_points(
+#         points=points,
+#         source=source,
+#         comet=comet,
+#         muR=muR,
+#         tnow=tnow,
+#         dt=dt,
+#         Rast_AU=Rast_AU,
+#         pericenter=PERICENTER,
+#         cloudcentr=cloud_center,
+#         method="v_integration",
+#     )
+
+#     # delta-ejection
+#     dens_d_flat = batch_over_points(
+#         points=points,
+#         source=source,
+#         comet=comet,
+#         muR=muR,
+#         tnow=tnow,
+#         dt=dt,
+#         Rast_AU=Rast_AU,
+#         pericenter=PERICENTER,
+#         cloudcentr=cloud_center,
+#         method="delta_ejection",
+#     )
+
+#     # simple expansion
+#     dens_s_flat = batch_over_points(
+#         points=points,
+#         source=source,
+#         comet=comet,
+#         muR=muR,
+#         tnow=tnow,
+#         dt=dt,
+#         Rast_AU=Rast_AU,
+#         pericenter=PERICENTER,
+#         cloudcentr=cloud_center,
+#         method="simple_expansion",
+#     )
+
+#     # Reshape back into (N1, N2) arrays.
+#     dens_s = np.zeros((n1, n2), dtype=float)
+#     dens_d = np.zeros_like(dens_s)
+#     dens_v = np.zeros_like(dens_s)
+
+#     idx = 0
+#     for j in range(n2):
+#         for i in range(n1):
+#             dens_d[i, j] = dens_d_flat[idx]
+#             dens_v[i, j] = dens_v_flat[idx]
+#             dens_s[i, j] = dens_s_flat[idx]
+#             idx += 1
+
+#     # Exclude the center (consistent with Fortran)
+#     dx_AU = resolution_m[0] / AU_M
+#     cx, cy = n1 // 2, n2 // 2
+#     k = int(source.ud.umin * tnow / dx_AU) + 1
+#     x0 = max(0, cx - k); x1 = min(n1, cx + k + 1)
+#     y0 = max(0, cy - k); y1 = min(n2, cy + k + 1)
+#     dens_d[x0:x1, y0:y1] = 1.0
+#     dens_v[x0:x1, y0:y1] = 1.0
+#     dens_s[x0:x1, y0:y1] = 1.0
+
+#     # Save matrices
+#     def _save_matrix(path: Path, A: np.ndarray) -> None:
+#         np.savetxt(path, A, fmt="%.9e")
+
+#     _save_matrix(results_dir / "py_test_simple_exp_meth.dat", dens_s)
+#     _save_matrix(results_dir / "py_test_delta-eject_meth.dat", dens_d)
+#     _save_matrix(results_dir / "py_test_v-integr_meth.dat", dens_v)
+
+#     # Discrepancies & stats
+#     with np.errstate(divide="ignore", invalid="ignore"):
+#         test_d = dens_d / dens_v - 1.0   # delta-ejection vs v-integration
+#         test_s = dens_s / dens_d - 1.0   # simple expansion vs delta-ejection
+#         test_d[~np.isfinite(test_d)] = 0.0
+#         test_s[~np.isfinite(test_s)] = 0.0
+
+#     _save_matrix(results_dir / "py_test_delta-eject_vs_v-integr.dat", test_d)
+#     _save_matrix(results_dir / "py_test_simp_exp_vs_delta-eject.dat", test_s)
+
+#     # Print detailed statistics (percent)
+#     min_d = float(np.min(test_d)) * 100.0
+#     max_d = float(np.max(test_d)) * 100.0
+#     min_s = float(np.min(test_s)) * 100.0
+#     max_s = float(np.max(test_s)) * 100.0
+
+#     print(" difference between the delta-ejection solution and v-integration solution")
+#     print(f"min {min_d:8.1f}%")
+#     print(f"max {max_d:8.1f}%")
+#     print(" difference between the simple expansion solution and delta-ejection solution")
+#     print(f"min {min_s:8.1f}%")
+#     print(f"max {max_s:8.1f}%")
+
+#     # Recommendations (keep 5% threshold; wording mirrors Fortran)
+#     mean_abs_d = float(np.mean(np.abs(test_d)))
+#     mean_abs_s = float(np.mean(np.abs(test_s)))
+#     extreme_d = max(abs(min_d), abs(max_d))  # already in percent
+#     extreme_s = max(abs(min_s), abs(max_s))  # already in percent
+
+#     if (mean_abs_d < ACCURACY_PERCENT * 1e-2) and (extreme_d < ACCURACY_PERCENT):
+#         print(" delta-ejection method is applicable")
+#     else:
+#         print(" v-integration method is recommended")
+
+#     if (mean_abs_s < ACCURACY_PERCENT * 1e-2) and (extreme_s < ACCURACY_PERCENT):
+#         print(" simple expansion method is applicable too")
+#     else:
+#         print(" simple expansion method is NOT recommended")
+
+#     return 0
+
+
 def main() -> int:
     # Resolve repository root from this file location
     here = Path(__file__).resolve()
@@ -261,7 +435,9 @@ def main() -> int:
     coords, vastvec, tnow, dtau_s = _read_test_input(input_path)
     vast = float(np.linalg.norm(vastvec))
 
-    # Source and comet (mirrors Fortran block)
+    # ------------------------
+    # Build source and comet
+    # ------------------------
     r = float(np.linalg.norm(coords))
     alphaM = math.acos(float(coords[2]) / r)
     betaM = math.atan2(float(coords[1]), float(coords[0]))
@@ -289,68 +465,84 @@ def main() -> int:
     muR = GMSUN_AU3_PER_DAY2
     Rast_AU = 0.0
 
+    # --------------------------------------------------
+    # Cloud center and grid resolution (as before)
+    # --------------------------------------------------
     # Plane through the middle of the cloud.
-    # Fortran uses runge_kutta_point_position; here we approximate:
     cloud_center, _ = propagate_two_body(
         coords, vastvec, mu=muR, time=tnow, prefer_scipy=False
     )
 
-    # --- build orbital-plane grid around the cloud center and compute densities ---
-    # Resolution in *meters* (matches Fortran): umax [AU/day] * tnow [day] -> [AU], then * AU_M -> [m]
+    # Resolution in *meters* (matches Fortran):
+    # umax [AU/day] * tnow [day] -> [AU], then * AU_M -> [m]
     resolution_m = (
         float(source.ud.umax * tnow * AU_M) / n1,
         float(source.ud.umax * tnow * AU_M) / n2,
     )
 
-    points = orbital_plane_grid(n1, n2, resolution_m, comet, cloud_center)
+    # --------------------------------------------------
+    # Build the grid using orbital_plane_grid helper
+    # --------------------------------------------------
+    points = orbital_plane_grid(
+        n1=n1,
+        n2=n2,
+        resolution_m=resolution_m,
+        comet=comet,
+        cloud_center=cloud_center,
+    )
 
-    # Single dt argument: for this test we use dt=tnow for delta-ejection
-    # and simple expansion; passing it also to v_integration is harmless.
-    dt = tnow
+    # --------------------------------------------------
+    # Wrap source & comet for batching API (Nt = 1, Ns = 1)
+    # --------------------------------------------------
+    sources_by_time: list[list[Source]] = [[source]]  # shape (Nt=1, Ns=1)
+    comets_by_time: list[Comet] = [comet]             # length Nt=1
+
+    # Single dt argument in original test is tnow; batch_over_points_sources
+    # typically infers dt from (tnow - source.Tj), so Tj=0, tnow as before.
+
+    # -----------------------
+    # Call batching over points & sources
+    # -----------------------
 
     # v-integration
-    dens_v_flat = batch_over_points(
+    dens_v_flat = batch_over_points_sources(
         points=points,
-        source=source,
-        comet=comet,
+        sources_by_time=sources_by_time,
+        comets_by_time=comets_by_time,
         muR=muR,
         tnow=tnow,
-        dt=dt,
         Rast_AU=Rast_AU,
         pericenter=PERICENTER,
-        cloudcentr=cloud_center,
         method="v_integration",
     )
 
     # delta-ejection
-    dens_d_flat = batch_over_points(
+    dens_d_flat = batch_over_points_sources(
         points=points,
-        source=source,
-        comet=comet,
+        sources_by_time=sources_by_time,
+        comets_by_time=comets_by_time,
         muR=muR,
         tnow=tnow,
-        dt=dt,
         Rast_AU=Rast_AU,
         pericenter=PERICENTER,
-        cloudcentr=cloud_center,
         method="delta_ejection",
     )
 
     # simple expansion
-    dens_s_flat = batch_over_points(
+    dens_s_flat = batch_over_points_sources(
         points=points,
-        source=source,
-        comet=comet,
+        sources_by_time=sources_by_time,
+        comets_by_time=comets_by_time,
         muR=muR,
         tnow=tnow,
-        dt=dt,
         Rast_AU=Rast_AU,
         pericenter=PERICENTER,
-        cloudcentr=cloud_center,
         method="simple_expansion",
     )
 
-    # Reshape back into (N1, N2) arrays.
+    # --------------------------------------------------
+    # Reshape and post-process exactly as before
+    # --------------------------------------------------
     dens_s = np.zeros((n1, n2), dtype=float)
     dens_d = np.zeros_like(dens_s)
     dens_v = np.zeros_like(dens_s)
@@ -381,7 +573,7 @@ def main() -> int:
     _save_matrix(results_dir / "py_test_delta-eject_meth.dat", dens_d)
     _save_matrix(results_dir / "py_test_v-integr_meth.dat", dens_v)
 
-    # Discrepancies & stats
+    # Discrepancies & stats (unchanged)
     with np.errstate(divide="ignore", invalid="ignore"):
         test_d = dens_d / dens_v - 1.0   # delta-ejection vs v-integration
         test_s = dens_s / dens_d - 1.0   # simple expansion vs delta-ejection
