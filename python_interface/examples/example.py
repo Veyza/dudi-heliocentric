@@ -207,12 +207,66 @@ def _cart_to_spherical_vec(rvec):
     return r, alpha, beta
 
 
+# def main() -> int:
+#     # repo root = ../../ from this file
+#     here = Path(__file__).resolve()
+#     repo_root = here.parents[2]
+#     ephem_path = repo_root / "input_data_files" / "ephemeridae.dat"
+#     out_path = repo_root / "results" / "result.dat"
+
+#     # parameters from the Fortran example
+#     Nt = 41          # number of time steps (was Np)
+#     Ns = 50          # number of sources per time
+#     Rast_m = 5e3
+#     Rast_AU = Rast_m / AU_M
+#     Qpr = 0.5
+#     Rg_m = 0.29e-6
+#     n1, n2 = 200, 200
+#     resolution_m = (2e3, 2e3)
+
+#     # μ_R (AU^3/day^2)
+#     muR = reduced_gravitational_parameter(Rg_m, Qpr)
+
+#     # ephemeris & sources
+#     sources, comet = get_sources(ephem_path, Nt, Ns, Rast_AU)
+
+#     # time now = moment at last ephemeris row
+#     tnow = sources[-1][0].Tj
+
+
+#     # ------------------------------------------------------------------
+#     # Use the new time×sources×points batching (delta-ejection)
+#     # We mimic the old behaviour: i_t = 0..Nt-2 (exclude last row where dt=0)
+#     # ------------------------------------------------------------------
+#     sources_by_time = sources[: Nt - 1]   # shape (Nt-1, Ns)
+#     comets_by_time = comet[: Nt - 1]      # length Nt-1
+#     points = orbital_plane_grid(n1, n2, resolution_m, comet[-1])
+
+#     dens_flat = batch_over_points_sources(
+#         points=points,
+#         sources_by_time=sources_by_time,
+#         comets_by_time=comets_by_time,
+#         muR=muR,
+#         tnow=tnow,
+#         Rast_AU=Rast_AU,
+#         pericenter=False,          # not used by delta_ejection
+#         method="delta_ejection",
+#     )
+
+#     # reshape into (n1, n2)
+#     density = dens_flat.reshape(n2, n1).T
+
+#     matrix_out(out_path, density)
+#     print(f"Wrote {out_path}")
+#     return 0
+
+
 def main() -> int:
     # repo root = ../../ from this file
     here = Path(__file__).resolve()
     repo_root = here.parents[2]
     ephem_path = repo_root / "input_data_files" / "ephemeridae.dat"
-    out_path = repo_root / "results" / "result.dat"
+    out_path = repo_root / "results" / "result_points_only.dat"
 
     # parameters from the Fortran example
     Nt = 41          # number of time steps (was Np)
@@ -233,25 +287,40 @@ def main() -> int:
     # time now = moment at last ephemeris row
     tnow = sources[-1][0].Tj
 
-
     # ------------------------------------------------------------------
-    # Use the new time×sources×points batching (delta-ejection)
-    # We mimic the old behaviour: i_t = 0..Nt-2 (exclude last row where dt=0)
+    # Build grid of points once (same orbital-plane definition as before)
     # ------------------------------------------------------------------
-    sources_by_time = sources[: Nt - 1]   # shape (Nt-1, Ns)
-    comets_by_time = comet[: Nt - 1]      # length Nt-1
     points = orbital_plane_grid(n1, n2, resolution_m, comet[-1])
+    n_points = len(points)
 
-    dens_flat = batch_over_points_sources(
-        points=points,
-        sources_by_time=sources_by_time,
-        comets_by_time=comets_by_time,
-        muR=muR,
-        tnow=tnow,
-        Rast_AU=Rast_AU,
-        pericenter=False,          # not used by delta_ejection
-        method="delta_ejection",
-    )
+    # ------------------------------------------------------------------
+    # Batch over points only:
+    #   - Python loops over i_t = 0..Nt-2 and i_s = 0..Ns-1
+    #   - Fortran (batch_over_points) loops over points
+    # ------------------------------------------------------------------
+    dens_flat = np.zeros(n_points, dtype=float)
+
+    for i_t in range(Nt - 1):          # mimic Fortran ip = 1..Np-1
+        comet_it = comet[i_t]
+        # Fortran example uses dt = tnow - sources(ip,1)%Tj
+        dt = tnow - sources[i_t][0].Tj
+
+        for i_s in range(Ns):
+            src = sources[i_t][i_s]
+
+            contrib = batch_over_points(
+                points=points,
+                source=src,
+                comet=comet_it,
+                muR=muR,
+                tnow=tnow,
+                dt=dt,
+                Rast_AU=Rast_AU,
+                pericenter=False,
+                cloudcentr=comet[-1].coords,   # unused for delta_ejection
+                method="delta_ejection",
+            )
+            dens_flat += contrib
 
     # reshape into (n1, n2)
     density = dens_flat.reshape(n2, n1).T
