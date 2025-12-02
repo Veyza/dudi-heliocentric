@@ -139,7 +139,7 @@ def call_v_integration(
         int(src_eject_distr), int(src_ud_shape), float(src_umin), float(src_umax),
         float(src_Nparticles), float(src_Tj), float(src_dtau),
         _as_vec3(comet_coords), _as_vec3(comet_vastvec), float(comet_vast),
-        float(muR), float(tnow), float(Rast_AU), _C.c_int(pericenter),
+        float(muR), float(tnow), float(Rast_AU), C.c_int(pericenter),
         C.byref(out),
     )
     return float(out.value)
@@ -434,7 +434,7 @@ def call_batch_sources(
         umin_arr, umax_arr,
         Np_arr, Tj_arr, dtau_arr,
         _as_vec3(comet_coords), _as_vec3(comet_vastvec), float(comet_vast),
-        float(muR), float(tnow), float(dt), float(Rast_AU), _C.c_int(pericenter),
+        float(muR), float(tnow), float(dt), float(Rast_AU), C.c_int(pericenter),
         _as_vec3(cloudcentr), int(method_id),
     )
     return density
@@ -580,7 +580,7 @@ def call_batch_sources_points(
         src_Np_flat, src_Tj_flat, src_dtau_flat,
         comet_coords_flat, comet_vvec_flat, comet_vast_arr,
         float(muR), float(tnow), float(Rast_AU),
-        _C.c_int(pericenter),
+        C.c_int(pericenter),
         int(method_id),
     )
     return density
