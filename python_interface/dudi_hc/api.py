@@ -549,6 +549,8 @@ def batch_over_points_sources(
 
 
 
+
+
 def read_ratemap(filename: str) -> float:
     """
     Read a ratemap file into Fortran module variables.
