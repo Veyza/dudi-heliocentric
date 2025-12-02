@@ -1,13 +1,18 @@
 ! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.2
+! Version 1.1.0
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
-! If you do, please cite the following paper
-! Anastasiia Ershova and Jürgen Schmidt, 
+! If you do, please cite the following papers
+!
+! Anastasiia Ershova and Juergen Schmidt, 
 ! Two-body model for the spatial distribution of dust ejected from
 ! an atmosphereless body, 2021, A&A, 650, A186 
+! and Ershova, A., Schmidt, J., Liu, X., Szalay, J., Kimura, H., Hirai,
+! T., Arai, T., and Kobayashi, M.,
+! A computationally efficient semi-analytical model for the dust
+! environment of comets and asteroids, A&A 693, A80 (2025).
 
 ! File: select_method.f90
 ! Description: A routine that calculates dust number density using three
@@ -32,7 +37,7 @@ program select_method
     real(8), parameter :: Rast_AU = Rast / AU
     real, parameter :: accuracy = 5.0 ! %
     logical, parameter :: pericenter = .FALSE.
-    integer nt1, nt2
+    integer n1, n2
     real(8) tnow, resolution(2), dtau
     integer i, ii, k
     real, allocatable, dimension(:,:) :: density_s, density_d, density_v
@@ -43,9 +48,9 @@ program select_method
     type(ephemeris) comet
     character(len = 61) :: fname = './input_data_files/orbit_and_time_test.dat'
     
-    nt1 = 200 ; nt2 = 200
-    allocate(points(nt1,nt2), density_s(nt1, nt2), &
-    density_d(nt1,nt2), density_v(nt1,nt2), test_s(nt1,nt2), test_d(nt1,nt2))
+    n1 = 200 ; n2 = 200
+    allocate(points(n1,n2), density_s(n1, n2), &
+    density_d(n1,n2), density_v(n1,n2), test_s(n1,n2), test_d(n1,n2))
     
     ! inputing the parameters of the test case
     open(200, file = fname, status = 'old')
@@ -82,19 +87,19 @@ program select_method
     ! the points where we conpute the number density are chosen so that
     ! they form a plain section through the middle of the dust cloud
     ! points with zero-density must present only in a small region in the middle
-    resolution(1) = source%ud%umax * tnow * AU / dble(nt1)
+    resolution(1) = source%ud%umax * tnow * AU / dble(n1)
     resolution(2) = resolution(1)
     ! find the coordinates of the cloud center
     call runge_kutta_point_position(comet%coords, comet%Vastvec, muR, tnow, rtmp)
     
-    call orbital_plane_grid(points, nt1, nt2, resolution, comet, rtmp)
+    call orbital_plane_grid(points, n1, n2, resolution, comet, rtmp)
     ! compute the number density distribution in the defined plane
     ! using two different solutions
     !$OMP PARALLEL PRIVATE(i,ii) &
     !$OMP SHARED(points, source, density_s, density_d, density_v, muR, comet)
     !$OMP DO
-    do i = 1, nt1
-    do ii = 1, nt2
+    do i = 1, n1
+    do ii = 1, n2
         call hc_DUDI_delta_ejection(density_d(i,ii), points(i,ii), &
                         source, muR, tnow, comet, Rast_AU)
                         
@@ -113,28 +118,28 @@ program select_method
     ! where the methods may provide different results due to
     ! their different resolution
     k = int(source%ud%umin * tnow / (resolution(1) / AU)) + 1
-    forall(i = (nt1/2-k):(nt1/2+k))
-        forall(ii = (nt2/2-k):(nt2/2+k))
+    forall(i = (n1/2-k):(n1/2+k))
+        forall(ii = (n2/2-k):(n2/2+k))
             density_d(i,ii) = 1.0
             density_v(i,ii) = 1.0
             density_s(i,ii) = 1.0
         endforall
     endforall
     
-    call matrix_out('./results/test_simple_exp_meth.dat', density_s, nt1, nt2)
-    call matrix_out('./results/test_delta-eject_meth.dat', density_d, nt1, nt2)
-  call matrix_out('./results/test_v-integr_meth.dat', density_v, nt1, nt2)
+    call matrix_out('./results/test_simple_exp_meth.dat', density_s, n1, n2)
+    call matrix_out('./results/test_delta-eject_meth.dat', density_d, n1, n2)
+  call matrix_out('./results/test_v-integr_meth.dat', density_v, n1, n2)
 
     ! compute the matrix of delta-ejection solution deviations
     ! from the v-integration solution
-    forall(i = 1:nt1)
-        forall(ii = 1:nt2) test_d(i,ii) = density_d(i,ii) / density_v(i,ii)
-       forall(ii = 1:nt2) test_s(i,ii) = density_s(i,ii) / density_d(i,ii)
+    forall(i = 1:n1)
+        forall(ii = 1:n2) test_d(i,ii) = density_d(i,ii) / density_v(i,ii)
+       forall(ii = 1:n2) test_s(i,ii) = density_s(i,ii) / density_d(i,ii)
     endforall
     test_s = test_s - 1.0
     test_d = test_d - 1.0
-    call matrix_out('./results/test_simp_exp_vs_delta-eject.dat', test_s, nt1, nt2)
-    call matrix_out('./results/test_delta-eject_vs_v-integr.dat', test_d, nt1, nt2)
+    call matrix_out('./results/test_simp_exp_vs_delta-eject.dat', test_s, n1, n2)
+    call matrix_out('./results/test_delta-eject_vs_v-integr.dat', test_d, n1, n2)
     
     ! estimate the minimum and maximum deviations
     write(*,*) 'difference between the delta-ejection solution and v-integration solution'
@@ -146,7 +151,7 @@ program select_method
     write(*,'(A3, x, f7.1, A1)') 'max', maxval(test_s) * 100, '%'
 
     ! recommend the delta ejection method if the deviations are small
-    if(sum(abs(test_d)) / dble(nt1 * nt2) < accuracy * 1e-2 &
+    if(sum(abs(test_d)) / dble(n1 * n2) < accuracy * 1e-2 &
     .and. max(abs(minval(test_d) * 100), abs(maxval(test_d) * 100)) < accuracy) then
         write(*,*) 'delta-ejection method is applicable'
     ! otherwise, the v-integration solution is to be preferred
@@ -154,7 +159,7 @@ program select_method
         write(*,*) 'v-integration method is recommended'
     endif
   ! recommend the simple expansion method if the deviations are small
-    if(sum(abs(test_s)) / dble(nt1 * nt2) < accuracy * 1e-2 &
+    if(sum(abs(test_s)) / dble(n1 * n2) < accuracy * 1e-2 &
     .and. max(abs(minval(test_s) * 100), abs(maxval(test_s) * 100)) < accuracy) then
         write(*,*) 'simple expansion method is applicable too'
     ! otherwise, the v-integration solution is to be preferred
