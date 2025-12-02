@@ -36,24 +36,24 @@ from ._bridge_ctypes import (
     METHOD_V_INTEGRATION,
 )
 from ._bridge_ctypes import (
-    call_read_ratemap,
-    call_read_first_ratemap,
-    call_ratematr_interpolate,
-    call_get_ratemap_dims,
-    call_get_lon_limits,
-    call_set_lon_limits,
-    call_get_lats,
-    call_set_lats,
-    call_get_lons,
-    call_set_lons,
-    call_get_ratemap_flat,
-    call_set_ratemap_from_flat,
-    call_get_rmap1_flat,
-    call_set_rmap1_from_flat,
-    call_get_rmap2_flat,
-    call_set_rmap2_from_flat,
-    call_get_rMtmp,
-    call_set_rMtmp,
+    call_read_ratemap            as _call_read_ratemap,
+    call_read_first_ratemap      as _call_read_first_ratemap,
+    call_ratematr_interpolate    as _call_ratematr_interpolate,
+    call_get_ratemap_dims        as _call_get_ratemap_dims,
+    call_get_lon_limits          as _call_get_lon_limits,
+    call_set_lon_limits          as _call_set_lon_limits,
+    call_get_lats                as _call_get_lats,
+    call_set_lats                as _call_set_lats,
+    call_get_lons                as _call_get_lons,
+    call_set_lons                as _call_set_lons,
+    call_get_ratemap_flat        as _call_get_ratemap_flat,
+    call_set_ratemap_from_flat   as _call_set_ratemap_from_flat,
+    call_get_rmap1_flat          as _call_get_rmap1_flat,
+    call_set_rmap1_from_flat     as _call_set_rmap1_from_flat,
+    call_get_rmap2_flat          as _call_get_rmap2_flat,
+    call_set_rmap2_from_flat     as _call_set_rmap2_from_flat,
+    call_get_rMtmp               as _call_get_rMtmp,
+    call_set_rMtmp               as _call_set_rMtmp,
 )
 
 
@@ -563,7 +563,7 @@ def read_ratemap(filename: str) -> float:
     rhel : float
         The heliocentric distance (or whatever rhel means in your Fortran).
     """
-    return _bridge.call_read_ratemap(filename)
+    return _call_read_ratemap(filename)
 
 
 def read_first_ratemap(filename: str) -> float:
@@ -572,7 +572,7 @@ def read_first_ratemap(filename: str) -> float:
 
     Returns rhel as reported by the Fortran routine.
     """
-    return _bridge.call_read_first_ratemap(filename)
+    return _call_read_first_ratemap(filename)
 
 
 def ratematr_interpolate(rhel: float, rhel1: float, rhel2: float) -> None:
@@ -581,28 +581,28 @@ def ratematr_interpolate(rhel: float, rhel1: float, rhel2: float) -> None:
 
     This operates entirely on the Fortran-side ratemap arrays.
     """
-    _bridge.call_ratematr_interpolate(rhel, rhel1, rhel2)
+    _call_ratematr_interpolate(rhel, rhel1, rhel2)
 
 
 def get_ratemap_dims() -> tuple[int, int]:
     """
     Get (nlats, nlons) from the Fortran module.
     """
-    return _bridge.call_get_ratemap_dims()
+    return _call_get_ratemap_dims()
 
 
 def get_lon_limits() -> tuple[float, float]:
     """
     Get (lonmin, lonmax) from the Fortran module.
     """
-    return _bridge.call_get_lon_limits()
+    return _call_get_lon_limits()
 
 
 def set_lon_limits(lonmin: float, lonmax: float) -> None:
     """
     Set (lonmin, lonmax) in the Fortran module.
     """
-    _bridge.call_set_lon_limits(lonmin, lonmax)
+    _call_set_lon_limits(lonmin, lonmax)
 
 
 def get_lats() -> np.ndarray:
@@ -610,7 +610,7 @@ def get_lats() -> np.ndarray:
     Return the latitude grid as a 1D NumPy array (shape (nlats,)).
     """
     nlats, _ = get_ratemap_dims()
-    return _bridge.call_get_lats(nlats)
+    return _call_get_lats(nlats)
 
 
 def get_lons() -> np.ndarray:
@@ -618,7 +618,7 @@ def get_lons() -> np.ndarray:
     Return the longitude grid as a 1D NumPy array (shape (nlons,)).
     """
     _, nlons = get_ratemap_dims()
-    return _bridge.call_get_lons(nlons)
+    return _call_get_lons(nlons)
 
 
 def set_lats(lats: np.ndarray) -> None:
@@ -629,7 +629,7 @@ def set_lats(lats: np.ndarray) -> None:
     nlats, _ = get_ratemap_dims()
     if lats.shape != (nlats,):
         raise ValueError(f"lats must have shape ({nlats},), got {lats.shape}")
-    _bridge.call_set_lats(lats)
+    _call_set_lats(lats)
 
 
 def set_lons(lons: np.ndarray) -> None:
@@ -640,7 +640,7 @@ def set_lons(lons: np.ndarray) -> None:
     _, nlons = get_ratemap_dims()
     if lons.shape != (nlons,):
         raise ValueError(f"lons must have shape ({nlons},), got {lons.shape}")
-    _bridge.call_set_lons(lons)
+    _call_set_lons(lons)
 
 
 def _reshape_map(map_flat: np.ndarray, nlats: int, nlons: int) -> np.ndarray:
@@ -661,7 +661,7 @@ def get_ratemap() -> np.ndarray:
     Return ratemap as a 2D NumPy array with shape (nlats, nlons).
     """
     nlats, nlons = get_ratemap_dims()
-    flat = _bridge.call_get_ratemap_flat(nlats, nlons)
+    flat = _call_get_ratemap_flat(nlats, nlons)
     return _reshape_map(flat, nlats, nlons)
 
 
@@ -670,7 +670,7 @@ def get_rmap1() -> np.ndarray:
     Return rmap1 as a 2D NumPy array with shape (nlats, nlons).
     """
     nlats, nlons = get_ratemap_dims()
-    flat = _bridge.call_get_rmap1_flat(nlats, nlons)
+    flat = _call_get_rmap1_flat(nlats, nlons)
     return _reshape_map(flat, nlats, nlons)
 
 
@@ -679,7 +679,7 @@ def get_rmap2() -> np.ndarray:
     Return rmap2 as a 2D NumPy array with shape (nlats, nlons).
     """
     nlats, nlons = get_ratemap_dims()
-    flat = _bridge.call_get_rmap2_flat(nlats, nlons)
+    flat = _call_get_rmap2_flat(nlats, nlons)
     return _reshape_map(flat, nlats, nlons)
 
 
@@ -694,7 +694,7 @@ def set_ratemap(ratemap: np.ndarray) -> None:
             f"ratemap must have shape ({nlats}, {nlons}), got {ratemap.shape}"
         )
     flat = np.asfortranarray(ratemap).ravel(order="F")
-    _bridge.call_set_ratemap_from_flat(flat)
+    _call_set_ratemap_from_flat(flat)
 
 
 def set_rmap1(rmap1: np.ndarray) -> None:
@@ -708,7 +708,7 @@ def set_rmap1(rmap1: np.ndarray) -> None:
             f"rmap1 must have shape ({nlats}, {nlons}), got {rmap1.shape}"
         )
     flat = np.asfortranarray(rmap1).ravel(order="F")
-    _bridge.call_set_rmap1_from_flat(flat)
+    _call_set_rmap1_from_flat(flat)
 
 
 def set_rmap2(rmap2: np.ndarray) -> None:
@@ -722,14 +722,14 @@ def set_rmap2(rmap2: np.ndarray) -> None:
             f"rmap2 must have shape ({nlats}, {nlons}), got {rmap2.shape}"
         )
     flat = np.asfortranarray(rmap2).ravel(order="F")
-    _bridge.call_set_rmap2_from_flat(flat)
+    _call_set_rmap2_from_flat(flat)
 
 
 def get_rMtmp() -> np.ndarray:
     """
     Get rMtmp (size-3 vector) from Fortran.
     """
-    return _bridge.call_get_rMtmp()
+    return _call_get_rMtmp()
 
 
 def set_rMtmp(rMtmp: np.ndarray) -> None:
@@ -739,7 +739,7 @@ def set_rMtmp(rMtmp: np.ndarray) -> None:
     rMtmp = np.asarray(rMtmp, dtype=np.float64)
     if rMtmp.shape != (3,):
         raise ValueError(f"rMtmp must have shape (3,), got {rMtmp.shape}")
-    _bridge.call_set_rMtmp(rMtmp)
+    _call_set_rMtmp(rMtmp)
 
 
 # ======================================================================

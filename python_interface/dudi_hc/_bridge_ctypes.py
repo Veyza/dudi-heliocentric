@@ -339,7 +339,7 @@ def call_batch_points(
         float(src_umin), float(src_umax),
         float(src_Nparticles), float(src_Tj), float(src_dtau),
         _as_vec3(comet_coords), _as_vec3(comet_vastvec), float(comet_vast),
-        float(muR), float(tnow), float(dt), float(Rast_AU), _C.c_int(pericenter),
+        float(muR), float(tnow), float(dt), float(Rast_AU), C.c_int(pericenter),
         _as_vec3(cloudcentr), int(method_id),
     )
     return density
