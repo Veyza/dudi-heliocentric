@@ -254,7 +254,7 @@ def get_moving_sources(
 # ----------------------------------------------------------------------
 
 def get_flyby_trajectory(
-    nt1: int,
+    n1: int,
     resolution: float,
     CAdist: float,
     lastrM: np.ndarray,
@@ -264,7 +264,7 @@ def get_flyby_trajectory(
 
     Parameters
     ----------
-    nt1 : int
+    n1 : int
         Number of trajectory points.
     resolution : float
         Step along the trajectory [m].
@@ -297,8 +297,8 @@ def get_flyby_trajectory(
     CApoint = lastrM - tmpnorm * CAdist     # CAdist already in AU
 
     points: list[Point] = []
-    for i in range(1, nt1 + 1):
-        rvector = CApoint + tmpvec * (i - nt1 / 2.0)
+    for i in range(1, n1 + 1):
+        rvector = CApoint + tmpvec * (i - n1 / 2.0)
         r = _norma3d(rvector)
         alpha = float(np.arccos(rvector[2] / r))
         beta = float(np.arctan2(rvector[1], rvector[0]))
@@ -319,10 +319,10 @@ def get_flyby_trajectory(
 
 def integrate_over_matrix() -> float:
     """
-    Python translation of Fortran integrate_over_matrix.
+    Vectorized Python translation of Fortran integrate_over_matrix.
 
-    Integrates the current Fortran ratemap (already set via api.read_* and
-    api.ratematr_interpolate) over the sphere.
+    Integrates the current Fortran ratemap (already set via api.read_*
+    and api.ratematr_interpolate) over the sphere.
     """
     ratemap = api.get_ratemap()   # shape (nlats, nlons)
     lats = api.get_lats()         # shape (nlats,)
@@ -332,69 +332,52 @@ def integrate_over_matrix() -> float:
     if lats.shape[0] != nlats or lons.shape[0] != nlons:
         raise RuntimeError("Inconsistent ratemap / lats / lons dimensions")
 
-    integral = 0.0
+    # ------------------------------------------------------------------
+    # 1) Integrate over longitude for each latitude -> rint[lat]
+    # ------------------------------------------------------------------
+    # lons differences between adjacent longitudes
+    dlons = np.diff(lons)                    # shape (nlons-1,)
+    wrap = lons[0] - lons[-1] + TWOPI        # closing segment
 
-    # Polar angle (colatitude) = π/2 - latitude
-    polangle = HALFPI - lats
+    # (ratemap[:,1:] + ratemap[:,:-1]) has shape (nlats, nlons-1)
+    # Broadcast dlons across lat dimension and sum over lon
+    inner = (ratemap[:, 1:] + ratemap[:, :-1]) * dlons[np.newaxis, :]
+    rint = inner.sum(axis=1) + (ratemap[:, 0] + ratemap[:, -1]) * wrap
+    rint *= 0.5  # trapezoid in longitude
 
-    # Main bands: Fortran ii = 2..nlats
-    for ii in range(1, nlats):
-        # ring at latitude index ii
-        rint = 0.0
-        for i in range(1, nlons):
-            rint += (ratemap[ii, i] + ratemap[ii, i - 1]) * (lons[i] - lons[i - 1])
-        # close ring
-        rint += (ratemap[ii, 0] + ratemap[ii, nlons - 1]) * (
-            lons[0] - lons[nlons - 1] + TWOPI
-        )
-        rint *= 0.5
+    # ------------------------------------------------------------------
+    # 2) Integrate over latitude (bands between ii-1 and ii)
+    # ------------------------------------------------------------------
+    polangle = HALFPI - lats  # colatitude
 
-        # ring at previous latitude (ii-1)
-        rint1 = 0.0
-        for i in range(1, nlons):
-            rint1 += (ratemap[ii - 1, i] + ratemap[ii - 1, i - 1]) * (
-                lons[i] - lons[i - 1]
-            )
-        rint1 += (ratemap[ii - 1, 0] + ratemap[ii - 1, nlons - 1]) * (
-            lons[0] - lons[nlons - 1] + TWOPI
-        )
-        rint1 *= 0.5
-
-        # trapezoid in colatitude with sin(polangle)
-        integral += (rint + rint1) * np.sin(polangle[ii]) * (
-            polangle[ii - 1] - polangle[ii]
-        ) * 0.5
-
-    # Uppermost ring (Fortran index 1)
-    rint = 0.0
-    for i in range(1, nlons):
-        rint += (ratemap[0, i] + ratemap[0, i - 1]) * (lons[i] - lons[i - 1])
-    rint += (ratemap[0, 0] + ratemap[0, nlons - 1]) * (
-        lons[0] - lons[nlons - 1] + TWOPI
+    # main bands: Fortran ii = 2..nlats
+    # vectorized:
+    #   (rint[ii] + rint[ii-1]) * sin(polangle[ii]) * (polangle[ii-1] - polangle[ii]) / 2
+    main = (
+        (rint[1:] + rint[:-1])
+        * np.sin(polangle[1:])
+        * (polangle[:-1] - polangle[1:])
+        * 0.5
     )
-    rint *= 0.5
+    integral = main.sum()
+
+    # ------------------------------------------------------------------
+    # 3) Top and bottom rings (same formula as Fortran, reuse rint[0] and rint[-1])
+    # ------------------------------------------------------------------
     integral += (
-        rint
+        rint[0]
         * np.sin((-HALFPI - lats[0]) / 2.0)
         * (-HALFPI - lats[0])
     )
 
-    # Lowermost ring (Fortran index nlats)
-    rint = 0.0
-    for i in range(1, nlons):
-        rint += (ratemap[nlats - 1, i] + ratemap[nlats - 1, i - 1]) * (
-            lons[i] - lons[i - 1]
-        )
-    rint += (ratemap[nlats - 1, 0] + ratemap[nlats - 1, nlons - 1]) * (
-        lons[0] - lons[nlons - 1] + TWOPI
-    )
     integral += (
-        rint
-        * np.sin((HALFPI - lats[nlats - 1]) / 2.0)
-        * (HALFPI - lats[nlats - 1])
+        rint[-1]
+        * np.sin((HALFPI - lats[-1]) / 2.0)
+        * (HALFPI - lats[-1])
     )
 
     return float(integral)
+
 
 
 # ----------------------------------------------------------------------
@@ -402,8 +385,8 @@ def integrate_over_matrix() -> float:
 # ----------------------------------------------------------------------
 
 def get_points(
-    nt1: int,
-    nt2: int,
+    n1: int,
+    n2: int,
     resolution: tuple[float, float],
     lastrM: np.ndarray,
     cntrpx: float,
@@ -412,7 +395,7 @@ def get_points(
     """
     Python translation of Fortran get_points.
 
-    Returns a (nt1, nt2) array of Point objects.
+    Returns a (n1, n2) array of Point objects.
     """
     resx, resy = resolution
     lastrM = np.asarray(lastrM, dtype=np.float64)
@@ -428,12 +411,12 @@ def get_points(
 
     xvec = xvec * (resx / AU)
     yvec = yvec * (resy / AU)
-    tmpvec = lastrM - nt1 * xvec * cntrpx - nt2 * yvec * cntrpy
+    tmpvec = lastrM - n1 * xvec * cntrpx - n2 * yvec * cntrpy
 
-    points = np.empty((nt1, nt2), dtype=object)
+    points = np.empty((n1, n2), dtype=object)
 
-    for j in range(nt2):      # Fortran ii = 1..nt2
-        for i in range(nt1):  # Fortran i  = 1..nt1
+    for j in range(n2):      # Fortran ii = 1..n2
+        for i in range(n1):  # Fortran i  = 1..n1
             rvector = tmpvec + (i + 1) * xvec + (j + 1) * yvec
             r = _norma3d(rvector)
             alpha = float(np.arccos(rvector[2] / r))
@@ -582,7 +565,7 @@ def runge_kutta_point_position(
     time: float,
 ) -> np.ndarray:
     """
-    Python translation of help.f90: runge_kutta_point_position.
+    Optimized RK4 propagator for a 2-body orbit.
 
     Parameters
     ----------
@@ -595,41 +578,72 @@ def runge_kutta_point_position(
     -------
     r : (3,) final position after `time` (AU)
     """
-    r = np.asarray(r0, dtype=np.float64).copy()
-    v = np.asarray(v0, dtype=np.float64).copy()
+    # Unpack into plain floats (much faster in a tight loop than tiny NumPy arrays)
+    x, y, z = map(float, r0)
+    vx, vy, vz = map(float, v0)
 
+    # --- step size logic (same as Fortran, just written more clearly) ---
     Nstep = 200
     dt = time / float(Nstep)
-
-    # Same adaptive logic as in Fortran
     while dt > 3.0e-4:
         Nstep = int(Nstep * 1.2)
         dt = time / float(Nstep)
 
+    dt2 = 0.5 * dt
+    dt6 = dt / 6.0
+
+    def accel(x: float, y: float, z: float) -> tuple[float, float, float]:
+        """Gravitational acceleration -mu r / |r|^3."""
+        r2 = x*x + y*y + z*z
+        r = math.sqrt(r2)
+        inv_r3 = mu / (r2 * r)  # mu / |r|^3
+        ax = -inv_r3 * x
+        ay = -inv_r3 * y
+        az = -inv_r3 * z
+        return ax, ay, az
+
     for _ in range(Nstep):
-        r2 = np.sum(r * r)
-        k1 = -mu / math.sqrt(r2) ** 3 * r
-        l1 = v
+        # k1, l1
+        k1x, k1y, k1z = accel(x, y, z)
+        l1x, l1y, l1z = vx, vy, vz
 
-        r_tmp = r + l1 * dt / 2.0
-        r2_tmp = np.sum(r_tmp * r_tmp)
-        k2 = -mu / math.sqrt(r2_tmp) ** 3 * r_tmp
-        l2 = v + k1 * dt / 2.0
+        # k2, l2
+        x2 = x + l1x * dt2
+        y2 = y + l1y * dt2
+        z2 = z + l1z * dt2
+        k2x, k2y, k2z = accel(x2, y2, z2)
+        l2x = vx + k1x * dt2
+        l2y = vy + k1y * dt2
+        l2z = vz + k1z * dt2
 
-        r_tmp = r + l2 * dt / 2.0
-        r2_tmp = np.sum(r_tmp * r_tmp)
-        k3 = -mu / math.sqrt(r2_tmp) ** 3 * r_tmp
-        l3 = v + k2 * dt / 2.0
+        # k3, l3
+        x3 = x + l2x * dt2
+        y3 = y + l2y * dt2
+        z3 = z + l2z * dt2
+        k3x, k3y, k3z = accel(x3, y3, z3)
+        l3x = vx + k2x * dt2
+        l3y = vy + k2y * dt2
+        l3z = vz + k2z * dt2
 
-        r_tmp = r + l3 * dt
-        r2_tmp = np.sum(r_tmp * r_tmp)
-        k4 = -mu / math.sqrt(r2_tmp) ** 3 * r_tmp
-        l4 = v + k3 * dt
+        # k4, l4
+        x4 = x + l3x * dt
+        y4 = y + l3y * dt
+        z4 = z + l3z * dt
+        k4x, k4y, k4z = accel(x4, y4, z4)
+        l4x = vx + k3x * dt
+        l4y = vy + k3y * dt
+        l4z = vz + k3z * dt
 
-        v = v + dt / 6.0 * (k1 + 2.0 * k2 + 2.0 * k3 + k4)
-        r = r + dt / 6.0 * (l1 + 2.0 * l2 + 2.0 * l3 + l4)
+        # Update v, r
+        vx += dt6 * (k1x + 2.0*k2x + 2.0*k3x + k4x)
+        vy += dt6 * (k1y + 2.0*k2y + 2.0*k3y + k4y)
+        vz += dt6 * (k1z + 2.0*k2z + 2.0*k3z + k4z)
 
-    return r
+        x  += dt6 * (l1x + 2.0*l2x + 2.0*l3x + l4x)
+        y  += dt6 * (l1y + 2.0*l2y + 2.0*l3y + l4y)
+        z  += dt6 * (l1z + 2.0*l2z + 2.0*l3z + l4z)
+
+    return np.array([x, y, z], dtype=np.float64)
 
 
 # ----------------------------------------------------------------------
@@ -657,8 +671,8 @@ def run_phaethon(
     "Phaethon_2025-02-22_last_int=10min_ECLIPJ2000.dat",
     Neph: int = 2000,
     Nlin: int = 10,
-    nt1: int = 400,
-    nt2: int = 400,
+    n1: int = 400,
+    n2: int = 400,
     centerpositionx: float = 0.5,
     centerpositiony: float = 0.5,
 ) -> None:
@@ -684,7 +698,7 @@ def run_phaethon(
     )
 
     # Number of points along the asteroid trajectory:
-    Np = (Neph - 1) * Nlin + 1
+    Nt = (Neph - 1) * Nlin + 1
 
     # ------------------------------------------------------------------
     # Allocate objects: Source and Comet
@@ -727,13 +741,15 @@ def run_phaethon(
             Vast=0.0,
         )
 
-    sources: list[Source] = [_make_empty_source() for _ in range(Np)]
-    comet: list[Comet] = [_make_empty_comet() for _ in range(Np)]
+    sources: list[Source] = [_make_empty_source() for _ in range(Nt)]
+    comet: list[Comet] = [_make_empty_comet() for _ in range(Nt)]
 
     # ------------------------------------------------------------------
     # Input source parameters along the orbit
     # ------------------------------------------------------------------
-    get_moving_sources(eph_filename, Np, Nlin, sources, comet)
+    print("getting moving sources")
+    get_moving_sources(eph_filename, Nt, Nlin, sources, comet)
+    print("got moving sources")
 
     # Moment for which we compute the density
     tnow = float(sources[-1].Tj)
@@ -741,26 +757,26 @@ def run_phaethon(
     # Resolution of the planar grid [m]
     resolution = np.array([5.0e3, 5.0e3], dtype=np.float64)
 
-    # Build 2D grid of points (nt1 × nt2)
+    # Build 2D grid of points (n1 × n2)
     points_grid = get_points(
-        nt1=nt1,
-        nt2=nt2,
+        n1=n1,
+        n2=n2,
         resolution=resolution,
         lastrM=np.asarray(comet[-1].coords, dtype=np.float64),
         cntrpx=centerpositionx,
         cntrpy=centerpositiony,
     )
 
-    # Flatten points in the same order as Fortran loops: ii=1..nt2, i=1..nt1
+    # Flatten points in the same order as Fortran loops: ii=1..n2, i=1..n1
     points_flat: list[Point] = [
-        points_grid[i, j] for j in range(nt2) for i in range(nt1)
+        points_grid[i, j] for j in range(n2) for i in range(n1)
     ]
 
     # Load list of impact-ejecta maps (Szalay et al. 2019)
     rhels, fnames = get_maps_data()  # length Nmaps=4 in this setup
 
     # Density arrays
-    density = np.zeros((nt1, nt2), dtype=np.float64)
+    density = np.zeros((n1, n2), dtype=np.float64)
 
     # ------------------------------------------------------------------
     # Loop over particle radii (different beta and muR)
@@ -786,7 +802,7 @@ def run_phaethon(
         # Time limits (in days) for contributing ejecta
         dtlim2 = (
             resolution[0]
-            * nt1
+            * n1
             * (1.0 - centerpositionx)
             / AU
             / float(sources[0].ud.umin)
@@ -802,7 +818,7 @@ def run_phaethon(
                 * resolution[0]
                 / AU
                 * (1.0 - centerpositionx)
-                * nt1
+                * n1
                 / denom
             )
 
@@ -811,7 +827,7 @@ def run_phaethon(
         # Find earliest index whose dust is still in field of view
         idt = 0  # Python 0-based; Fortran started from 1
         while (
-            idt < Np - 1
+            idt < Nt - 1
             and tnow - float(sources[idt].Tj) > dt_limit
         ):
             idt += 1
@@ -821,11 +837,11 @@ def run_phaethon(
         # ------------------------------------------------------------------
         # Loop over active sources along the trajectory
         # ------------------------------------------------------------------
-        for i_p in range(idt, Np - 1):  # Fortran: i_p = idt, Np-1
+        for i_t in range(idt, Nt - 1):  # Fortran: i_t = idt, Nt-1
             # Choose which ejecta maps correspond to current heliocentric distance
             while (
                 mapind2 < len(fnames) - 1
-                and sources[i_p].r < rhel2
+                and sources[i_t].r < rhel2
             ):
                 rhel1 = rhel2
                 mapind1 = mapind2
@@ -839,17 +855,17 @@ def run_phaethon(
 
             # Interpolate ratemap for this heliocentric distance
             api.ratematr_interpolate(
-                rhel=sources[i_p].r,
+                rhel=sources[i_t].r,
                 rhel1=rhel1,
                 rhel2=rhel2,
             )
 
-            dt = tnow - float(sources[i_p].Tj)
+            dt = tnow - float(sources[i_t].Tj)
 
             # Cloud centre (propagate along two-body orbit with muR)
             cloudcentr = runge_kutta_point_position(
-                r0=comet[i_p].coords,
-                v0=comet[i_p].Vastvec,
+                r0=comet[i_t].coords,
+                v0=comet[i_t].Vastvec,
                 mu=muR,
                 time=dt,
             )
@@ -860,8 +876,8 @@ def run_phaethon(
             # Compute densities at all points for this source
             dens_flat = api.batch_over_points(
                 points=points_flat,
-                source=sources[i_p],
-                comet=comet[i_p],
+                source=sources[i_t],
+                comet=comet[i_t],
                 muR=muR,
                 tnow=tnow,
                 dt=dt,
@@ -873,8 +889,8 @@ def run_phaethon(
 
             # Accumulate into 2D array, matching Fortran (i,ii) ordering
             idx = 0
-            for j in range(nt2):
-                for i in range(nt1):
+            for j in range(n2):
+                for i in range(n1):
                     density[i, j] += float(dens_flat[idx])
                     idx += 1
 
