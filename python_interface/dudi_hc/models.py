@@ -34,7 +34,7 @@ def spherical_to_cartesian(r: float, alpha: float, beta: float) -> Vec3:
     cb, sb = math.cos(beta), math.sin(beta)
     return np.array([r*sa*cb, r*sa*sb, r*ca], dtype=np.float64)
 
-@dataclass(frozen=True)
+@dataclass
 class EjectionSpeedProperties:
     """Matches Fortran type(ejection_speed_properties).
 
@@ -60,7 +60,7 @@ class EjectionSpeedProperties:
         if not (math.isfinite(self.umax) and self.umax >= self.umin):
             raise ValueError("umax must be finite and >= umin.")
 
-@dataclass(frozen=True)
+@dataclass
 class Point:
     """
     Location where the dust number density is evaluated.
@@ -93,7 +93,7 @@ class Point:
             raise ValueError("Point angles must be finite.")
         _ = as_vec3(self.rvector, "Point.rvector")
 
-@dataclass(frozen=True)
+@dataclass
 class Source:
     """
     Dust source definition at ejection.
@@ -148,7 +148,7 @@ class Source:
         if not isinstance(self.ejection_angle_distr, int):
             raise ValueError("ejection_angle_distr must be int.")
 
-@dataclass(frozen=True)
+@dataclass
 class Comet:
     """
     State of the dust-emitting body at ejection.
