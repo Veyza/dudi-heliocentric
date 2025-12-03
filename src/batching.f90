@@ -78,7 +78,7 @@ contains
         real(8) :: dt
         real(8) :: cloudcentr(3)
         real    :: tmp(n_points)
-
+		
         density(:) = 0.0
 
         do i_t = 1, Nt
@@ -139,6 +139,7 @@ contains
             density(:) = -10.0
 
            end select
+           
         end do
 
     end subroutine hc_DUDI_batch_sources_points

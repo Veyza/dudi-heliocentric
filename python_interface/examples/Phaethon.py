@@ -202,6 +202,7 @@ def get_moving_sources(
                 Vast=Vast_i,
             )
         )
+        #print(coords[i, :], Vastvec[i, :])
 
     # ----- build Source objects (1 per time step) -----
     sources: list[Source] = []
@@ -702,21 +703,21 @@ def matrix_out(fname: str, image: np.ndarray) -> None:
 def run_phaethon(
     eph_filename: str = "input_data_files/"
     "Phaethon_2025-02-22_last_int=10min_ECLIPJ2000.dat",
-    Neph: int = 2000,
+    Neph: int = 1000,
     Nlin: int = 10,
-    n1: int = 400,
-    n2: int = 400,
+    n1: int = 200,
+    n2: int = 200,
     centerpositionx: float = 0.5,
     centerpositiony: float = 0.5,
 ) -> None:
     Nrgs = 13
     Rgs = np.array(
         [
-            0.1,
+            0.55,
             0.2,
             0.3,
             0.42,
-            0.55,
+            0.1,
             0.67,
             0.85,
             1.0,
@@ -761,127 +762,152 @@ def run_phaethon(
         points_grid[i, j] for j in range(n2) for i in range(n1)
     ]
 
-    # Load list of impact-ejecta maps (Szalay et al. 2019)
-    rhels, fnames = get_maps_data()  # length Nmaps=4 in this setup
-
     # Density arrays
     density = np.zeros((n1, n2), dtype=np.float64)
+
+    def _group_sources_by_ratemap(
+        sources: Sequence[Source],
+        rhels: np.ndarray,
+        idt: int,
+        Nt: int,
+    ) -> list[tuple[int, int, int, int]]:
+        """
+        Compute contiguous blocks of i_t that share the same mapind2.
+
+        Returns a list of tuples (block_start, block_end, mapind1, mapind2),
+        where block_end is exclusive.
+        """
+        blocks: list[tuple[int, int, int, int]] = []
+
+        # Initial indices as in your original code
+        mapind1 = 0
+        mapind2 = 1
+        rhel1 = rhels[mapind1]
+        rhel2 = rhels[mapind2]
+
+        current_start = idt
+        current_mapind1 = mapind1
+        current_mapind2 = mapind2
+
+        for i_t in range(idt, Nt - 1):
+            r = sources[i_t].r
+
+            # Advance mapind* until this r is between rhel1 and rhel2
+            while mapind2 < len(rhels) - 1 and r < rhel2:
+                mapind1 = mapind2
+                mapind2 += 1
+                rhel1 = rhels[mapind1]
+                rhel2 = rhels[mapind2]
+
+            # If the pair (mapind1,mapind2) changed, close previous block
+            if (mapind1, mapind2) != (current_mapind1, current_mapind2):
+                blocks.append((current_start, i_t, current_mapind1, current_mapind2))
+                current_start = i_t
+                current_mapind1 = mapind1
+                current_mapind2 = mapind2
+
+        # Close last block
+        blocks.append((current_start, Nt - 1, current_mapind1, current_mapind2))
+        return blocks
+
+    # Load list of impact-ejecta maps (Szalay et al. 2019)
+    rhels, fnames = get_maps_data()  # length Nmaps=4 in this setup
+    
 
     # ------------------------------------------------------------------
     # Loop over particle radii (different beta and muR)
     # ------------------------------------------------------------------
     for i_R in range(0, Nrgs + 1):  # Fortran: i_R = 0, Nrgs
-        # Reset which ejecta maps we interpolate between
-        mapind1 = 0  # Fortran index 1
-        mapind2 = 1  # Fortran index 2
+        density = np.zeros((n1, n2), dtype=float)
 
-        rhel1 = api.read_first_ratemap(fnames[mapind1])  # rmap1
-        rhel2 = api.read_ratemap(fnames[mapind2])        # rmap2
-
-        density[:, :] = 0.0
-
-        # beta from grain radius
-        if i_R > 0:
-            beta = beta_from_Rg(Rgs[i_R])
-        else:
-            beta = 0.0  # large grains ~100 μm
-
+        # --- β from grain radius ---
+        beta = beta_from_Rg(Rgs[i_R]) if i_R > 0 else 0.0      # ~0 for large grains
         muR = GMsun * (1.0 - beta)
 
-        # Time limits (in days) for contributing ejecta
+        # --- time-limit dtlim2 ---
         dtlim2 = (
-            resolution[0]
-            * n1
-            * (1.0 - centerpositionx)
-            / AU
-            / float(sources[0].ud.umin)
+            resolution[0] * n1 * (1.0 - centerpositionx)
+            / AU / float(sources[0].ud.umin)
         )
 
+        # --- time-limit dtlim3 ---
         denom = GMsun - muR
-        if abs(denom) < 1e-14:
-            dtlim3 = float("inf")
-        else:
-            dtlim3 = math.sqrt(
-                2.0
-                * sources[0].r**2
-                * resolution[0]
-                / AU
-                * (1.0 - centerpositionx)
-                * n1
-                / denom
+        dtlim3 = (
+            math.sqrt(
+                2.0 * sources[0].r**2 * resolution[0] / AU
+                * (1.0 - centerpositionx) * n1 / denom
             )
+            if abs(denom) >= 1e-14
+            else float("inf")
+        )
 
         dt_limit = min(dtlim2, dtlim3)
 
-        # Find earliest index whose dust is still in field of view
-        idt = 0  # Python 0-based; Fortran started from 1
-        while (
-            idt < Nt - 1
-            and tnow - float(sources[idt].Tj) > dt_limit
-        ):
-            idt += 1
+        # --- earliest still-visible index idt ---
+        # Equivalent to:
+        # while idt < Nt-1 and tnow - Tj[idt] > dt_limit: idt += 1
+        Tj = np.array([s.Tj for s in sources], dtype=float)
+        age = tnow - Tj                                          # time since ejection
 
-        print("start index", idt + 1)  # report in Fortran-style 1-based
+        # idt = first index where age <= dt_limit (or Nt-1 if none)
+        mask = np.where(age <= dt_limit)[0]
+        idt = int(mask[0]) if mask.size else Nt - 1
 
-        # ------------------------------------------------------------------
-        # Loop over active sources along the trajectory
-        # ------------------------------------------------------------------
-        for i_t in range(idt, Nt - 1):  # Fortran: i_t = idt, Nt-1
-            # Choose which ejecta maps correspond to current heliocentric distance
-            while (
-                mapind2 < len(fnames) - 1
-                and sources[i_t].r < rhel2
-            ):
-                rhel1 = rhel2
-                mapind1 = mapind2
-                mapind2 += 1
 
-                # rmap1 = rmap2
-                rmap2 = api.get_rmap2()
-                api.set_rmap1(rmap2)
+        # current state of ratemap indices / data
+        mapind1 = 0
+        mapind2 = 1
+        rhel1 = rhels[mapind1]
+        rhel2 = rhels[mapind2]
 
-                rhel2 = api.read_ratemap(fnames[mapind2])
+        # Ensure rmap1/rmap2 are in a known initial state
+        rhel1 = api.read_first_ratemap(fnames[mapind1])
+        rhel2 = api.read_ratemap(fnames[mapind2])
 
-            # Interpolate ratemap for this heliocentric distance
+        blocks = _group_sources_by_ratemap(sources, rhels, idt, Nt)
+
+        for block_start, block_end, b_mapind1, b_mapind2 in blocks:
+            print(block_start, block_end, b_mapind1, b_mapind2)
+            # If we need to move to a new map pair, do the same steps as before
+            if b_mapind2 != mapind2:
+                # Move mapind1 / mapind2 forward one by one, like original code
+                while mapind2 < b_mapind2:
+                    mapind1 = mapind2
+                    mapind2 += 1
+
+                    # rmap1 = rmap2
+                    rmap2 = api.get_rmap2()
+                    api.set_rmap1(rmap2)
+
+                    rhel2 = api.read_ratemap(fnames[mapind2])
+
+                rhel1 = rhels[mapind1]
+                rhel2 = rhels[mapind2]
+
+            # Now all sources in [block_start, block_end) use same mapind1/mapind2.
+            # We can *freeze* the interpolation: one call only.
             api.ratematr_interpolate(
-                rhel=sources[i_t].r,
+                rhel=rhel2,  # your proposed simplification
                 rhel1=rhel1,
                 rhel2=rhel2,
             )
 
-            dt = tnow - float(sources[i_t].Tj)
-
-            # Cloud centre (propagate along two-body orbit with muR)
-            cloudcentr = runge_kutta_point_position(
-                r0=comet[i_t].coords,
-                v0=comet[i_t].Vastvec,
-                mu=muR,
-                time=dt,
-            )
-
-            # Set rMtmp in Fortran (used in distributions_fun)
-            api.set_rMtmp(cloudcentr)
-
-            # Compute densities at all points for this source
-            dens_flat = api.batch_over_points(
+            dens_flat = api.batch_over_points_sources(
                 points=points_flat,
-                source=sources[i_t],
-                comet=comet[i_t],
+                sources_by_time=sources[block_start:block_end],
+                comets_by_time=comet[block_start:block_end],
                 muR=muR,
                 tnow=tnow,
-                dt=dt,
                 Rast_AU=Rast_AU,
-                pericenter=False,
-                cloudcentr=cloudcentr,
+                pericenter=False,          # not used by delta_ejection
                 method="simple_expansion",
+                )
+
+            # Replace the double loop with a reshape using Fortran order
+            density[:, :] += np.asarray(dens_flat, float).reshape(
+                (n1, n2), order="F"
             )
 
-            # Accumulate into 2D array, matching Fortran (i,ii) ordering
-            idx = 0
-            for j in range(n2):
-                for i in range(n1):
-                    density[i, j] += float(dens_flat[idx])
-                    idx += 1
 
         # Output file name: "results/Rg= xx.xxmicron.dat"
         fnameout = f"results/Rg={Rgs[i_R]:5.2f}micron.dat"
