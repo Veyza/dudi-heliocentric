@@ -4,7 +4,7 @@ from typing import Iterable, Sequence
 import numpy as np
 import types
 
-from python_interface.dudi_hc.models import Point, Source, Comet
+from python_interface.dudi_hc.models import Point, Source, Comet, EjectionSpeedProperties
 from python_interface.dudi_hc import api
 
 
@@ -24,14 +24,6 @@ AU = 1.495978707e11       # [m]
 S_IN_DAY = 86400.0        # [s]
 # Fortran AUdays2SI ≈ AU / seconds_per_day
 AUdays2SI = AU / S_IN_DAY
-
-
-def _norma3d(v: Iterable[float]) -> float:
-    """Euclidean norm of a 3-vector (Fortran norma3d)."""
-    arr = np.asarray(v, dtype=np.float64)
-    if arr.shape != (3,):
-        raise ValueError(f"Expected 3-vector, got shape {arr.shape}")
-    return float(np.linalg.norm(arr))
 
 
 def _vector_product(a: Iterable[float], b: Iterable[float]) -> np.ndarray:
@@ -93,9 +85,7 @@ def get_moving_sources(
     fname: str,
     Np: int,
     Nlin: int,
-    sources: Sequence[Source],
-    comet: Sequence[Comet],
-) -> None:
+) -> tuple[list[Source], list[Comet]]:
     """
     Python translation of Fortran get_moving_sources.
 
@@ -109,14 +99,14 @@ def get_moving_sources(
     Nlin : int
         Step between ephemeris lines. Intermediate entries are filled
         by linear interpolation.
-    sources : sequence of Source
-        Pre-allocated sequence of length Np, modified in place.
-    comet : sequence of Comet
-        Pre-allocated sequence of length Np, modified in place.
-    """
-    if len(sources) != Np or len(comet) != Np:
-        raise ValueError("sources and comet must both have length Np")
 
+    Returns
+    -------
+    sources : list[Source]
+        One source per time step (length Np).
+    comet : list[Comet]
+        Comet state at each time step (length Np).
+    """
     # ----- map file names and distances -----
     rhels, fnames = get_maps_data()
     if len(fnames) < 2:
@@ -126,7 +116,6 @@ def get_moving_sources(
     mapind1 = 0
     mapind2 = 1
 
-    # Use api wrappers to call Fortran:
     rhel1 = api.read_first_ratemap(fnames[mapind1])
     rhel2 = api.read_ratemap(fnames[mapind2])
 
@@ -135,8 +124,11 @@ def get_moving_sources(
         rmap2 = api.get_rmap2()
         api.set_rmap1(rmap2)
 
-    # ----- read ephemeris and interpolate -----
+    # ----- read ephemeris and interpolate (Fortran logic) -----
     moment = np.zeros(Np, dtype=np.float64)
+    coords = np.zeros((Np, 3), dtype=np.float64)
+    Vastvec = np.zeros((Np, 3), dtype=np.float64)
+
     dNlin = float(Nlin)
 
     with open(fname, "r") as f:
@@ -152,12 +144,16 @@ def get_moving_sources(
             )
 
         moment[0] = vals[0]
-        comet[0].coords = np.array(vals[1:4], dtype=np.float64)
-        comet[0].Vastvec = np.array(vals[4:7], dtype=np.float64)
+        coords[0, :] = vals[1:4]
+        Vastvec[0, :] = vals[4:7]
 
-        # Fortran: do i = Nlin+1, Np, Nlin  (1-based)
-        # Python index: i = i_fortran - 1
-        for i in range(Nlin, Np, Nlin):
+        # Fortran:
+        #   do i = Nlin+1, Np, Nlin       (i is 1-based)
+        #   read(200,*) moment(i), comet(i)%coords, comet(i)%Vastvec
+        #   forall(ii = (i-Nlin+1):(i-1)) ...
+        #
+        # Python: i_fortran -> i_python = i_fortran - 1
+        for i_fortran in range(Nlin + 1, Np + 1, Nlin):
             line = f.readline()
             if not line:
                 raise RuntimeError(
@@ -170,40 +166,60 @@ def get_moving_sources(
                     "t, x, y, z, vx, vy, vz"
                 )
 
+            i = i_fortran - 1  # 0-based
             moment[i] = vals[0]
-            comet[i].coords = np.array(vals[1:4], dtype=np.float64)
-            comet[i].Vastvec = np.array(vals[4:7], dtype=np.float64)
+            coords[i, :] = vals[1:4]
+            Vastvec[i, :] = vals[4:7]
 
             if Nlin > 1:
-                # Fortran: forall(ii = (i-Nlin+1):(i-1))
-                for j in range(i - Nlin + 1, i):
+                # Fortran: ii = (i-Nlin+1):(i-1) (1-based)
+                for ii_fortran in range(i_fortran - Nlin + 1, i_fortran):
+                    j = ii_fortran - 1  # 0-based index
                     # weight w = (ii - i + Nlin) / dNlin
-                    w = float(j - i + Nlin) / dNlin
+                    w = float(ii_fortran - i_fortran + Nlin) / dNlin
 
-                    moment[j] = moment[i - Nlin] + (moment[i] - moment[i - Nlin]) * w
-                    comet[j].Vastvec = (
-                        comet[i - Nlin].Vastvec
-                        + (comet[i].Vastvec - comet[i - Nlin].Vastvec) * w
+                    moment[j] = (
+                        moment[i - Nlin]
+                        + (moment[i] - moment[i - Nlin]) * w
                     )
-                    comet[j].coords = (
-                        comet[i - Nlin].coords
-                        + (comet[i].coords - comet[i - Nlin].coords) * w
+                    Vastvec[j, :] = (
+                        Vastvec[i - Nlin, :]
+                        + (Vastvec[i, :] - Vastvec[i - Nlin, :]) * w
+                    )
+                    coords[j, :] = (
+                        coords[i - Nlin, :]
+                        + (coords[i, :] - coords[i - Nlin, :]) * w
                     )
 
     # Shift timeline: moment(i) = moment(i) - moment(1)
     moment -= moment[0]
 
-    # Phaethon radius, as in Fortran
-    Rast = 2.9e3  # [m]
+    # Phaethon radius [m], as in Fortran
+    Rast = 2.9e3
 
-    # ----- fill source and comet properties for each time step -----
+    # Precompute dt between steps in days (used for Nparticles)
+    dt_days = float(moment[1] - moment[0]) if Np > 1 else 0.0
+
+    # ----- build Comet objects -----
+    comets: list[Comet] = []
     for i in range(Np):
-        rrM = np.asarray(comet[i].coords, dtype=np.float64)
-        sources[i].rrM = rrM
-        r = _norma3d(rrM)
-        sources[i].r = r
+        Vast_i = float(np.linalg.norm(Vastvec[i, :]))
+        comets.append(
+            Comet(
+                coords=coords[i, :].copy(),
+                Vastvec=Vastvec[i, :].copy(),
+                Vast=Vast_i,
+            )
+        )
 
-        # Update which maps we interpolate between when r drops below rhel2
+    # ----- build Source objects (1 per time step) -----
+    sources: list[Source] = []
+
+    for i in range(Np):
+        rrM = coords[i, :].astype(np.float64)
+        r = float(np.linalg.norm(rrM))
+
+        # update which maps we interpolate between when r drops below rhel2
         if r < rhel2 and mapind2 + 1 < len(fnames):
             rhel1 = rhel2
             mapind1 = mapind2
@@ -214,29 +230,35 @@ def get_moving_sources(
         # Interpolate ratemap for this r (Fortran ratematr_interpolate)
         api.ratematr_interpolate(rhel=r, rhel1=rhel1, rhel2=rhel2)
 
-        # Asteroid speed at position i
-        comet[i].Vast = _norma3d(comet[i].Vastvec)
-
         # Angular coordinates
-        sources[i].alphaM = float(np.arccos(rrM[2] / r))
-        sources[i].betaM = float(np.arctan2(rrM[1], rrM[0]))
+        if r > 0.0:
+            alphaM = float(np.arccos(rrM[2] / r))
+            betaM = float(np.arctan2(rrM[1], rrM[0]))
+        else:
+            alphaM = 0.0
+            betaM = 0.0
 
-        # Symmetry axis: Fortran assigns a scalar to an array, broadcasting;
-        # we mimic that behaviour exactly.
-        axis_val = rrM[0] / r
-        sources[i].symmetry_axis = np.array(
-            [axis_val, axis_val, axis_val], dtype=np.float64
+        # Symmetry axis: Fortran broadcasts scalar rrM(1)/r into the array
+        if r > 0.0:
+            axis_val = rrM / r
+        else:
+            axis_val = 0.0
+        symmetry_axis = np.array(
+            axis_val,
+            dtype=np.float64,
         )
 
-        # Distributions / timing parameters
-        sources[i].zeta = 0.0
-        sources[i].eta = 0.0
-        sources[i].ud.ud_shape = 1
-        sources[i].ud.umin = 2.0 / AUdays2SI
-        sources[i].ud.umax = 2399.0 / AUdays2SI
-        sources[i].ejection_angle_distr = 3
-        sources[i].Tj = float(moment[i])
-        sources[i].dtau = 0.0
+        # Distributions / timing parameters (from Fortran)
+        zeta = 0.0
+        eta = 0.0
+        ud = EjectionSpeedProperties(
+            ud_shape=1,
+            umin=2.0 / AUdays2SI,
+            umax=2399.0 / AUdays2SI,
+        )
+        ejection_angle_distr = 3
+        Tj = float(moment[i])
+        dtau = 0.0
 
         # Integrate number density of impact ejecta over the map
         totrate = integrate_over_matrix()
@@ -244,9 +266,29 @@ def get_moving_sources(
         # Convert number density to flux (Szalay et al. 2016, Eq. 3)
         totrate = totrate / 0.31 / 7.2e-3 / 4.0 / PI * Rast**2
 
-        # Convert flux to number of ejected particles
-        dt_days = moment[1] - moment[0] if Np > 1 else 0.0
-        sources[i].Nparticles = totrate * dt_days * S_IN_DAY
+        # Convert flux to number of ejected particles in this time step
+        Nparticles = float(totrate * dt_days * S_IN_DAY)
+
+        sources.append(
+            Source(
+                r=r,
+                alphaM=alphaM,
+                betaM=betaM,
+                rrM=rrM.copy(),
+                zeta=zeta,
+                eta=eta,
+                symmetry_axis=symmetry_axis,
+                ejection_angle_distr=ejection_angle_distr,
+                ud=ud,
+                Nparticles=Nparticles,
+                Tj=Tj,
+                dtau=dtau,
+            )
+        )
+
+    return sources, comets
+
+
 
 
 # ----------------------------------------------------------------------
@@ -283,9 +325,9 @@ def get_flyby_trajectory(
 
     # CS to compare with Szalay et al. 2019
     zvec = np.array([0.0, 0.0, 1.0], dtype=np.float64)
-    xvec = lastrM / _norma3d(lastrM)
+    xvec = lastrM / np.linalg.norm(lastrM)
     zvec = zvec - zvec * float(np.dot(xvec, zvec))
-    zvec = zvec / _norma3d(zvec)
+    zvec = zvec / np.linalg.norm(zvec)
     yvec = _vector_product(zvec, xvec)
 
     angle2xvec = 29.0 * DEG2RAD
@@ -299,7 +341,7 @@ def get_flyby_trajectory(
     points: list[Point] = []
     for i in range(1, n1 + 1):
         rvector = CApoint + tmpvec * (i - n1 / 2.0)
-        r = _norma3d(rvector)
+        r = np.linalg.norm(rvector)
         alpha = float(np.arccos(rvector[2] / r))
         beta = float(np.arctan2(rvector[1], rvector[0]))
         p = Point(
@@ -404,9 +446,9 @@ def get_points(
 
     # CS as in Szalay et al. 2019 comparison
     zvec = np.array([0.0, 0.0, 1.0], dtype=np.float64)
-    xvec = lastrM / _norma3d(lastrM)
+    xvec = lastrM / np.linalg.norm(lastrM)
     zvec = zvec - zvec * float(np.dot(xvec, zvec))
-    zvec = zvec / _norma3d(zvec)
+    zvec = zvec / np.linalg.norm(zvec)
     yvec = _vector_product(zvec, xvec)
 
     xvec = xvec * (resx / AU)
@@ -418,7 +460,7 @@ def get_points(
     for j in range(n2):      # Fortran ii = 1..n2
         for i in range(n1):  # Fortran i  = 1..n1
             rvector = tmpvec + (i + 1) * xvec + (j + 1) * yvec
-            r = _norma3d(rvector)
+            r = np.linalg.norm(rvector)
             alpha = float(np.arccos(rvector[2] / r))
             beta = float(np.arctan2(rvector[1], rvector[0]))
             points[i, j] = Point(
@@ -461,14 +503,14 @@ def get_points_3d(
     # x̂: projection of lastrM onto ecliptic plane
     xvec = lastrM.copy()
     xvec = xvec - zvec * float(np.dot(xvec, zvec))
-    if _norma3d(xvec) == 0.0:
+    if np.linalg.norm(xvec) == 0.0:
         xvec = np.array([1.0, 0.0, 0.0], dtype=np.float64)
     else:
-        xvec = xvec / _norma3d(xvec)
+        xvec = xvec / np.linalg.norm(xvec)
 
     # Make ẑ ⟂ x̂, then ŷ = ẑ × x̂
     zvec = zvec - xvec * float(np.dot(xvec, zvec))
-    zvec = zvec / _norma3d(zvec)
+    zvec = zvec / np.linalg.norm(zvec)
     yvec = _vector_product(zvec, xvec)
 
     # Step vectors in AU
@@ -490,7 +532,7 @@ def get_points_3d(
         for j in range(ny):     # Fortran j = 1..ny
             for i in range(nx):  # Fortran i = 1..nx
                 rvector = tmpvec + (i + 1) * xvec + (j + 1) * yvec + (k + 1) * zvec
-                r = _norma3d(rvector)
+                r = np.linalg.norm(rvector)
                 alpha = float(np.arccos(rvector[2] / r))
                 beta = float(np.arctan2(rvector[1], rvector[0]))
                 points[i, j, k] = Point(
@@ -701,54 +743,10 @@ def run_phaethon(
     Nt = (Neph - 1) * Nlin + 1
 
     # ------------------------------------------------------------------
-    # Allocate objects: Source and Comet
-    # ------------------------------------------------------------------
-    # Source dataclass requires:
-    #   r, alphaM, betaM, rrM, zeta, eta, symmetry_axis,
-    #   ejection_angle_distr, ud, Nparticles, Tj, dtau
-    #
-    # We create "empty" sources with sensible zero defaults; they will
-    # be filled in by get_moving_sources.
-    def _make_empty_source() -> Source:
-        return Source(
-            r=0.0,
-            alphaM=0.0,
-            betaM=0.0,
-            rrM=np.zeros(3, dtype=np.float64),
-            zeta=0.0,
-            eta=0.0,
-            symmetry_axis=np.array([1.0, 0.0, 0.0], dtype=np.float64),
-            ejection_angle_distr=0,
-            # ud is whatever type you used in models; a SimpleNamespace with
-            # the right attributes works fine because api.py only accesses
-            # ud.ud_shape, ud.umin, ud.umax.
-            ud=types.SimpleNamespace(
-                ud_shape=0,
-                umin=0.0,
-                umax=0.0,
-            ),
-            Nparticles=0.0,
-            Tj=0.0,
-            dtau=0.0,
-        )
-
-    # Comet dataclass (mirror of ephemeris type):
-    #   coords(3), Vastvec(3), Vast
-    def _make_empty_comet() -> Comet:
-        return Comet(
-            coords=np.zeros(3, dtype=np.float64),
-            Vastvec=np.zeros(3, dtype=np.float64),
-            Vast=0.0,
-        )
-
-    sources: list[Source] = [_make_empty_source() for _ in range(Nt)]
-    comet: list[Comet] = [_make_empty_comet() for _ in range(Nt)]
-
-    # ------------------------------------------------------------------
     # Input source parameters along the orbit
     # ------------------------------------------------------------------
     print("getting moving sources")
-    get_moving_sources(eph_filename, Nt, Nlin, sources, comet)
+    sources, comet = get_moving_sources(eph_filename, Nt, Nlin)
     print("got moving sources")
 
     # Moment for which we compute the density
