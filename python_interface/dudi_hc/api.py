@@ -463,6 +463,9 @@ def batch_over_points_sources(
         print(Nt)
         raise ValueError("comets_by_time must have the same length Nt as sources_by_time")
 
+    # If user passed a flat list of Source objects (1D), wrap into 2D.
+    if sources_by_time and isinstance(sources_by_time[0], Source):
+        sources_by_time = [[s] for s in sources_by_time]
     Ns = len(sources_by_time[0])
     if any(len(row) != Ns for row in sources_by_time):
         raise ValueError("all rows in sources_by_time must have the same length Ns")
