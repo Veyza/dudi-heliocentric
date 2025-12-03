@@ -26,15 +26,6 @@ S_IN_DAY = 86400.0        # [s]
 AUdays2SI = AU / S_IN_DAY
 
 
-def _vector_product(a: Iterable[float], b: Iterable[float]) -> np.ndarray:
-    """3-D vector product (Fortran vector_product)."""
-    a = np.asarray(a, dtype=np.float64)
-    b = np.asarray(b, dtype=np.float64)
-    if a.shape != (3,) or b.shape != (3,):
-        raise ValueError("vector_product expects two 3-vectors")
-    return np.cross(a, b)
-
-
 def _linterpol(x: np.ndarray, y: np.ndarray, x_new: float) -> float:
     """
     1-D linear interpolation, Python equivalent of Fortran LiNTERPOL.
@@ -328,7 +319,7 @@ def get_flyby_trajectory(
     xvec = lastrM / np.linalg.norm(lastrM)
     zvec = zvec - zvec * float(np.dot(xvec, zvec))
     zvec = zvec / np.linalg.norm(zvec)
-    yvec = _vector_product(zvec, xvec)
+    yvec = np.cross(zvec, xvec)
 
     angle2xvec = 29.0 * DEG2RAD
 
@@ -449,7 +440,7 @@ def get_points(
     xvec = lastrM / np.linalg.norm(lastrM)
     zvec = zvec - zvec * float(np.dot(xvec, zvec))
     zvec = zvec / np.linalg.norm(zvec)
-    yvec = _vector_product(zvec, xvec)
+    yvec = np.cross(zvec, xvec)
 
     xvec = xvec * (resx / AU)
     yvec = yvec * (resy / AU)
@@ -511,7 +502,7 @@ def get_points_3d(
     # Make ẑ ⟂ x̂, then ŷ = ẑ × x̂
     zvec = zvec - xvec * float(np.dot(xvec, zvec))
     zvec = zvec / np.linalg.norm(zvec)
-    yvec = _vector_product(zvec, xvec)
+    yvec = np.cross(zvec, xvec)
 
     # Step vectors in AU
     xvec = xvec * (resx / AU)
