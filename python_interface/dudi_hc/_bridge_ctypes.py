@@ -653,17 +653,6 @@ def call_get_ratemap_dims() -> tuple[int, int]:
     _lib.py_get_ratemap_dims(C.byref(nlats), C.byref(nlons))
     return int(nlats.value), int(nlons.value)
 
-# void py_set_ratemap_dims(int *nlats, int *nlons);
-_lib.py_get_ratemap_dims.argtypes = [C.POINTER(C.c_int), C.POINTER(C.c_int)]
-_lib.py_get_ratemap_dims.restype = None
-
-
-def call_set_ratemap_dims() -> tuple[int, int]:
-    nlats = C.c_int()
-    nlons = C.c_int()
-    _lib.py_set_ratemap_dims(C.byref(nlats), C.byref(nlons))
-    return int(nlats.value), int(nlons.value)
-
 # void py_get_lon_limits(double *lonmin, double *lonmax);
 _lib.py_get_lon_limits.argtypes = [C.POINTER(C.c_double), C.POINTER(C.c_double)]
 _lib.py_get_lon_limits.restype = None
