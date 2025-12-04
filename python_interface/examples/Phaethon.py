@@ -107,13 +107,11 @@ def get_moving_sources(
     mapind1 = 0
     mapind2 = 1
 
-    rhel1 = api.read_first_ratemap(fnames[mapind1])
-    rhel2 = api.read_ratemap(fnames[mapind2])
+    rhel1 = api.read_ratemap_get_rhel(fnames[mapind1])
+    rmap1 = api.get_rmap2()
+    api.set_rmap1(rmap1)
 
-    def _copy_rmap2_to_rmap1() -> None:
-        """Fortran 'rmap1 = rmap2' via api."""
-        rmap2 = api.get_rmap2()
-        api.set_rmap1(rmap2)
+    rhel2 = api.read_ratemap_get_rhel(fnames[mapind2])
 
     # ----- read ephemeris and interpolate (Fortran logic) -----
     moment = np.zeros(Np, dtype=np.float64)
@@ -216,11 +214,12 @@ def get_moving_sources(
             rhel1 = rhel2
             mapind1 = mapind2
             mapind2 += 1
-            _copy_rmap2_to_rmap1()
-            rhel2 = api.read_ratemap(fnames[mapind2])
+            rmap2 = api.get_rmap2()
+            api.set_rmap1(rmap2)
+            rhel2 = api.read_ratemap_get_rhel(fnames[mapind2])
 
         # Interpolate ratemap for this r (Fortran ratematr_interpolate)
-        api.ratematr_interpolate(rhel=r, rhel1=rhel1, rhel2=rhel2)
+        api.ratematr_interpolate(rhel=r, rhel1=rhel1, rhel2=(rhel1+rhel2)/2.0)
 
         # Angular coordinates
         if r > 0.0:
@@ -861,13 +860,18 @@ def run_phaethon(
         rhel2 = rhels[mapind2]
 
         # Ensure rmap1/rmap2 are in a known initial state
-        rhel1 = api.read_first_ratemap(fnames[mapind1])
-        rhel2 = api.read_ratemap(fnames[mapind2])
+        rhel1 = api.read_ratemap_get_rhel(fnames[mapind1])
+        rmap1 = api.get_rmap2()
+        api.set_rmap1(rmap1)
+        rhel2 = api.read_ratemap_get_rhel(fnames[mapind2])
+        rmap2 = api.get_rmap2()
+        rmap1 = api.get_rmap1()
 
         blocks = _group_sources_by_ratemap(sources, rhels, idt, Nt)
 
         for block_start, block_end, b_mapind1, b_mapind2 in blocks:
             print(block_start, block_end, b_mapind1, b_mapind2)
+            print(rhel1, rhel2, rmap1[4,4], rmap2[4,4])
             # If we need to move to a new map pair, do the same steps as before
             if b_mapind2 != mapind2:
                 # Move mapind1 / mapind2 forward one by one, like original code
@@ -879,7 +883,10 @@ def run_phaethon(
                     rmap2 = api.get_rmap2()
                     api.set_rmap1(rmap2)
 
-                    rhel2 = api.read_ratemap(fnames[mapind2])
+                    print(rmap1[5,5])
+                    print(rmap2[5,5])
+
+                    rhel2 = api.read_ratemap_get_rhel(fnames[mapind2])
 
                 rhel1 = rhels[mapind1]
                 rhel2 = rhels[mapind2]
