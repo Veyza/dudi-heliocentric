@@ -742,14 +742,6 @@ contains
   end subroutine get_ratemap_dims
 
 
-  subroutine set_ratemap_dims(nlats_in, nlons_in) & 
-                   bind(C, name="py_set_ratemap_dims")
-    integer, intent(out) :: nlats_in, nlons_in
-    nlats = nlats_in
-    nlons = nlons_in
-  end subroutine set_ratemap_dims
-
-
   subroutine get_lon_limits(lonmin_out, lonmax_out) & 
                    bind(C, name="py_get_lon_limits")
     real(8), intent(out) :: lonmin_out, lonmax_out
@@ -926,7 +918,7 @@ contains
   !                                double rhel1,
   !                                double rhel2);
   !
-  subroutine ratematr_interpolate(rhel, rhel1, rhel2) &
+  subroutine py_ratematr_interpolate(rhel, rhel1, rhel2) &
        bind(C, name="py_ratematr_interpolate")
     use iso_c_binding
     implicit none
@@ -939,7 +931,7 @@ contains
     rhel2_f = real(rhel2, kind=8)
 
     call ratematr_interpolate(rhel_f, rhel1_f, rhel2_f)
-  end subroutine ratematr_interpolate
+  end subroutine py_ratematr_interpolate
 
 
 end module py_dudihc_bridge
