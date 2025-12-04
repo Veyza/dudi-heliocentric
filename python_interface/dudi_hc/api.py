@@ -36,8 +36,7 @@ from ._bridge_ctypes import (
     METHOD_V_INTEGRATION,
 )
 from ._bridge_ctypes import (
-    call_read_ratemap_get_rhel            as _call_read_ratemap_get_rhel,
-    call_read_first_ratemap_get_rhel      as _call_read_first_ratemap_get_rhel,
+    call_read_ratemap_get_rhel   as _call_read_ratemap_get_rhel,
     call_ratematr_interpolate    as _call_ratematr_interpolate,
     call_get_ratemap_dims        as _call_get_ratemap_dims,
     call_get_lon_limits          as _call_get_lon_limits,
@@ -570,14 +569,6 @@ def read_ratemap_get_rhel(filename: str) -> float:
     """
     return _call_read_ratemap_get_rhel(filename)
 
-
-def read_first_ratemap_get_rhel(filename: str) -> float:
-    """
-    Read the first ratemap file (if your Fortran distinguishes it).
-
-    Returns rhel as reported by the Fortran routine.
-    """
-    return _call_read_first_ratemap_get_rhel(filename)
 
 
 def ratematr_interpolate(rhel: float, rhel1: float, rhel2: float) -> None:

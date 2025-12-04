@@ -22,7 +22,7 @@ module py_dudihc_bridge
        hc_DUDI_simple_expansion
   use distributions_fun, only: nlats, nlons, lonmax, lonmin, &
                          lats, lons, rmap1, rmap2, ratemap, rMtmp, &
-                         ratematr_interpolate, read_ratemap, read_first_ratemap
+                         ratematr_interpolate, read_ratemap
   implicit none
 
 
@@ -878,35 +878,6 @@ contains
     rhel = rhel_f
   end subroutine read_ratemap_get_rhel
 
-
-  ! Wrapper for:
-  !   subroutine read_first_ratemap(fname, rhel)
-  !     character(*), intent(in) :: fname
-  !     real(8),      intent(out):: rhel
-  !
-  ! C interface:
-  !   void py_read_first_ratemap(const char *fname, double *rhel);
-  !
-  subroutine read_first_ratemap_get_rhel(fname_c, rhel) bind(C, name="py_read_first_ratemap_get_rhel")
-    use iso_c_binding
-    implicit none
-    character(kind=c_char), intent(in) :: fname_c(*)   ! C string (null-terminated)
-    real(c_double),          intent(out) :: rhel       ! C double* (by reference)
-
-    character(len=512) :: fname_f
-    real(8)            :: rhel_f
-    integer            :: i
-
-    ! Convert C null-terminated string to Fortran CHARACTER(*)
-    fname_f = ' '
-    do i = 1, len(fname_f)
-       if (fname_c(i) == c_null_char) exit
-       fname_f(i:i) = achar(iachar(fname_c(i)))
-    end do
-
-    call read_first_ratemap(trim(fname_f), rhel_f)
-    rhel = rhel_f
-  end subroutine read_first_ratemap_get_rhel
 
 
   ! Wrapper for:

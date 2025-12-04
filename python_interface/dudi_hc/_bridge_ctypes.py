@@ -608,21 +608,6 @@ def call_read_ratemap_get_rhel(filename: str) -> float:
     return float(rhel.value)
 
 
-# void py_read_first_ratemap_get_rhel(const char *fname, double *rhel);
-_lib.py_read_first_ratemap_get_rhel.argtypes = [C.c_char_p, C.POINTER(C.c_double)]
-_lib.py_read_first_ratemap_get_rhel.restype = None
-
-
-def call_read_first_ratemap_get_rhel(filename: str) -> float:
-    """
-    Call Fortran py_read_first_ratemap_get_rhel(fname, rhel) and return rhel.
-    """
-    rhel = C.c_double()
-    fname_bytes = filename.encode("utf-8")
-    _lib.py_read_first_ratemap_get_rhel(fname_bytes, C.byref(rhel))
-    return float(rhel.value)
-
-
 # void py_ratematr_interpolate(double rhel, double rhel1, double rhel2);
 _lib.py_ratematr_interpolate.argtypes = [C.c_double, C.c_double, C.c_double]
 _lib.py_ratematr_interpolate.restype = None
