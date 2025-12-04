@@ -593,33 +593,33 @@ def call_batch_sources_points(
 
 # --- file-reading wrappers --------------------------------------------
 
-# void py_read_ratemap(const char *fname, double *rhel);
-_lib.py_read_ratemap.argtypes = [C.c_char_p, C.POINTER(C.c_double)]
-_lib.py_read_ratemap.restype = None
+# void py_read_ratemap_get_rhel(const char *fname, double *rhel);
+_lib.py_read_ratemap_get_rhel.argtypes = [C.c_char_p, C.POINTER(C.c_double)]
+_lib.py_read_ratemap_get_rhel.restype = None
 
 
-def call_read_ratemap(filename: str) -> float:
+def call_read_ratemap_get_rhel(filename: str) -> float:
     """
-    Call Fortran py_read_ratemap(fname, rhel) and return rhel.
+    Call Fortran py_read_ratemap_get_rhel(fname, rhel) and return rhel.
     """
     rhel = C.c_double()
     fname_bytes = filename.encode("utf-8")
-    _lib.py_read_ratemap(fname_bytes, C.byref(rhel))
+    _lib.py_read_ratemap_get_rhel(fname_bytes, C.byref(rhel))
     return float(rhel.value)
 
 
-# void py_read_first_ratemap(const char *fname, double *rhel);
-_lib.py_read_first_ratemap.argtypes = [C.c_char_p, C.POINTER(C.c_double)]
-_lib.py_read_first_ratemap.restype = None
+# void py_read_first_ratemap_get_rhel(const char *fname, double *rhel);
+_lib.py_read_first_ratemap_get_rhel.argtypes = [C.c_char_p, C.POINTER(C.c_double)]
+_lib.py_read_first_ratemap_get_rhel.restype = None
 
 
-def call_read_first_ratemap(filename: str) -> float:
+def call_read_first_ratemap_get_rhel(filename: str) -> float:
     """
-    Call Fortran py_read_first_ratemap(fname, rhel) and return rhel.
+    Call Fortran py_read_first_ratemap_get_rhel(fname, rhel) and return rhel.
     """
     rhel = C.c_double()
     fname_bytes = filename.encode("utf-8")
-    _lib.py_read_first_ratemap(fname_bytes, C.byref(rhel))
+    _lib.py_read_first_ratemap_get_rhel(fname_bytes, C.byref(rhel))
     return float(rhel.value)
 
 
