@@ -664,11 +664,11 @@ def call_set_lon_limits(lonmin: float, lonmax: float) -> None:
 # --- 1D grids: lats, lons ----------------------------------------------
 
 # void py_get_lats(double *lats_out);  ! expects length nlats
-_lib.py_get_lats.argtypes = [C.POINTER(C.c_double)]
+_lib.py_get_lats.argtypes = [C.POINTER(C.c_float)]
 _lib.py_get_lats.restype = None
 
 # void py_set_lats(const double *lats_in);  ! expects length nlats
-_lib.py_set_lats.argtypes = [C.POINTER(C.c_double)]
+_lib.py_set_lats.argtypes = [C.POINTER(C.c_float)]
 _lib.py_set_lats.restype = None
 
 
@@ -676,27 +676,27 @@ def call_get_lats(nlats: int) -> np.ndarray:
     """
     Return lats as a 1D NumPy array of shape (nlats,).
     """
-    arr = np.empty(nlats, dtype=np.float64)
-    ptr = arr.ctypes.data_as(C.POINTER(C.c_double))
+    arr = np.empty(nlats, dtype=np.float32)
+    ptr = arr.ctypes.data_as(C.POINTER(C.c_float))
     _lib.py_get_lats(ptr)
-    return arr
+    return arr.astype(np.float64)
 
 
 def call_set_lats(lats: np.ndarray) -> None:
     """
     Copy a 1D NumPy array into Fortran lats.
     """
-    lats = np.asarray(lats, dtype=np.float64)
-    ptr = lats.ctypes.data_as(C.POINTER(C.c_double))
+    lats = np.asarray(lats, dtype=np.float32)
+    ptr = lats.ctypes.data_as(C.POINTER(C.c_float))
     _lib.py_set_lats(ptr)
 
 
 # void py_get_lons(double *lons_out);  ! expects length nlons
-_lib.py_get_lons.argtypes = [C.POINTER(C.c_double)]
+_lib.py_get_lons.argtypes = [C.POINTER(C.c_float)]
 _lib.py_get_lons.restype = None
 
 # void py_set_lons(const double *lons_in);  ! expects length nlons
-_lib.py_set_lons.argtypes = [C.POINTER(C.c_double)]
+_lib.py_set_lons.argtypes = [C.POINTER(C.c_float)]
 _lib.py_set_lons.restype = None
 
 
@@ -704,18 +704,18 @@ def call_get_lons(nlons: int) -> np.ndarray:
     """
     Return lons as a 1D NumPy array of shape (nlons,).
     """
-    arr = np.empty(nlons, dtype=np.float64)
-    ptr = arr.ctypes.data_as(C.POINTER(C.c_double))
+    arr = np.empty(nlons, dtype=np.float32)
+    ptr = arr.ctypes.data_as(C.POINTER(C.c_float))
     _lib.py_get_lons(ptr)
-    return arr
+    return arr.astype(np.float64)
 
 
 def call_set_lons(lons: np.ndarray) -> None:
     """
     Copy a 1D NumPy array into Fortran lons.
     """
-    lons = np.asarray(lons, dtype=np.float64)
-    ptr = lons.ctypes.data_as(C.POINTER(C.c_double))
+    lons = np.asarray(lons, dtype=np.float32)
+    ptr = lons.ctypes.data_as(C.POINTER(C.c_float))
     _lib.py_set_lons(ptr)
 
 
