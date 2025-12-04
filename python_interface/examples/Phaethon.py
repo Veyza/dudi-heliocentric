@@ -283,70 +283,6 @@ def get_moving_sources(
 
 
 # ----------------------------------------------------------------------
-# get_flyby_trajectory
-# ----------------------------------------------------------------------
-
-def get_flyby_trajectory(
-    n1: int,
-    resolution: float,
-    CAdist: float,
-    lastrM: np.ndarray,
-) -> list[Point]:
-    """
-    Python translation of Fortran get_flyby_trajectory.
-
-    Parameters
-    ----------
-    n1 : int
-        Number of trajectory points.
-    resolution : float
-        Step along the trajectory [m].
-    CAdist : float
-        Closest-approach distance along the normal direction [AU].
-    lastrM : array_like, shape (3,)
-        Asteroid position vector in AU.
-
-    Returns
-    -------
-    points : list[Point]
-    """
-    lastrM = np.asarray(lastrM, dtype=np.float64)
-    if lastrM.shape != (3,):
-        raise ValueError("lastrM must be a 3-vector in AU")
-
-    # CS to compare with Szalay et al. 2019
-    zvec = np.array([0.0, 0.0, 1.0], dtype=np.float64)
-    xvec = lastrM / np.linalg.norm(lastrM)
-    zvec = zvec - zvec * float(np.dot(xvec, zvec))
-    zvec = zvec / np.linalg.norm(zvec)
-    yvec = np.cross(zvec, xvec)
-
-    angle2xvec = 29.0 * DEG2RAD
-
-    tmpvec = xvec * np.cos(angle2xvec) + yvec * np.sin(angle2xvec)
-    tmpvec = tmpvec * (resolution / AU)      # m -> AU
-    tmpnorm = -xvec * np.sin(angle2xvec) + yvec * np.cos(angle2xvec)
-
-    CApoint = lastrM - tmpnorm * CAdist     # CAdist already in AU
-
-    points: list[Point] = []
-    for i in range(1, n1 + 1):
-        rvector = CApoint + tmpvec * (i - n1 / 2.0)
-        r = np.linalg.norm(rvector)
-        alpha = float(np.arccos(rvector[2] / r))
-        beta = float(np.arctan2(rvector[1], rvector[0]))
-        p = Point(
-            r=r,
-            alpha=alpha,
-            beta=beta,
-            rvector=np.asarray(rvector, dtype=np.float64),
-        )
-        points.append(p)
-
-    return points
-
-
-# ----------------------------------------------------------------------
 # integrate_over_matrix
 # ----------------------------------------------------------------------
 
@@ -465,78 +401,6 @@ def get_points(
 
 
 # ----------------------------------------------------------------------
-# get_points_3d
-# ----------------------------------------------------------------------
-
-def get_points_3d(
-    nx: int,
-    ny: int,
-    nz: int,
-    resolution: tuple[float, float, float],
-    lastrM: np.ndarray,
-    cntrpx: float,
-    cntrpy: float,
-    cntrpz: float,
-) -> np.ndarray:
-    """
-    Python translation of Fortran get_points_3d.
-
-    Returns an (nx, ny, nz) array of Point objects.
-    """
-    resx, resy, resz = resolution
-    lastrM = np.asarray(lastrM, dtype=np.float64)
-    if lastrM.shape != (3,):
-        raise ValueError("lastrM must be a 3-vector in AU")
-
-    # Start with ecliptic Z
-    zvec = np.array([0.0, 0.0, 1.0], dtype=np.float64)
-
-    # x̂: projection of lastrM onto ecliptic plane
-    xvec = lastrM.copy()
-    xvec = xvec - zvec * float(np.dot(xvec, zvec))
-    if np.linalg.norm(xvec) == 0.0:
-        xvec = np.array([1.0, 0.0, 0.0], dtype=np.float64)
-    else:
-        xvec = xvec / np.linalg.norm(xvec)
-
-    # Make ẑ ⟂ x̂, then ŷ = ẑ × x̂
-    zvec = zvec - xvec * float(np.dot(xvec, zvec))
-    zvec = zvec / np.linalg.norm(zvec)
-    yvec = np.cross(zvec, xvec)
-
-    # Step vectors in AU
-    xvec = xvec * (resx / AU)
-    yvec = yvec * (resy / AU)
-    zvec = zvec * (resz / AU)
-
-    # Lower-front-left corner (according to cntrp*)
-    tmpvec = (
-        lastrM
-        - nx * xvec * cntrpx
-        - ny * yvec * cntrpy
-        - nz * zvec * cntrpz
-    )
-
-    points = np.empty((nx, ny, nz), dtype=object)
-
-    for k in range(nz):         # Fortran k = 1..nz
-        for j in range(ny):     # Fortran j = 1..ny
-            for i in range(nx):  # Fortran i = 1..nx
-                rvector = tmpvec + (i + 1) * xvec + (j + 1) * yvec + (k + 1) * zvec
-                r = np.linalg.norm(rvector)
-                alpha = float(np.arccos(rvector[2] / r))
-                beta = float(np.arctan2(rvector[1], rvector[0]))
-                points[i, j, k] = Point(
-                    r=r,
-                    alpha=alpha,
-                    beta=beta,
-                    rvector=np.asarray(rvector, dtype=np.float64),
-                )
-
-    return points
-
-
-# ----------------------------------------------------------------------
 # beta_from_Rg
 # ----------------------------------------------------------------------
 
@@ -585,98 +449,6 @@ GMsun = 0.0002959122082855908  # 1.327124400419393e20 / AU**3 * 86400**2
 # Phaethon radius (used already in get_moving_sources)
 RAST_METERS = 2.9e3
 Rast_AU = RAST_METERS / AU  # AU was defined earlier in the script
-
-
-# ----------------------------------------------------------------------
-# Runge–Kutta propagator: runge_kutta_point_position
-# ----------------------------------------------------------------------
-
-def runge_kutta_point_position(
-    r0: Sequence[float],
-    v0: Sequence[float],
-    mu: float,
-    time: float,
-) -> np.ndarray:
-    """
-    Optimized RK4 propagator for a 2-body orbit.
-
-    Parameters
-    ----------
-    r0 : (3,) initial position (AU)
-    v0 : (3,) initial velocity (AU/day)
-    mu : scalar, gravitational parameter [AU^3/day^2]
-    time : float, integration interval (days; can be negative)
-
-    Returns
-    -------
-    r : (3,) final position after `time` (AU)
-    """
-    # Unpack into plain floats (much faster in a tight loop than tiny NumPy arrays)
-    x, y, z = map(float, r0)
-    vx, vy, vz = map(float, v0)
-
-    # --- step size logic (same as Fortran, just written more clearly) ---
-    Nstep = 200
-    dt = time / float(Nstep)
-    while dt > 3.0e-4:
-        Nstep = int(Nstep * 1.2)
-        dt = time / float(Nstep)
-
-    dt2 = 0.5 * dt
-    dt6 = dt / 6.0
-
-    def accel(x: float, y: float, z: float) -> tuple[float, float, float]:
-        """Gravitational acceleration -mu r / |r|^3."""
-        r2 = x*x + y*y + z*z
-        r = math.sqrt(r2)
-        inv_r3 = mu / (r2 * r)  # mu / |r|^3
-        ax = -inv_r3 * x
-        ay = -inv_r3 * y
-        az = -inv_r3 * z
-        return ax, ay, az
-
-    for _ in range(Nstep):
-        # k1, l1
-        k1x, k1y, k1z = accel(x, y, z)
-        l1x, l1y, l1z = vx, vy, vz
-
-        # k2, l2
-        x2 = x + l1x * dt2
-        y2 = y + l1y * dt2
-        z2 = z + l1z * dt2
-        k2x, k2y, k2z = accel(x2, y2, z2)
-        l2x = vx + k1x * dt2
-        l2y = vy + k1y * dt2
-        l2z = vz + k1z * dt2
-
-        # k3, l3
-        x3 = x + l2x * dt2
-        y3 = y + l2y * dt2
-        z3 = z + l2z * dt2
-        k3x, k3y, k3z = accel(x3, y3, z3)
-        l3x = vx + k2x * dt2
-        l3y = vy + k2y * dt2
-        l3z = vz + k2z * dt2
-
-        # k4, l4
-        x4 = x + l3x * dt
-        y4 = y + l3y * dt
-        z4 = z + l3z * dt
-        k4x, k4y, k4z = accel(x4, y4, z4)
-        l4x = vx + k3x * dt
-        l4y = vy + k3y * dt
-        l4z = vz + k3z * dt
-
-        # Update v, r
-        vx += dt6 * (k1x + 2.0*k2x + 2.0*k3x + k4x)
-        vy += dt6 * (k1y + 2.0*k2y + 2.0*k3y + k4y)
-        vz += dt6 * (k1z + 2.0*k2z + 2.0*k3z + k4z)
-
-        x  += dt6 * (l1x + 2.0*l2x + 2.0*l3x + l4x)
-        y  += dt6 * (l1y + 2.0*l2y + 2.0*l3y + l4y)
-        z  += dt6 * (l1z + 2.0*l2z + 2.0*l3z + l4z)
-
-    return np.array([x, y, z], dtype=np.float64)
 
 
 # ----------------------------------------------------------------------
@@ -896,8 +668,15 @@ def run_phaethon(
             api.ratematr_interpolate(
                 rhel=rhel2,  # your proposed simplification
                 rhel1=rhel1,
-                rhel2=rhel2,
+                rhel2=(rhel2+rhel1)/2.0,
             )
+            ratemap = api.get_ratemap()
+            print(ratemap[5,5], ratemap[20,20], ratemap[1,90])
+            lats = api.get_lats()
+            lons = api.get_lons()
+            print(lats[0], lats[89], lons[0], lons[179])
+            lonlims = api.get_lon_limits()
+            print(lonlims)
 
             dens_flat = api.batch_over_points_sources(
                 points=points_flat,
