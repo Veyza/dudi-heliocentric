@@ -734,118 +734,126 @@ contains
 
   !--- dimensions and limits --------------------------------------------------
 
-  subroutine py_get_ratemap_dims(nlats_out, nlons_out) & 
+  subroutine get_ratemap_dims(nlats_out, nlons_out) & 
                    bind(C, name="py_get_ratemap_dims")
     integer, intent(out) :: nlats_out, nlons_out
     nlats_out = nlats
     nlons_out = nlons
-  end subroutine py_get_ratemap_dims
+  end subroutine get_ratemap_dims
 
 
-  subroutine py_get_lon_limits(lonmin_out, lonmax_out) & 
+  subroutine set_ratemap_dims(nlats_in, nlons_in) & 
+                   bind(C, name="py_set_ratemap_dims")
+    integer, intent(out) :: nlats_in, nlons_in
+    nlats = nlats_in
+    nlons = nlons_in
+  end subroutine set_ratemap_dims
+
+
+  subroutine get_lon_limits(lonmin_out, lonmax_out) & 
                    bind(C, name="py_get_lon_limits")
     real(8), intent(out) :: lonmin_out, lonmax_out
     lonmin_out = lonmin
     lonmax_out = lonmax
-  end subroutine py_get_lon_limits
+  end subroutine get_lon_limits
 
 
-  subroutine py_set_lon_limits(lonmin_in, lonmax_in) & 
+  subroutine set_lon_limits(lonmin_in, lonmax_in) & 
                    bind(C, name="py_set_lon_limits")
     real(8), intent(in) :: lonmin_in, lonmax_in
     lonmin = lonmin_in
     lonmax = lonmax_in
-  end subroutine py_set_lon_limits
+  end subroutine set_lon_limits
 
 
   !--- latitude / longitude grids ---------------------------------------------
 
-  subroutine py_get_lats(lats_out) & 
+  subroutine get_lats(lats_out) & 
                    bind(C, name="py_get_lats")
     real, intent(out) :: lats_out(nlats)
     lats_out = lats
-  end subroutine py_get_lats
+  end subroutine get_lats
 
 
-  subroutine py_get_lons(lons_out) &
+  subroutine get_lons(lons_out) &
                    bind(C, name="py_get_lons")
     real, intent(out) :: lons_out(nlons)
     lons_out = lons
-  end subroutine py_get_lons
+  end subroutine get_lons
 
 
-  subroutine py_set_lats(lats_in) &
+  subroutine set_lats(lats_in) &
                    bind(C, name="py_set_lats")
     real, intent(in) :: lats_in(nlats)
     lats = lats_in
-  end subroutine py_set_lats
+  end subroutine set_lats
 
 
-  subroutine py_set_lons(lons_in) &
+  subroutine set_lons(lons_in) &
                    bind(C, name="py_set_lons")
     real, intent(in) :: lons_in(nlons)
     lons = lons_in
-  end subroutine py_set_lons
+  end subroutine set_lons
 
 
   !--- ratemap matrices -------------------------------------------------------
 
-  subroutine py_get_ratemap(ratemap_out) &
+  subroutine get_ratemap(ratemap_out) &
                    bind(C, name="py_get_ratemap")
     real(8), intent(out) :: ratemap_out(nlons, nlats)
     ratemap_out = ratemap
-  end subroutine py_get_ratemap
+  end subroutine get_ratemap
 
 
-  subroutine py_get_rmap1(rmap1_out) &
+  subroutine get_rmap1(rmap1_out) &
                    bind(C, name="py_get_rmap1")
     real(8), intent(out) :: rmap1_out(nlons, nlats)
     rmap1_out = rmap1
-  end subroutine py_get_rmap1
+  end subroutine get_rmap1
 
 
-  subroutine py_get_rmap2(rmap2_out) &
+  subroutine get_rmap2(rmap2_out) &
                    bind(C, name="py_get_rmap2")
     real(8), intent(out) :: rmap2_out(nlons, nlats)
     rmap2_out = rmap2
-  end subroutine py_get_rmap2
+  end subroutine get_rmap2
 
 
-  subroutine py_set_ratemap(ratemap_in) &
+  subroutine set_ratemap(ratemap_in) &
                    bind(C, name="py_set_ratemap")
     real(8), intent(in) :: ratemap_in(nlons, nlats)
     ratemap = ratemap_in
-  end subroutine py_set_ratemap
+  end subroutine set_ratemap
 
 
-  subroutine py_set_rmap1(rmap1_in) &
+  subroutine set_rmap1(rmap1_in) &
                    bind(C, name="py_set_rmap1")
     real(8), intent(in) :: rmap1_in(nlons, nlats)
     rmap1 = rmap1_in
-  end subroutine py_set_rmap1
+  end subroutine set_rmap1
 
 
-  subroutine py_set_rmap2(rmap2_in) &
+  subroutine set_rmap2(rmap2_in) &
                    bind(C, name="py_set_rmap2")
     real(8), intent(in) :: rmap2_in(nlons, nlats)
     rmap2 = rmap2_in
-  end subroutine py_set_rmap2
+  end subroutine set_rmap2
 
 
   !--- temporary vector rMtmp -------------------------------------------------
 
-  subroutine py_get_rMtmp(rMtmp_out) &
+  subroutine get_rMtmp(rMtmp_out) &
                    bind(C, name="py_get_rMtmp")
     real(8), intent(out) :: rMtmp_out(3)
     rMtmp_out = rMtmp
-  end subroutine py_get_rMtmp
+  end subroutine get_rMtmp
 
 
-  subroutine py_set_rMtmp(rMtmp_in) &
+  subroutine set_rMtmp(rMtmp_in) &
                    bind(C, name="py_set_rMtmp")
     real(8), intent(in) :: rMtmp_in(3)
     rMtmp = rMtmp_in
-  end subroutine py_set_rMtmp
+  end subroutine set_rMtmp
   
 
 
@@ -857,7 +865,7 @@ contains
   ! C interface:
   !   void py_read_ratemap(const char *fname, double *rhel);
   !
-  subroutine py_read_ratemap(fname_c, rhel) bind(C, name="py_read_ratemap")
+  subroutine read_ratemap_get_rhel(fname_c, rhel) bind(C, name="py_read_ratemap_get_rhel")
     use iso_c_binding
     implicit none
     character(kind=c_char), intent(in) :: fname_c(*)   ! C string (null-terminated)
@@ -876,7 +884,7 @@ contains
 
     call read_ratemap(trim(fname_f), rhel_f)
     rhel = rhel_f
-  end subroutine py_read_ratemap
+  end subroutine read_ratemap_get_rhel
 
 
   ! Wrapper for:
@@ -887,7 +895,7 @@ contains
   ! C interface:
   !   void py_read_first_ratemap(const char *fname, double *rhel);
   !
-  subroutine py_read_first_ratemap(fname_c, rhel) bind(C, name="py_read_first_ratemap")
+  subroutine read_first_ratemap_get_rhel(fname_c, rhel) bind(C, name="py_read_first_ratemap_get_rhel")
     use iso_c_binding
     implicit none
     character(kind=c_char), intent(in) :: fname_c(*)   ! C string (null-terminated)
@@ -906,7 +914,7 @@ contains
 
     call read_first_ratemap(trim(fname_f), rhel_f)
     rhel = rhel_f
-  end subroutine py_read_first_ratemap
+  end subroutine read_first_ratemap_get_rhel
 
 
   ! Wrapper for:
@@ -918,7 +926,7 @@ contains
   !                                double rhel1,
   !                                double rhel2);
   !
-  subroutine py_ratematr_interpolate(rhel, rhel1, rhel2) &
+  subroutine ratematr_interpolate(rhel, rhel1, rhel2) &
        bind(C, name="py_ratematr_interpolate")
     use iso_c_binding
     implicit none
@@ -931,7 +939,7 @@ contains
     rhel2_f = real(rhel2, kind=8)
 
     call ratematr_interpolate(rhel_f, rhel1_f, rhel2_f)
-  end subroutine py_ratematr_interpolate
+  end subroutine ratematr_interpolate
 
 
 end module py_dudihc_bridge
