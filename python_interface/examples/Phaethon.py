@@ -200,7 +200,6 @@ def get_moving_sources(
                 Vast=Vast_i,
             )
         )
-        #print(coords[i, :], Vastvec[i, :])
 
     # ----- build Source objects (1 per time step) -----
     sources: list[Source] = []
@@ -642,8 +641,6 @@ def run_phaethon(
         blocks = _group_sources_by_ratemap(sources, rhels, idt, Nt)
 
         for block_start, block_end, b_mapind1, b_mapind2 in blocks:
-            print(block_start, block_end, b_mapind1, b_mapind2)
-            print(rhel1, rhel2, rmap1[4,4], rmap2[4,4])
             # If we need to move to a new map pair, do the same steps as before
             if b_mapind2 != mapind2:
                 # Move mapind1 / mapind2 forward one by one, like original code
@@ -654,9 +651,6 @@ def run_phaethon(
                     # rmap1 = rmap2
                     rmap2 = api.get_rmap2()
                     api.set_rmap1(rmap2)
-
-                    print(rmap1[5,5])
-                    print(rmap2[5,5])
 
                     rhel2 = api.read_ratemap_get_rhel(fnames[mapind2])
 
@@ -671,12 +665,6 @@ def run_phaethon(
                 rhel2=(rhel2+rhel1)/2.0,
             )
             ratemap = api.get_ratemap()
-            print(ratemap[5,5], ratemap[20,20], ratemap[1,90])
-            lats = api.get_lats()
-            lons = api.get_lons()
-            print(lats[0], lats[89], lons[0], lons[179])
-            lonlims = api.get_lon_limits()
-            print(lonlims)
 
             dens_flat = api.batch_over_points_sources(
                 points=points_flat,
