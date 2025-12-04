@@ -87,47 +87,7 @@ module distributions_fun
                 lonmax = maxval(lons)
             
             end subroutine read_ratemap
-            
-            ! reads a matrix from Jamey Szalay's file fname
-            ! rhel is the heliocentric distance of the asteroid
-            ! corresponding to the moments the map is computed for
-            ! lats and lons are the latitudes and longitudes to which
-            ! the columns and the rows of the matrix correspond
-            ! they are not exactly uniform
-            ! the subroutine will return the lats and lons in radians
-            ! and rhel in AU
-            subroutine read_first_ratemap(fname, rhel)
-                character(*), intent(in) :: fname
-                real(8), intent(out) :: rhel
-                integer i
-                character(len = 18) strtmp
-                character(len = 14) strtmp2
-                real(8) vtmp(3)
-                
-                open(100, file = fname, status = 'old')
-                    do i = 1, 5
-                        read(100,*) strtmp
-                    enddo
-                    read(100,*) strtmp, vtmp
-                    rhel = sqrt(sum(vtmp**2)) * 1d3        ! in meters
-                    rhel = rhel / AU                        ! in AU
-                    read(100,*) strtmp
-                    read(100,*) strtmp2, lons
-                    read(100,*) strtmp2, lats
-                    do i = 1, 3
-                        read(100,*) strtmp
-                    enddo
-                    do i = 1, nlats
-                        read(100,*) rmap1(:,i)
-                    enddo
-                close(100)
-                lats = lats * real(deg2rad)
-                lons = lons * real(deg2rad)
-                
-                lonmin = minval(lons)
-                lonmax = maxval(lons)
-            
-            end subroutine read_first_ratemap
+           
     
     
       ! The axisymmetric distribution of ejection direction
@@ -344,6 +304,7 @@ module distributions_fun
       
       end function ejection_speed_distribution
 
-      
+
+ 
 
 end module distributions_fun

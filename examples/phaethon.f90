@@ -85,7 +85,8 @@ program phaethon
     do i_R = 0, Nrgs
 
        mapind1 = 1 ; mapind2 = mapind1 + 1
-       call read_first_ratemap(fnames(mapind1), rhel1)
+       call read_ratemap(fnames(mapind1), rhel1)
+       rmap1 = rmap2
        call read_ratemap(fnames(mapind2), rhel2)
         
        density = 0d0
