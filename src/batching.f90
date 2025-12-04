@@ -62,7 +62,7 @@ contains
     subroutine hc_DUDI_batch_sources_points( &
         n_points, Nt, Ns, density, points, sources, &
         muR, tnow, comets, Rast_AU, pericenter, method_id )
-
+		use distributions_fun
         implicit none
 
         integer, intent(in) :: n_points, Nt, Ns
@@ -92,7 +92,7 @@ contains
               call runge_kutta_point_position( comets(i_t)%coords, &
                                                comets(i_t)%Vastvec, &
                                                muR, dt, cloudcentr )
-
+			  rMtmp = cloudcentr
               do i_s = 1, Ns
             !$OMP PARALLEL PRIVATE(i) &
 			!$OMP SHARED(points, sources, density, muR, comets, dt, i_t, i_s, tmp, cloudcentr)
