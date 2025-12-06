@@ -473,7 +473,7 @@ def matrix_out(fname: str, image: np.ndarray) -> None:
 def run_phaethon(
     eph_filename: str = "input_data_files/"
     "Phaethon_2025-02-22_last_int=10min_ECLIPJ2000.dat",
-    Neph: int = 1000,
+    Neph: int = 2000,
     Nlin: int = 10,
     n1: int = 200,
     n2: int = 200,
@@ -637,6 +637,7 @@ def run_phaethon(
         rhel2 = api.read_ratemap_get_rhel(fnames[mapind2])
         rmap2 = api.get_rmap2()
         rmap1 = api.get_rmap1()
+        r_mid = (rhel2+rhel1)*0.5
 
         blocks = _group_sources_by_ratemap(sources, rhels, idt, Nt)
 
@@ -656,13 +657,14 @@ def run_phaethon(
 
                 rhel1 = rhels[mapind1]
                 rhel2 = rhels[mapind2]
+                r_mid = (rhel2+rhel1)*0.5
 
             # Now all sources in [block_start, block_end) use same mapind1/mapind2.
             # We can *freeze* the interpolation: one call only.
             api.ratematr_interpolate(
-                rhel=rhel2,  # your proposed simplification
+                rhel=r_mid,  # your proposed simplification
                 rhel1=rhel1,
-                rhel2=(rhel2+rhel1)/2.0,
+                rhel2=rhel2,
             )
             ratemap = api.get_ratemap()
 
