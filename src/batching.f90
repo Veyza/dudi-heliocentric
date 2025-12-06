@@ -94,9 +94,9 @@ contains
                                                muR, dt, cloudcentr )
 			  rMtmp = cloudcentr
               do i_s = 1, Ns
-            !$OMP PARALLEL PRIVATE(i) &
-			!$OMP SHARED(points, sources, density, muR, comets, dt, i_t, i_s, tmp, cloudcentr)
-			!$OMP DO
+              !$OMP PARALLEL PRIVATE(i) &
+			  !$OMP SHARED(points, sources, density, muR, comets, dt, i_t, i_s, tmp, cloudcentr)
+			  !$OMP DO
                  do i = 1, n_points
                     call hc_DUDI_simple_expansion(tmp(i), sources(i_t, i_s), dt, &
                                                    cloudcentr, points(i))
@@ -108,9 +108,9 @@ contains
 
            case (METHOD_DELTA_EJECTION)
               do i_s = 1, Ns
-            !$OMP PARALLEL PRIVATE(i) &
-			!$OMP SHARED(points, sources, density, muR, comets, dt, i_t, tmp)
-			!$OMP DO
+              !$OMP PARALLEL PRIVATE(i) &
+			  !$OMP SHARED(points, sources, density, muR, comets, dt, i_t, tmp)
+		  	  !$OMP DO
                  do i = 1, n_points
                     call hc_DUDI_delta_ejection( tmp(i), points(i), sources(i_t, i_s), &
                                                  muR, dt, comets(i_t), Rast_AU )
@@ -122,9 +122,9 @@ contains
 
            case (METHOD_V_INTEGRATION)
               do i_s = 1, Ns
-            !$OMP PARALLEL PRIVATE(i) &
-			!$OMP SHARED(points, sources, density, muR, comets, dt, i_t, tmp, pericenter)
-			!$OMP DO
+              !$OMP PARALLEL PRIVATE(i) &
+			  !$OMP SHARED(points, sources, density, muR, comets, dt, i_t, tmp, pericenter)
+			  !$OMP DO
                  do i = 1, n_points
                     call hc_DUDI_v_integration( tmp(i), points(i), sources(i_t, i_s), &
                                                 muR, tnow, comets(i_t), Rast_AU, pericenter )
