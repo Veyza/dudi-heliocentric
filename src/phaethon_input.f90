@@ -122,7 +122,7 @@ contains
     sources(i)%alphaM = acos(sources(i)%rrM(3) / sources(i)%r)
     sources(i)%betaM = atan(sources(i)%rrM(2), &
                   sources(i)%rrM(1))
-    sources(i)%symmetry_axis = sources(i)%rrM(1) / sources(i)%r
+    sources(i)%symmetry_axis = sources(i)%rrM / sources(i)%r
     sources(i)%zeta = 0d0
     sources(i)%eta = 0d0
     sources(i)%ud%ud_shape = 1
