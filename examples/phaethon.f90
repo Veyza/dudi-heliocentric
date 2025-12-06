@@ -12,7 +12,7 @@
 ! Author: Anastasiia Ershova
 ! E-mail: vveyzaa@gmail.com
 
-! File: phaethon_input.f90
+! File: phaethon_iNtut.f90
 ! Description: This is the main program managing the modeling of dust
 ! ejection from NEA 3200 Phaethon at the orbital phase at which it is
 ! planned to be visited by the DESTINY+ mission using the simple 
@@ -32,12 +32,12 @@ program phaethon
     implicit none
     integer, parameter :: Neph = 2000  ! this many positions are in the file with ephemeridae
     integer, parameter :: Nlin = 10  ! this many positions - 1 are interpolated between the ephemeridae
-  integer, parameter :: Np = (Neph-1) * Nlin + 1  ! number of points along the asteroid trajectory
+    integer, parameter :: Nt = (Neph-1) * Nlin + 1  ! number of points along the asteroid trajectory
     real(8), parameter :: centerpositionx = 0.5d0
     real(8), parameter :: centerpositiony = 0.5d0
     integer, parameter :: Nmaps = 4
     integer, parameter :: Nrgs = 13
-    integer nt1, nt2
+    integer n1, n2
     real(8) tnow, resolution(2), beta
     integer i_p, i, ii, i_R, idt
     real(8) dtlim2, dtlim3
@@ -57,24 +57,24 @@ program phaethon
     integer mapind1, mapind2
     
   ! We will compute the number density in a planar rectangular grid
-    ! nt1 and nt2 are the number of the grid nodes along the vertical
+    ! n1 and n2 are the number of the grid nodes along the vertical
     ! and horizontal directions
-    nt1 = 400 ; nt2 = 400
-    allocate(points(nt1,nt2), tmp_res(nt1,nt2), density(nt1,nt2), &
-             corr_res(nt1, nt2), sources(Np), comet(Np))
+    n1 = 400 ; n2 = 400
+    allocate(points(n1,n2), tmp_res(n1,n2), density(n1,n2), &
+             corr_res(n1, n2), sources(Nt), comet(Nt))
     
-    ! input sources parameters
-    call get_moving_sources(fname, Np, Nlin, sources, comet)
+    ! iNtut sources parameters
+    call get_moving_sources(fname, Nt, Nlin, sources, comet)
     
     ! the moment for which we compute the number density
-    tnow = sources(Np)%Tj
+    tnow = sources(Nt)%Tj
   
   ! resolution(1) and (2) are the distances between the grid nodes in 
   ! horizontal and vertical directions
     resolution(1) = 5d3
     resolution(2) = resolution(1)
     ! Generating the list of points where we compute number density
-    call get_points(points, nt1, nt2, resolution, comet(Np)%coords, &
+    call get_points(points, n1, n2, resolution, comet(Nt)%coords, &
                 centerpositionx, centerpositiony)
 
   ! Load the matrices with number density of impact ejecta (Szalay et al., 2019)
@@ -98,10 +98,10 @@ program phaethon
       endif
       muR = GMsun * (1d0 - beta)        
       ! when the particles ejected with umin leave the FoV
-      dtlim2 = resolution(1) * nt1 * (1d0 - centerpositionx) / AU / sources(1)%ud%umin
+      dtlim2 = resolution(1) * n1 * (1d0 - centerpositionx) / AU / sources(1)%ud%umin
       ! when the edge of the prime cloud leaves the FoV
       dtlim3 = sqrt(2d0 * sources(1)%r**2 * resolution(1) / AU &
-                * (1d0 - centerpositionx) * nt1 / (GMsun - muR))                    
+                * (1d0 - centerpositionx) * n1 / (GMsun - muR))                    
       idt = 1
       ! find how far from tnow the dust that is still in the
       ! considered vicinity of the asteroid was ejected
@@ -111,7 +111,7 @@ program phaethon
       write(*,*) 'start index', idt
       ! Loop over the consequently active sources along the asteroid
       ! trajectory
-      do i_p = idt, Np-1
+      do i_p = idt, Nt-1
       ! use the impact-ejecta map that corresponds to the current
       ! heliocentric distance
           do while(sources(i_p)%r < rhel2)
@@ -127,9 +127,9 @@ program phaethon
                 comet(i_p)%Vastvec, muR, dt, cloudcentr)
           rMtmp = cloudcentr
           !$omp parallel do default(none) private(i,ii) collapse(2) schedule(static) &
-          !$omp& shared(nt1,nt2, i_p, points, sources, tmp_res, Rgs, muR, comet, dt, cloudcentr)
-          do ii = 1, nt2
-            do i = 1, nt1
+          !$omp& shared(n1,n2, i_p, points, sources, tmp_res, Rgs, muR, comet, dt, cloudcentr)
+          do ii = 1, n2
+            do i = 1, n1
               call hc_DUDI_simple_expansion(tmp_res(i,ii), sources(i_p), dt, cloudcentr, points(i,ii))
             enddo
           enddo
@@ -137,7 +137,7 @@ program phaethon
           density = density + tmp_res
       enddo
       write(fnameout, '("results/Rg=", F5.2, "micron.dat")') Rgs(i_R)
-      call matrix_out(trim(fnameout), density, nt1, nt2)
+      call matrix_out(trim(fnameout), density, n1, n2)
       write(*,*) 'result is in the file ', fnameout
       if(i_R < Nrgs) then
         write(*,*) 'calculations continue'
