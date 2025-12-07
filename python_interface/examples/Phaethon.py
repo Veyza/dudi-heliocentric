@@ -515,8 +515,8 @@ def matrix_out(fname: str, image: np.ndarray) -> None:
 def run_phaethon(
     eph_filename: str = "input_data_files/"
     "Phaethon_2025-02-22_last_int=10min_ECLIPJ2000.dat",
-    Neph: int = 10,
-    Nlin: int = 1,
+    Neph: int = 1000,
+    Nlin: int = 10,
     n1: int = 200,
     n2: int = 200,
     centerpositionx: float = 0.5,
@@ -664,8 +664,6 @@ def run_phaethon(
         # idt = first index where age <= dt_limit (or Nt-1 if none)
         mask = np.where(age <= dt_limit)[0]
         idt = int(mask[0]) if mask.size else Nt - 1
-        print(f"start index {idt}, dtlim2 {dtlim2}, dtlim3 {dtlim3} dt_limit {dt_limit}, muR {muR}, beta {beta}")
-
 
         # current state of ratemap indices / data
         mapind1 = 0
