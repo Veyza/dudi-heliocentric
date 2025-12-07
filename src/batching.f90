@@ -104,6 +104,8 @@ contains
               !$OMP END DO
 			  !$OMP END PARALLEL
               density = density + tmp
+!~               write(*,*) tmp(1), density(1)
+!~               write(*,*) sources(i_t, i_s)
               end do
 
            case (METHOD_DELTA_EJECTION)

@@ -135,9 +135,6 @@ contains
 		
 		! integrate the number density of impact ejecta over the matrix
 		call integrate_over_matrix(tmp)
-		write(*,*) 'ratemap', ratemap(1:3,1), sources(i)%r, 'integral', tmp
-		write(*,*) 'ratemap1', rmap1(1:3,1), rhel1
-		write(*,*) 'ratemap2', rmap2(1:3,1), rhel2
 		! converting the number density to flux
 		! see Eq. 3 from the Szalay et al, 2016 (asteroid on a spherical orbit)
 		totrate = tmp / 0.31d0 / 7.2e-3 / 4d0 / pi * Rast**2
@@ -249,6 +246,7 @@ contains
       integral = integral &
          + rint * sin((halfpi - lats(nlats)) / 2d0) &
          * (halfpi - lats(nlats))
+      
 
    end subroutine integrate_over_matrix
 

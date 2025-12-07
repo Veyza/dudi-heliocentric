@@ -1,7 +1,7 @@
 ! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.2
+! Version 1.1.0
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
 ! If you do, please cite the following paper
@@ -30,8 +30,8 @@ program phaethon
     USE OMP_LIB
     
     implicit none
-    integer, parameter :: Neph = 2000  ! this many positions are in the file with ephemeridae
-    integer, parameter :: Nlin = 10  ! this many positions - 1 are interpolated between the ephemeridae
+    integer, parameter :: Neph = 1000  ! this many positions are in the file with ephemeridae
+    integer, parameter :: Nlin = 1  ! this many positions - 1 are interpolated between the ephemeridae
     integer, parameter :: Nt = (Neph-1) * Nlin + 1  ! number of points along the asteroid trajectory
     real(8), parameter :: centerpositionx = 0.5d0
     real(8), parameter :: centerpositiony = 0.5d0
@@ -108,7 +108,7 @@ program phaethon
       do while(tnow - sources(idt)%Tj > min(dtlim3, dtlim2))
           idt = idt + 1
       enddo
-      write(*,*) 'start index', idt
+      write(*,*) 'start index', idt, dtlim2, dtlim3, muR, beta
       ! Loop over the consequently active sources along the asteroid
       ! trajectory
       do i_p = idt, Nt-1
