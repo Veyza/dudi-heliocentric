@@ -57,7 +57,7 @@ contains
       use help
       use distributions_fun
       implicit none
-      integer, parameter :: Nmaps = 9
+      integer, parameter :: Nmaps = 4
       integer, intent(in) :: Np, Nlin
       ! Phaethon's radius is used as a normalization factor when 
       ! calculating the dust production rate
@@ -66,7 +66,7 @@ contains
       type(ephemeris), intent(out) :: comet(Np)
       integer i, ii
       real(8) moment(Np), dNlin
-      real(8) totrate
+      real(8) totrate, tmp
       character(*), intent(in) :: fname
       character(len = 93), dimension(Nmaps) :: fnames
       real(8) rhels(Nmaps), rhel1, rhel2
@@ -115,33 +115,36 @@ contains
              rmap1 = rmap2
              call read_ratemap(fnames(mapind2), rhel2)
           endif
-          call ratematr_interpolate(sources(i)%r, rhel1, rhel2)
+!~           call ratematr_interpolate(sources(i)%r, rhel1, rhel2)
+          call ratematr_interpolate((rhel1+rhel2)/2d0, rhel1, rhel2)
          comet(i)%Vast = norma3d(comet(i)%Vastvec)    ! asteroid speed at position i
          ! generating Ns points uniformly distributed over a unit sphere
          
-    sources(i)%alphaM = acos(sources(i)%rrM(3) / sources(i)%r)
-    sources(i)%betaM = atan(sources(i)%rrM(2), &
-                  sources(i)%rrM(1))
-    sources(i)%symmetry_axis = sources(i)%rrM / sources(i)%r
-    sources(i)%zeta = 0d0
-    sources(i)%eta = 0d0
-    sources(i)%ud%ud_shape = 1
-    sources(i)%ud%umin = 2d0 / AUdays2SI
-    sources(i)%ud%umax = 2399d0 / AUdays2SI
-    sources(i)%ejection_angle_distr = 3
-    sources(i)%Tj = moment(i)
-    sources(i)%dtau = 0d0
-    
-    ! integrate the number density of impact ejecta over the matrix
-    call integrate_over_matrix(totrate)
-    ! converting the number density to flux
-    ! see Eq. 3 from the Szalay et al, 2016 (asteroid on a spherical orbit)
-    totrate = totrate / 0.31d0 / 7.2e-3 / 4d0 / pi * Rast**2
-    ! converting flux to the number of ejected particles
-    sources(i)%Nparticles = totrate &
-                        * (moment(2) - moment(1)) * s_in_day
+		sources(i)%alphaM = acos(sources(i)%rrM(3) / sources(i)%r)
+		sources(i)%betaM = atan(sources(i)%rrM(2), &
+					  sources(i)%rrM(1))
+		sources(i)%symmetry_axis = sources(i)%rrM / sources(i)%r
+		sources(i)%zeta = 0d0
+		sources(i)%eta = 0d0
+		sources(i)%ud%ud_shape = 1
+		sources(i)%ud%umin = 2d0 / AUdays2SI
+		sources(i)%ud%umax = 2399d0 / AUdays2SI
+		sources(i)%ejection_angle_distr = 3
+		sources(i)%Tj = moment(i)
+		sources(i)%dtau = 0d0
+		
+		! integrate the number density of impact ejecta over the matrix
+		call integrate_over_matrix(tmp)
+		write(*,*) 'ratemap', ratemap(1:3,1), sources(i)%r, 'integral', tmp
+		write(*,*) 'ratemap1', rmap1(1:3,1), rhel1
+		write(*,*) 'ratemap2', rmap2(1:3,1), rhel2
+		! converting the number density to flux
+		! see Eq. 3 from the Szalay et al, 2016 (asteroid on a spherical orbit)
+		totrate = tmp / 0.31d0 / 7.2e-3 / 4d0 / pi * Rast**2
+		! converting flux to the number of ejected particles
+		sources(i)%Nparticles = totrate &
+							* (moment(2) - moment(1)) * s_in_day
       enddo
-
    end subroutine get_moving_sources
 
 
