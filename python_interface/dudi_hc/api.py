@@ -658,7 +658,7 @@ def get_ratemap() -> np.ndarray:
     """
     nlats, nlons = get_ratemap_dims()
     flat = _call_get_ratemap_flat(nlats, nlons)
-    return _reshape_map(flat, nlats, nlons)
+    return _reshape_map(flat, nlons, nlats)
 
 
 def get_rmap1() -> np.ndarray:
