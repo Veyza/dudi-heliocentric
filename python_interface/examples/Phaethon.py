@@ -112,6 +112,9 @@ def get_moving_sources(
     api.set_rmap1(rmap1)
 
     rhel2 = api.read_ratemap_get_rhel(fnames[mapind2])
+    rmap2 = api.get_rmap2()
+
+    api.ratematr_interpolate(rhel=(rhel1+rhel2)/2.0, rhel1=rhel1, rhel2=rhel2)
 
     # ----- read ephemeris and interpolate (Fortran logic) -----
     moment = np.zeros(Np, dtype=np.float64)
@@ -180,8 +183,9 @@ def get_moving_sources(
                         + (coords[i, :] - coords[i - Nlin, :]) * w
                     )
 
-    # Shift timeline: moment(i) = moment(i) - moment(1)
-    moment -= moment[0]
+    # Shift timeline
+    t0 = moment[0]
+    moment = moment - t0
 
     # Phaethon radius [m], as in Fortran
     Rast = 2.9e3
@@ -207,7 +211,6 @@ def get_moving_sources(
     for i in range(Np):
         rrM = coords[i, :].astype(np.float64)
         r = float(np.linalg.norm(rrM))
-
         # update which maps we interpolate between when r drops below rhel2
         if r < rhel2 and mapind2 + 1 < len(fnames):
             rhel1 = rhel2
@@ -216,9 +219,9 @@ def get_moving_sources(
             rmap2 = api.get_rmap2()
             api.set_rmap1(rmap2)
             rhel2 = api.read_ratemap_get_rhel(fnames[mapind2])
+            # Interpolate ratemap for th middle of this interval
+            api.ratematr_interpolate(rhel=(rhel1+rhel2)/2.0, rhel1=rhel1, rhel2=rhel2)
 
-        # Interpolate ratemap for this r (Fortran ratematr_interpolate)
-        api.ratematr_interpolate(rhel=r, rhel1=rhel1, rhel2=(rhel1+rhel2)/2.0)
 
         # Angular coordinates
         if r > 0.0:
@@ -251,10 +254,11 @@ def get_moving_sources(
         dtau = 0.0
 
         # Integrate number density of impact ejecta over the map
-        totrate = integrate_over_matrix()
+        int_ov_mat = integrate_over_matrix()
+        ratemap = api.get_ratemap()
 
         # Convert number density to flux (Szalay et al. 2016, Eq. 3)
-        totrate = totrate / 0.31 / 7.2e-3 / 4.0 / PI * Rast**2
+        totrate = int_ov_mat / 0.31 / 7.2e-3 / 4.0 / PI * Rast**2
 
         # Convert flux to number of ejected particles in this time step
         Nparticles = float(totrate * dt_days * S_IN_DAY)
@@ -285,65 +289,103 @@ def get_moving_sources(
 # integrate_over_matrix
 # ----------------------------------------------------------------------
 
+import math
+import numpy as np
+
 def integrate_over_matrix() -> float:
     """
     Vectorized Python translation of Fortran integrate_over_matrix.
 
-    Integrates the current Fortran ratemap (already set via api.read_*
-    and api.ratematr_interpolate) over the sphere.
+    Assumptions
+    -----------
+    - api.get_ratemap() returns an array of shape (nlons, nlats),
+      corresponding to Fortran ratemap(nlons,nlats).
+    - api.get_lats()  -> shape (nlats,)
+    - api.get_lons()  -> shape (nlons,)
     """
-    ratemap = api.get_ratemap()   # shape (nlats, nlons)
-    lats = api.get_lats()         # shape (nlats,)
-    lons = api.get_lons()         # shape (nlons,)
 
-    nlats, nlons = ratemap.shape
-    if lats.shape[0] != nlats or lons.shape[0] != nlons:
-        raise RuntimeError("Inconsistent ratemap / lats / lons dimensions")
+    ratemap = np.asarray(api.get_ratemap(), dtype=np.float64)  # (nlons, nlats)
+    lats    = np.asarray(api.get_lats(),    dtype=np.float64)  # (nlats,)
+    lons    = np.asarray(api.get_lons(),    dtype=np.float64)  # (nlons,)
 
-    # ------------------------------------------------------------------
-    # 1) Integrate over longitude for each latitude -> rint[lat]
-    # ------------------------------------------------------------------
-    # lons differences between adjacent longitudes
-    dlons = np.diff(lons)                    # shape (nlons-1,)
-    wrap = lons[0] - lons[-1] + TWOPI        # closing segment
+    if ratemap.ndim != 2:
+        raise RuntimeError(f"ratemap must be 2D, got shape {ratemap.shape}")
 
-    # (ratemap[:,1:] + ratemap[:,:-1]) has shape (nlats, nlons-1)
-    # Broadcast dlons across lat dimension and sum over lon
-    inner = (ratemap[:, 1:] + ratemap[:, :-1]) * dlons[np.newaxis, :]
-    rint = inner.sum(axis=1) + (ratemap[:, 0] + ratemap[:, -1]) * wrap
-    rint *= 0.5  # trapezoid in longitude
+    nlons, nlats = ratemap.shape
+    if lats.shape != (nlats,) or lons.shape != (nlons,):
+        raise RuntimeError(
+            f"Inconsistent shapes: ratemap {ratemap.shape}, "
+            f"lats {lats.shape}, lons {lons.shape}"
+        )
+
+    # polangle(ii) = HALFPI - lats(ii)  (same as Fortran)
+    polangle = HALFPI - lats
 
     # ------------------------------------------------------------------
-    # 2) Integrate over latitude (bands between ii-1 and ii)
+    # Pre-compute longitude segment widths with wrap-around
+    # dlons[1:] = lons[i] - lons[i-1]
+    # dlons[0]  = lons[0] - lons[nlons-1] + TWOPI
     # ------------------------------------------------------------------
-    polangle = HALFPI - lats  # colatitude
+    dlons = np.empty_like(lons)
+    dlons[1:] = lons[1:] - lons[:-1]
+    dlons[0]  = lons[0] - lons[-1] + TWOPI
 
-    # main bands: Fortran ii = 2..nlats
-    # vectorized:
-    #   (rint[ii] + rint[ii-1]) * sin(polangle[ii]) * (polangle[ii-1] - polangle[ii]) / 2
-    main = (
-        (rint[1:] + rint[:-1])
-        * np.sin(polangle[1:])
-        * (polangle[:-1] - polangle[1:])
-        * 0.5
+    # ------------------------------------------------------------------
+    # Vectorized "ring integrals" over longitude.
+    # For each latitude column j:
+    #   rint(j) = 0.5 * sum_i (ratemap(i,j) + ratemap(i-1,j)) * dlon_i
+    # with i-1 understood cyclically. This matches the Fortran loops
+    # (including the explicit "closing the ring" term).
+    # ------------------------------------------------------------------
+    # vals[i,j] = ratemap(i,j) + ratemap(i-1,j) with cyclic shift
+    vals = ratemap + np.roll(ratemap, shift=1, axis=0)  # (nlons, nlats)
+
+    # rint_all[j] = 0.5 * sum_i vals[i,j] * dlons[i]
+    rint_all = 0.5 * (vals * dlons[:, None]).sum(axis=0)  # (nlats,)
+
+    # ------------------------------------------------------------------
+    # Main latitude bands: Fortran ii = 2..nlats (Python 1..nlats-1)
+    # integral += ((rint(ii) + rint(ii-1)) * sin(polangle(ii))
+    #              * (polangle(ii-1) - polangle(ii)) * 0.5)
+    # ------------------------------------------------------------------
+    rint_main = rint_all[1:]      # rint(ii)
+    rint_prev = rint_all[:-1]     # rint(ii-1)
+
+    pol_mid = polangle[1:]        # polangle(ii)
+    dpol    = polangle[:-1] - polangle[1:]  # polangle(ii-1) - polangle(ii)
+
+    integral_main = np.sum(
+        (rint_main + rint_prev) * np.sin(pol_mid) * dpol * 0.5
     )
-    integral = main.sum()
 
     # ------------------------------------------------------------------
-    # 3) Top and bottom rings (same formula as Fortran, reuse rint[0] and rint[-1])
+    # Uppermost ring: ii = 1 in Fortran -> index 0 in Python
+    # Fortran:
+    #   rint = (trapezoid in lon) / 2
+    #   integral += rint * sin((-HALFPI - lats(1))/2) * (-HALFPI - lats(1))
+    # Our rint_all[0] already includes the 0.5 factor.
     # ------------------------------------------------------------------
-    integral += (
-        rint[0]
-        * np.sin((-HALFPI - lats[0]) / 2.0)
-        * (-HALFPI - lats[0])
+    rint_top = rint_all[0]
+    cap_top  = -HALFPI - lats[0]
+    integral_top = rint_top * math.sin(cap_top / 2.0) * cap_top
+
+    # ------------------------------------------------------------------
+    # Bottom ring: ii = nlats in Fortran -> index nlats-1 in Python
+    # NOTE: Fortran does NOT divide by 2 here, so we must undo our 0.5.
+    # Fortran:
+    #   rint = sum_i (ratemap(i,nlats) + ratemap(i-1,nlats)) * dlon_i
+    #   integral += rint * sin((HALFPI - lats(nlats))/2) * (HALFPI - lats(nlats))
+    # Since rint_all[-1] = 0.5 * that sum, multiply by 2.
+    # ------------------------------------------------------------------
+    rint_bottom = 2.0 * rint_all[-1]
+    cap_bot     = HALFPI - lats[-1]
+    integral_bottom = (
+        rint_bottom
+        * math.sin(cap_bot / 2.0)
+        * cap_bot
     )
 
-    integral += (
-        rint[-1]
-        * np.sin((HALFPI - lats[-1]) / 2.0)
-        * (HALFPI - lats[-1])
-    )
-
+    integral = integral_main + integral_top + integral_bottom
     return float(integral)
 
 
@@ -473,8 +515,8 @@ def matrix_out(fname: str, image: np.ndarray) -> None:
 def run_phaethon(
     eph_filename: str = "input_data_files/"
     "Phaethon_2025-02-22_last_int=10min_ECLIPJ2000.dat",
-    Neph: int = 2000,
-    Nlin: int = 10,
+    Neph: int = 10,
+    Nlin: int = 1,
     n1: int = 200,
     n2: int = 200,
     centerpositionx: float = 0.5,
@@ -482,12 +524,13 @@ def run_phaethon(
 ) -> None:
     Nrgs = 13
     Rgs = np.array(
-        [
-            0.55,
+            [
+            99.0,
+            0.1,
             0.2,
             0.3,
             0.42,
-            0.1,
+            0.55,
             0.67,
             0.85,
             1.0,
@@ -496,7 +539,6 @@ def run_phaethon(
             4.0,
             6.0,
             10.0,
-            99.0
         ],
         dtype=np.float64,
     )
@@ -515,7 +557,7 @@ def run_phaethon(
     tnow = float(sources[-1].Tj)
 
     # Resolution of the planar grid [m]
-    resolution = np.array([5.0e3, 5.0e3], dtype=np.float64)
+    resolution = np.array([10.0e3, 10.0e3], dtype=np.float64)
 
     # Build 2D grid of points (n1 × n2)
     points_grid = get_points(
@@ -542,7 +584,7 @@ def run_phaethon(
         Nt: int,
     ) -> list[tuple[int, int, int, int]]:
         """
-        Compute contiguous blocks of i_t that share the same mapind2.
+        Compute contiguous blocks of i_t that share the same mapind1 and mapind2.
 
         Returns a list of tuples (block_start, block_end, mapind1, mapind2),
         where block_end is exclusive.
@@ -622,6 +664,7 @@ def run_phaethon(
         # idt = first index where age <= dt_limit (or Nt-1 if none)
         mask = np.where(age <= dt_limit)[0]
         idt = int(mask[0]) if mask.size else Nt - 1
+        print(f"start index {idt}, dtlim2 {dtlim2}, dtlim3 {dtlim3} dt_limit {dt_limit}, muR {muR}, beta {beta}")
 
 
         # current state of ratemap indices / data
@@ -672,6 +715,8 @@ def run_phaethon(
                 points=points_flat,
                 sources_by_time=sources[block_start:block_end],
                 comets_by_time=comet[block_start:block_end],
+                #sources_by_time=sources[block_start:block_start+1],
+                #comets_by_time=comet[block_start:block_start+1],
                 muR=muR,
                 tnow=tnow,
                 Rast_AU=Rast_AU,
