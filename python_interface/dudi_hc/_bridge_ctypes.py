@@ -344,6 +344,8 @@ def call_batch_points(
     )
     return density
 
+    
+
 
 def call_batch_sources(
     *,
@@ -438,6 +440,8 @@ def call_batch_sources(
         _as_vec3(cloudcentr), int(method_id),
     )
     return density
+
+
 
 def call_batch_sources_points(
     *,
@@ -721,7 +725,9 @@ def call_set_lons(lons: np.ndarray) -> None:
 
 # --- 2D maps: ratemap, rmap1, rmap2 ------------------------------------
 
-# void py_get_ratemap(double *ratemap_out);  ! length nlats*nlons
+# --- 2D maps: ratemap, rmap1, rmap2 ------------------------------------
+
+# void py_get_ratemap(double *ratemap_out);  ! length nlons*nlats
 _lib.py_get_ratemap.argtypes = [C.POINTER(C.c_double)]
 _lib.py_get_ratemap.restype = None
 
@@ -730,11 +736,11 @@ _lib.py_set_ratemap.argtypes = [C.POINTER(C.c_double)]
 _lib.py_set_ratemap.restype = None
 
 
-def call_get_ratemap_flat(nlats: int, nlons: int) -> np.ndarray:
+def call_get_ratemap_flat(nlons: int, nlats: int) -> np.ndarray:
     """
-    Return ratemap as a flat 1D array of length nlats*nlons.
+    Return ratemap as a flat 1D array of length nlons*nlats.
     """
-    arr = np.empty(nlats * nlons, dtype=np.float64)
+    arr = np.empty(nlons * nlats, dtype=np.float64)
     ptr = arr.ctypes.data_as(C.POINTER(C.c_double))
     _lib.py_get_ratemap(ptr)
     return arr
@@ -754,8 +760,11 @@ _lib.py_set_rmap1.argtypes = [C.POINTER(C.c_double)]
 _lib.py_set_rmap1.restype = None
 
 
-def call_get_rmap1_flat(nlats: int, nlons: int) -> np.ndarray:
-    arr = np.empty(nlats * nlons, dtype=np.float64)
+def call_get_rmap1_flat(nlons: int, nlats: int) -> np.ndarray:
+    """
+    Return rmap1 as a flat 1D array of length nlons*nlats.
+    """
+    arr = np.empty(nlons * nlats, dtype=np.float64)
     ptr = arr.ctypes.data_as(C.POINTER(C.c_double))
     _lib.py_get_rmap1(ptr)
     return arr
@@ -775,8 +784,11 @@ _lib.py_set_rmap2.argtypes = [C.POINTER(C.c_double)]
 _lib.py_set_rmap2.restype = None
 
 
-def call_get_rmap2_flat(nlats: int, nlons: int) -> np.ndarray:
-    arr = np.empty(nlats * nlons, dtype=np.float64)
+def call_get_rmap2_flat(nlons: int, nlats: int) -> np.ndarray:
+    """
+    Return rmap2 as a flat 1D array of length nlons*nlats.
+    """
+    arr = np.empty(nlons * nlats, dtype=np.float64)
     ptr = arr.ctypes.data_as(C.POINTER(C.c_double))
     _lib.py_get_rmap2(ptr)
     return arr
@@ -786,6 +798,7 @@ def call_set_rmap2_from_flat(rmap2_flat: np.ndarray) -> None:
     rmap2_flat = np.asarray(rmap2_flat, dtype=np.float64)
     ptr = rmap2_flat.ctypes.data_as(C.POINTER(C.c_double))
     _lib.py_set_rmap2(ptr)
+
 
 
 # --- temporary vector rMtmp (size 3) -----------------------------------

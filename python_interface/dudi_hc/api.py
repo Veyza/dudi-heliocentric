@@ -639,69 +639,75 @@ def set_lons(lons: np.ndarray) -> None:
     _call_set_lons(lons)
 
 
-def _reshape_map(map_flat: np.ndarray, nlats: int, nlons: int) -> np.ndarray:
+def _reshape_map(map_flat: np.ndarray, nlons: int, nlats: int) -> np.ndarray:
     """
-    Helper: reshape a flat Fortran-filled array into 2D Fortran-order.
+    Helper: reshape a flat Fortran-filled array into 2D Fortran-order
+    with shape (nlons, nlats).
     """
     arr = np.asarray(map_flat, dtype=np.float64)
-    if arr.size != nlats * nlons:
+    if arr.size != nlons * nlats:
         raise ValueError(
-            f"flat map has size {arr.size}, expected {nlats * nlons}"
+            f"flat map has size {arr.size}, expected {nlons * nlats}"
         )
-    arr = arr.reshape((nlats, nlons), order="F")
-    return arr
+    return arr.reshape((nlons, nlats), order="F")
+
 
 
 def get_ratemap() -> np.ndarray:
     """
-    Return ratemap as a 2D NumPy array with shape (nlats, nlons).
+    Return ratemap as a 2D NumPy array with shape (nlons, nlats).
     """
     nlats, nlons = get_ratemap_dims()
-    flat = _call_get_ratemap_flat(nlats, nlons)
+    flat = _call_get_ratemap_flat(nlons, nlats)  # match (nlons, nlats)
     return _reshape_map(flat, nlons, nlats)
+
 
 
 def get_rmap1() -> np.ndarray:
     """
-    Return rmap1 as a 2D NumPy array with shape (nlats, nlons).
+    Return rmap1 as a 2D NumPy array with shape (nlons, nlats).
     """
     nlats, nlons = get_ratemap_dims()
-    flat = _call_get_rmap1_flat(nlats, nlons)
-    return _reshape_map(flat, nlats, nlons)
+    flat = _call_get_rmap1_flat(nlons, nlats)
+    return _reshape_map(flat, nlons, nlats)
 
 
 def get_rmap2() -> np.ndarray:
     """
-    Return rmap2 as a 2D NumPy array with shape (nlats, nlons).
+    Return rmap2 as a 2D NumPy array with shape (nlons, nlats).
     """
     nlats, nlons = get_ratemap_dims()
-    flat = _call_get_rmap2_flat(nlats, nlons)
-    return _reshape_map(flat, nlats, nlons)
+    flat = _call_get_rmap2_flat(nlons, nlats)
+    return _reshape_map(flat, nlons, nlats)
+
 
 
 def set_ratemap(ratemap: np.ndarray) -> None:
     """
-    Copy a 2D NumPy array into the Fortran ratemap.
+    Copy a 2D NumPy array of shape (nlons, nlats) into the Fortran ratemap.
     """
     ratemap = np.asarray(ratemap, dtype=np.float64)
     nlats, nlons = get_ratemap_dims()
-    if ratemap.shape != (nlats, nlons):
+    expected_shape = (nlons, nlats)
+    if ratemap.shape != expected_shape:
         raise ValueError(
-            f"ratemap must have shape ({nlats}, {nlons}), got {ratemap.shape}"
+            f"ratemap must have shape {expected_shape}, got {ratemap.shape}"
         )
     flat = np.asfortranarray(ratemap).ravel(order="F")
     _call_set_ratemap_from_flat(flat)
 
 
+
 def set_rmap1(rmap1: np.ndarray) -> None:
     """
-    Copy a 2D NumPy array into the Fortran rmap1.
+    Copy a 2D NumPy array of shape (nlons, nlats) into the Fortran rmap1.
     """
     rmap1 = np.asarray(rmap1, dtype=np.float64)
     nlats, nlons = get_ratemap_dims()
-    if rmap1.shape != (nlats, nlons):
+    expected_shape = (nlons, nlats)
+    if rmap1.shape != expected_shape:
         raise ValueError(
-            f"rmap1 must have shape ({nlats}, {nlons}), got {rmap1.shape}"
+            f"rmap1 must have shape {expected_shape}, got {rmap1.shape}"
         )
     flat = np.asfortranarray(rmap1).ravel(order="F")
     _call_set_rmap1_from_flat(flat)
@@ -709,16 +715,18 @@ def set_rmap1(rmap1: np.ndarray) -> None:
 
 def set_rmap2(rmap2: np.ndarray) -> None:
     """
-    Copy a 2D NumPy array into the Fortran rmap2.
+    Copy a 2D NumPy array of shape (nlons, nlats) into the Fortran rmap2.
     """
     rmap2 = np.asarray(rmap2, dtype=np.float64)
     nlats, nlons = get_ratemap_dims()
-    if rmap2.shape != (nlats, nlons):
+    expected_shape = (nlons, nlats)
+    if rmap2.shape != expected_shape:
         raise ValueError(
-            f"rmap2 must have shape ({nlats}, {nlons}), got {rmap2.shape}"
+            f"rmap2 must have shape {expected_shape}, got {rmap2.shape}"
         )
     flat = np.asfortranarray(rmap2).ravel(order="F")
     _call_set_rmap2_from_flat(flat)
+
 
 
 def get_rMtmp() -> np.ndarray:
