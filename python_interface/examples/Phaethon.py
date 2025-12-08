@@ -517,8 +517,8 @@ def run_phaethon(
     "Phaethon_2025-02-22_last_int=10min_ECLIPJ2000.dat",
     Neph: int = 2000,
     Nlin: int = 10,
-    n1: int = 200,
-    n2: int = 200,
+    n1: int = 400,
+    n2: int = 400,
     centerpositionx: float = 0.5,
     centerpositiony: float = 0.5,
 ) -> None:
@@ -557,7 +557,7 @@ def run_phaethon(
     tnow = float(sources[-1].Tj)
 
     # Resolution of the planar grid [m]
-    resolution = np.array([10.0e3, 10.0e3], dtype=np.float64)
+    resolution = np.array([5.0e3, 5.0e3], dtype=np.float64)
 
     # Build 2D grid of points (n1 × n2)
     points_grid = get_points(
@@ -632,7 +632,6 @@ def run_phaethon(
         if current_start is not None:
             blocks.append((current_start, Nt, current_mapind1, current_mapind2))
 
-        print(f"blocks {blocks} rhel1 {rhel1} r {sources[idt].r} rhel2 {rhel2}")
         return blocks
 
 
@@ -740,17 +739,6 @@ def run_phaethon(
                 method="simple_expansion",
                 )
 
-            # n_points = len(points_flat)
-            # if dens_flat.shape[0] != n_points:
-            #     raise RuntimeError(
-            #         f"batch_over_points_sources returned {dens_flat.shape[0]} values, "
-            #         f"expected {n_points}"
-            #    )
-            if np.any(dens_flat > 1e-1):
-                print("WARNING: dens_flat contains values > 1e-1")
-                idx = np.where(dens_flat > 1e-1)[0]
-                print("Rg", Rgs[i_R], "Indices:", idx[:20], "...")      # print first 20 indices
-                print("Values:", dens_flat[idx][:20])   # print first 20 values
             dens_flat = np.array(dens_flat, dtype=float, copy=True)
 
 

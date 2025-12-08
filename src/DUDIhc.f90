@@ -91,7 +91,6 @@ module DUDIhc
             else
                 density = 0.0
             end if
-
         
         end subroutine hc_DUDI_simple_expansion
         

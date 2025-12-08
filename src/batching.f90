@@ -100,12 +100,14 @@ contains
                  do i = 1, n_points
                     call hc_DUDI_simple_expansion(tmp(i), sources(i_t, i_s), dt, &
                                                    cloudcentr, points(i))
+!~               if(tmp(i) > 1d-1 .or. tmp(i) < 0 .or. density(i) > 1d-1) then
+!~ 				  write(*,*) 'i', i, 'res', tmp(i), density(i)
+!~ 				  write(*,*) 'i_t, i_s', i_t, i_s, 'source', sources(i_t, i_s)
+!~               endif
                  end do
               !$OMP END DO
 			  !$OMP END PARALLEL
               density = density + tmp
-!~               write(*,*) tmp(1), density(1)
-!~               write(*,*) sources(i_t, i_s)
               end do
 
            case (METHOD_DELTA_EJECTION)
