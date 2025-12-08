@@ -515,7 +515,7 @@ def matrix_out(fname: str, image: np.ndarray) -> None:
 def run_phaethon(
     eph_filename: str = "input_data_files/"
     "Phaethon_2025-02-22_last_int=10min_ECLIPJ2000.dat",
-    Neph: int = 1000,
+    Neph: int = 2000,
     Nlin: int = 10,
     n1: int = 200,
     n2: int = 200,
@@ -574,11 +574,8 @@ def run_phaethon(
         points_grid[i, j] for j in range(n2) for i in range(n1)
     ]
 
-    # Density arrays
-    density = np.zeros((n1, n2), dtype=np.float64)
-
     def _group_sources_by_ratemap(
-        sources: Sequence[Source],
+        sources: Sequence["Source"],
         rhels: np.ndarray,
         idt: int,
         Nt: int,
@@ -591,17 +588,21 @@ def run_phaethon(
         """
         blocks: list[tuple[int, int, int, int]] = []
 
-        # Initial indices as in your original code
+        # Nothing to do
+        if idt >= Nt:
+            return blocks
+
+        # Start with the first interval in rhels
         mapind1 = 0
         mapind2 = 1
         rhel1 = rhels[mapind1]
         rhel2 = rhels[mapind2]
 
-        current_start = idt
-        current_mapind1 = mapind1
-        current_mapind2 = mapind2
+        current_start: int | None = None
+        current_mapind1: int | None = None
+        current_mapind2: int | None = None
 
-        for i_t in range(idt, Nt - 1):
+        for i_t in range(idt, Nt):
             r = sources[i_t].r
 
             # Advance mapind* until this r is between rhel1 and rhel2
@@ -610,17 +611,30 @@ def run_phaethon(
                 mapind2 += 1
                 rhel1 = rhels[mapind1]
                 rhel2 = rhels[mapind2]
+                print(f"mapind1, r, rhel2 {mapind1, r, rhel2} current {current_mapind1, current_mapind2}")
 
-            # If the pair (mapind1,mapind2) changed, close previous block
+            # First iteration: just start the first block, do NOT close anything
+            if current_start is None:
+                current_start = i_t
+                current_mapind1 = mapind1
+                current_mapind2 = mapind2
+                continue
+
+            # Later iterations: if the interval changed, close previous block
             if (mapind1, mapind2) != (current_mapind1, current_mapind2):
+                # current_start is guaranteed not None here
                 blocks.append((current_start, i_t, current_mapind1, current_mapind2))
                 current_start = i_t
                 current_mapind1 = mapind1
                 current_mapind2 = mapind2
 
-        # Close last block
-        blocks.append((current_start, Nt - 1, current_mapind1, current_mapind2))
+        # Close the last block (end is exclusive → Nt)
+        if current_start is not None:
+            blocks.append((current_start, Nt, current_mapind1, current_mapind2))
+
+        print(f"blocks {blocks} rhel1 {rhel1} r {sources[idt].r} rhel2 {rhel2}")
         return blocks
+
 
     # Load list of impact-ejecta maps (Szalay et al. 2019)
     rhels, fnames = get_maps_data()  # length Nmaps=4 in this setup
@@ -709,6 +723,10 @@ def run_phaethon(
             )
             ratemap = api.get_ratemap()
 
+            dens_flat = np.zeros(n1 * n2)
+
+            print(f"start index {block_start} map index {mapind1} {mapind2}")
+
             dens_flat = api.batch_over_points_sources(
                 points=points_flat,
                 sources_by_time=sources[block_start:block_end],
@@ -721,6 +739,20 @@ def run_phaethon(
                 pericenter=False,          # not used by delta_ejection
                 method="simple_expansion",
                 )
+
+            # n_points = len(points_flat)
+            # if dens_flat.shape[0] != n_points:
+            #     raise RuntimeError(
+            #         f"batch_over_points_sources returned {dens_flat.shape[0]} values, "
+            #         f"expected {n_points}"
+            #    )
+            if np.any(dens_flat > 1e-1):
+                print("WARNING: dens_flat contains values > 1e-1")
+                idx = np.where(dens_flat > 1e-1)[0]
+                print("Rg", Rgs[i_R], "Indices:", idx[:20], "...")      # print first 20 indices
+                print("Values:", dens_flat[idx][:20])   # print first 20 values
+            dens_flat = np.array(dens_flat, dtype=float, copy=True)
+
 
             # Replace the double loop with a reshape using Fortran order
             density[:, :] += np.asarray(dens_flat, float).reshape(
