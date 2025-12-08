@@ -39,7 +39,7 @@ program phaethon
     integer, parameter :: Nrgs = 13
     integer n1, n2
     real(8) tnow, resolution(2), beta
-    integer i_p, i, ii, i_R, idt
+    integer i_t, i, ii, i_R, idt
     real(8) dtlim2, dtlim3
     real(8) :: Rgs(0:Nrgs) = (/99d0, 0.1d0, 0.2d0, 0.3d0, &
                           0.42d0, 0.55d0, 0.67d0, 0.85d0, 1d0, &
@@ -111,26 +111,26 @@ program phaethon
       write(*,*) 'start index', idt
       ! Loop over the consequently active sources along the asteroid
       ! trajectory
-      do i_p = idt, Nt-1
+      do i_t = idt, Nt-1
       ! use the impact-ejecta map that corresponds to the current
       ! heliocentric distance
-          do while(sources(i_p)%r < rhel2)
+          do while(sources(i_t)%r < rhel2)
               rhel1 = rhel2
               mapind1 = mapind2
               mapind2 = mapind2 + 1
               rmap1 = rmap2
               call read_ratemap(fnames(mapind2), rhel2)
           enddo
-          call ratematr_interpolate(sources(i_p)%r, rhel1, rhel2)
-          dt = tnow - sources(i_p)%Tj
-          call runge_kutta_point_position(comet(i_p)%coords, &
-                comet(i_p)%Vastvec, muR, dt, cloudcentr)
+          call ratematr_interpolate(sources(i_t)%r, rhel1, rhel2)
+          dt = tnow - sources(i_t)%Tj
+          call runge_kutta_point_position(comet(i_t)%coords, &
+                comet(i_t)%Vastvec, muR, dt, cloudcentr)
           rMtmp = cloudcentr
           !$omp parallel do default(none) private(i,ii) collapse(2) schedule(static) &
-          !$omp& shared(n1,n2, i_p, points, sources, tmp_res, Rgs, muR, comet, dt, cloudcentr)
+          !$omp& shared(n1,n2, i_t, points, sources, tmp_res, Rgs, muR, comet, dt, cloudcentr)
           do ii = 1, n2
             do i = 1, n1
-              call hc_DUDI_simple_expansion(tmp_res(i,ii), sources(i_p), dt, cloudcentr, points(i,ii))
+              call hc_DUDI_simple_expansion(tmp_res(i,ii), sources(i_t), dt, cloudcentr, points(i,ii))
             enddo
           enddo
           !$omp end parallel do

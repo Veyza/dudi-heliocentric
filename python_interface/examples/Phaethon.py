@@ -611,7 +611,6 @@ def run_phaethon(
                 mapind2 += 1
                 rhel1 = rhels[mapind1]
                 rhel2 = rhels[mapind2]
-                print(f"mapind1, r, rhel2 {mapind1, r, rhel2} current {current_mapind1, current_mapind2}")
 
             # First iteration: just start the first block, do NOT close anything
             if current_start is None:
@@ -724,7 +723,7 @@ def run_phaethon(
 
             dens_flat = np.zeros(n1 * n2)
 
-            print(f"start index {block_start} map index {mapind1} {mapind2}")
+            print(f"start index {block_start}")
 
             dens_flat = api.batch_over_points_sources(
                 points=points_flat,
