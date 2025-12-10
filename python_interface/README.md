@@ -162,6 +162,10 @@ delta-ejection method (as in the Fortran example), performs batched
 calculations over sources and points for efficiency, and writes the resulting
 2D density matrix to `results/result.dat`, with the layout matching the
 Fortran output for further plotting or post-processing.
+The runtime of the `example.py` script is ~ 30 seconds with 4 OpenMP threads.
+Plot the result with the command:
+      python3 scripts/show_image.py 
+
 
 ### `Phaethon.py`
 
@@ -187,4 +191,10 @@ impact-ejecta ratemap at every time step, it groups time intervals into blocks
 that share the same ratemap pair and updates the interpolation once per block
 while performing batched density evaluations. This batching significantly
 reduces runtime but leads to subtle but noticeable differences from the original
-Fortran result shown in Fig. 10 of the paper. 
+Fortran result shown in Fig. 10 of the paper. Also, the resolution of the dust 
+number density map around Phaethon is reduced by a factor of two in the Python 
+script compared to the Fortran implementation. It corresponds to a fourfold 
+decrease in the number of FLOPs. As a result, the runtime of the Phaethon example
+in Python is lower (4 minutes with 4 OpenMP threads).
+Plot the result with the command:
+     python3 scripts/plot_Fig10.py
