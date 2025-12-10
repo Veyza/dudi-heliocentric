@@ -1,13 +1,18 @@
-! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
+! This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.2
+! Version 1.1.0
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
-! If you do, please cite the following paper
-! Anastasiia Ershova and Jürgen Schmidt, 
+! If you do, please cite the following papers
+!
+! Anastasiia Ershova and Juergen Schmidt, 
 ! Two-body model for the spatial distribution of dust ejected from
 ! an atmosphereless body, 2021, A&A, 650, A186 
+! and Ershova, A., Schmidt, J., Liu, X., Szalay, J., Kimura, H., Hirai,
+! T., Arai, T., and Kobayashi, M.,
+! A computationally efficient semi-analytical model for the dust
+! environment of comets and asteroids, A&A 693, A80 (2025).
 
 ! File: distributions_fun.f90
 ! Description: Contains unctions that describe the ejection process and
@@ -82,47 +87,7 @@ module distributions_fun
                 lonmax = maxval(lons)
             
             end subroutine read_ratemap
-            
-            ! reads a matrix from Jamey Szalay's file fname
-            ! rhel is the heliocentric distance of the asteroid
-            ! corresponding to the moments the map is computed for
-            ! lats and lons are the latitudes and longitudes to which
-            ! the columns and the rows of the matrix correspond
-            ! they are not exactly uniform
-            ! the subroutine will return the lats and lons in radians
-            ! and rhel in AU
-            subroutine read_first_ratemap(fname, rhel)
-                character(*), intent(in) :: fname
-                real(8), intent(out) :: rhel
-                integer i
-                character(len = 18) strtmp
-                character(len = 14) strtmp2
-                real(8) vtmp(3)
-                
-                open(100, file = fname, status = 'old')
-                    do i = 1, 5
-                        read(100,*) strtmp
-                    enddo
-                    read(100,*) strtmp, vtmp
-                    rhel = sqrt(sum(vtmp**2)) * 1d3        ! in meters
-                    rhel = rhel / AU                        ! in AU
-                    read(100,*) strtmp
-                    read(100,*) strtmp2, lons
-                    read(100,*) strtmp2, lats
-                    do i = 1, 3
-                        read(100,*) strtmp
-                    enddo
-                    do i = 1, nlats
-                        read(100,*) rmap1(:,i)
-                    enddo
-                close(100)
-                lats = lats * real(deg2rad)
-                lons = lons * real(deg2rad)
-                
-                lonmin = minval(lons)
-                lonmax = maxval(lons)
-            
-            end subroutine read_first_ratemap
+           
     
     
       ! The axisymmetric distribution of ejection direction
@@ -159,7 +124,7 @@ module distributions_fun
             fpsi = 0.25d0 / pi
           case(1)
           ! pseudo Gaussian distribution of polar angle, uniform distribution of azimuth
-            if(wpsi < pi) then
+            if(wpsi <= pi) then
               fpsi = Exp(-(psi)**2 / 2d0 / omega60 / omega60)
               ! this factor is normalization due to the fact that fpsi
               ! domain is from 0 to pi and not from -infinity to +infinity
@@ -339,6 +304,7 @@ module distributions_fun
       
       end function ejection_speed_distribution
 
-      
+
+ 
 
 end module distributions_fun

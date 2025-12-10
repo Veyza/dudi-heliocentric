@@ -77,11 +77,15 @@ EXAMPLE_OBJ := $(patsubst %.f90,$(MODDIR)/%.o,$(EXAMPLE_SRC))
 PHAETHON_OBJ:= $(patsubst %.f90,$(MODDIR)/%.o,$(PHAETHON_SRC))
 SELECT_OBJ  := $(patsubst %.f90,$(MODDIR)/%.o,$(SELECT_SRC))
 
-DEPS := $(CORE_OBJS:.o=.d) $(EXAMPLE_OBJ:.o=.d) $(PHAETHON_OBJ:.o=.d) $(SELECT_OBJ:.o=.d)
+# --- New 3D main program ---
+SRC_PHAETHON_3D   := $(EXDIR)/phaethon_3d.f90
+OBJ_PHAETHON_3D   := $(patsubst %.f90,$(MODDIR)/%.o,$(SRC_PHAETHON_3D))
+
+DEPS := $(CORE_OBJS:.o=.d) $(EXAMPLE_OBJ:.o=.d) $(PHAETHON_OBJ:.o=.d) $(SELECT_OBJ:.o=.d) $(OBJ_PHAETHON_3D:.o=.d)
 -include $(DEPS)
 
 # Default goal builds all binaries
-all: $(BINDIR)/dudihc $(BINDIR)/phaethon_dudihc $(BINDIR)/select_method_dudihc
+all: $(BINDIR)/dudihc $(BINDIR)/phaethon_dudihc $(BINDIR)/select_method_dudihc $(BINDIR)/phaethon_3d_dudihc
 
 # ------------ link steps ------------
 $(BINDIR)/dudihc: $(CORE_OBJS) $(EXAMPLE_OBJ) | $(BINDIR)
@@ -95,6 +99,10 @@ phaethon_dudihc: $(BINDIR)/phaethon_dudihc
 $(BINDIR)/select_method_dudihc: $(CORE_OBJS) $(SELECT_OBJ) | $(BINDIR)
 	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $^ -o $@ $(LDFLAGS)
 select_method_dudihc: $(BINDIR)/select_method_dudihc
+
+$(BINDIR)/phaethon_3d_dudihc: $(CORE_OBJS) $(OBJ_PHAETHON_3D) | $(BINDIR)
+	$(FC) $(FFLAGS) -J$(MODDIR) -I$(MODDIR) $^ -o $@ $(LDFLAGS)
+phaethon_3d_dudihc: $(BINDIR)/phaethon_3d_dudihc
 
 # ------------ compile step (pattern rule) ------------
 $(MODDIR)/%.o: %.f90 | $(MODDIR)
@@ -118,6 +126,10 @@ phaethon: $(BINDIR)/phaethon_dudihc | $(RESDIR)
 	$(BINDIR)/phaethon_dudihc
 	@echo ">>> Plot: $(PYTHON) $(PHAETHON_PYSCRIPT)"
 	$(PYTHON) $(PHAETHON_PYSCRIPT) || true
+	
+phaethon_3d: $(BINDIR)/phaethon_3d_dudihc | $(RESDIR)
+	@echo ">>> Running phaethon_3d_dudihc"
+	$(BINDIR)/phaethon_3d_dudihc
 
 select: $(BINDIR)/select_method_dudihc | $(RESDIR)
 	@echo ">>> Running select_method_dudihc"
@@ -127,6 +139,7 @@ select: $(BINDIR)/select_method_dudihc | $(RESDIR)
 run-example:           $(BINDIR)/dudihc            ; $(BINDIR)/dudihc
 run-phaethon_dudihc:   $(BINDIR)/phaethon_dudihc   ; $(BINDIR)/phaethon_dudihc
 run-select_method:     $(BINDIR)/select_method_dudihc ; $(BINDIR)/select_method_dudihc
+run-phaethon_3d_dudihc:   $(BINDIR)/phaethon_3d_dudihc   ; $(BINDIR)/phaethon_3d_dudihc
 
 # ------------ utilities ------------
 help:

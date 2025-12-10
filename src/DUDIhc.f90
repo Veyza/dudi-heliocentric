@@ -1,13 +1,18 @@
 ! This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.2
+! Version 1.1.0
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
-! If you do, please cite the following paper
-! Anastasiia Ershova and Jürgen Schmidt, 
+! If you do, please cite the following papers
+!
+! Anastasiia Ershova and Juergen Schmidt, 
 ! Two-body model for the spatial distribution of dust ejected from
 ! an atmosphereless body, 2021, A&A, 650, A186 
+! and Ershova, A., Schmidt, J., Liu, X., Szalay, J., Kimura, H., Hirai,
+! T., Arai, T., and Kobayashi, M.,
+! A computationally efficient semi-analytical model for the dust
+! environment of comets and asteroids, A&A 693, A80 (2025).
 
 ! File: DUDIhc.f90
 ! Description: Contains subroutines that implement three solution methods
@@ -86,7 +91,6 @@ module DUDIhc
             else
                 density = 0.0
             end if
-
         
         end subroutine hc_DUDI_simple_expansion
         

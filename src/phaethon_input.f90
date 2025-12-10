@@ -1,13 +1,18 @@
-! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
+! This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.2
+! Version 1.1.0
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
-! If you do, please cite the following paper
-! Anastasiia Ershova and Jürgen Schmidt, 
+! If you do, please cite the following papers
+!
+! Anastasiia Ershova and Juergen Schmidt, 
 ! Two-body model for the spatial distribution of dust ejected from
 ! an atmosphereless body, 2021, A&A, 650, A186 
+! and Ershova, A., Schmidt, J., Liu, X., Szalay, J., Kimura, H., Hirai,
+! T., Arai, T., and Kobayashi, M.,
+! A computationally efficient semi-analytical model for the dust
+! environment of comets and asteroids, A&A 693, A80 (2025).
 
 ! Author: Anastasiia Ershova
 ! E-mail: vveyzaa@gmail.com
@@ -52,7 +57,7 @@ contains
       use help
       use distributions_fun
       implicit none
-      integer, parameter :: Nmaps = 9
+      integer, parameter :: Nmaps = 4
       integer, intent(in) :: Np, Nlin
       ! Phaethon's radius is used as a normalization factor when 
       ! calculating the dust production rate
@@ -61,7 +66,7 @@ contains
       type(ephemeris), intent(out) :: comet(Np)
       integer i, ii
       real(8) moment(Np), dNlin
-      real(8) totrate
+      real(8) totrate, tmp
       character(*), intent(in) :: fname
       character(len = 93), dimension(Nmaps) :: fnames
       real(8) rhels(Nmaps), rhel1, rhel2
@@ -69,7 +74,8 @@ contains
 
       call get_maps_data(rhels, fnames)
       mapind1 = 1 ; mapind2 = mapind1 + 1
-      call read_first_ratemap(fnames(mapind1), rhel1)
+      call read_ratemap(fnames(mapind1), rhel1)
+      rmap1 = rmap2
       call read_ratemap(fnames(mapind2), rhel2)
        
       dNlin = dble(Nlin)
@@ -109,33 +115,33 @@ contains
              rmap1 = rmap2
              call read_ratemap(fnames(mapind2), rhel2)
           endif
-          call ratematr_interpolate(sources(i)%r, rhel1, rhel2)
+!~           call ratematr_interpolate(sources(i)%r, rhel1, rhel2)
+          call ratematr_interpolate((rhel1+rhel2)/2d0, rhel1, rhel2)
          comet(i)%Vast = norma3d(comet(i)%Vastvec)    ! asteroid speed at position i
          ! generating Ns points uniformly distributed over a unit sphere
          
-    sources(i)%alphaM = acos(sources(i)%rrM(3) / sources(i)%r)
-    sources(i)%betaM = atan(sources(i)%rrM(2), &
-                  sources(i)%rrM(1))
-    sources(i)%symmetry_axis = sources(i)%rrM(1) / sources(i)%r
-    sources(i)%zeta = 0d0
-    sources(i)%eta = 0d0
-    sources(i)%ud%ud_shape = 1
-    sources(i)%ud%umin = 2d0 / AUdays2SI
-    sources(i)%ud%umax = 2399d0 / AUdays2SI
-    sources(i)%ejection_angle_distr = 3
-    sources(i)%Tj = moment(i)
-    sources(i)%dtau = 0d0
-    
-    ! integrate the number density of impact ejecta over the matrix
-    call integrate_over_matrix(totrate)
-    ! converting the number density to flux
-    ! see Eq. 3 from the Szalay et al, 2016 (asteroid on a spherical orbit)
-    totrate = totrate / 0.31d0 / 7.2e-3 / 4d0 / pi * Rast**2
-    ! converting flux to the number of ejected particles
-    sources(i)%Nparticles = totrate &
-                        * (moment(2) - moment(1)) * s_in_day
+		sources(i)%alphaM = acos(sources(i)%rrM(3) / sources(i)%r)
+		sources(i)%betaM = atan(sources(i)%rrM(2), &
+					  sources(i)%rrM(1))
+		sources(i)%symmetry_axis = sources(i)%rrM / sources(i)%r
+		sources(i)%zeta = 0d0
+		sources(i)%eta = 0d0
+		sources(i)%ud%ud_shape = 1
+		sources(i)%ud%umin = 2d0 / AUdays2SI
+		sources(i)%ud%umax = 2399d0 / AUdays2SI
+		sources(i)%ejection_angle_distr = 3
+		sources(i)%Tj = moment(i)
+		sources(i)%dtau = 0d0
+		
+		! integrate the number density of impact ejecta over the matrix
+		call integrate_over_matrix(tmp)
+		! converting the number density to flux
+		! see Eq. 3 from the Szalay et al, 2016 (asteroid on a spherical orbit)
+		totrate = tmp / 0.31d0 / 7.2e-3 / 4d0 / pi * Rast**2
+		! converting flux to the number of ejected particles
+		sources(i)%Nparticles = totrate &
+							* (moment(2) - moment(1)) * s_in_day
       enddo
-
    end subroutine get_moving_sources
 
 
@@ -240,6 +246,7 @@ contains
       integral = integral &
          + rint * sin((halfpi - lats(nlats)) / 2d0) &
          * (halfpi - lats(nlats))
+      
 
    end subroutine integrate_over_matrix
 
@@ -284,6 +291,71 @@ contains
       enddo
 
    end subroutine get_points
+   
+
+    !===============================================================
+    ! Build a 3-D grid of evaluation points in the orbital frame
+    ! analogous to get_points (2-D), but with a third axis.
+    !---------------------------------------------------------------
+    ! points(nx,ny,nz)  : output positions (type(position_in_space))
+    ! nx,ny,nz          : node counts along x,y,z grid axes
+    ! resolution(1:3)   : spacing along x,y,z [meters]
+    ! lastrM(3)         : reference position (last comet position) [AU]
+    ! cntrpx,cntrpy,cntrpz : fractional position of the grid origin
+    !                        inside the box (0..1, like centerpositionx/y)
+    !===============================================================
+    subroutine get_points_3d(points, nx, ny, nz, resolution, lastrM, &
+                             cntrpx, cntrpy, cntrpz)
+       use const
+       use define_types
+       use help
+       implicit none
+       integer, intent(in) :: nx, ny, nz
+       real(8), intent(in) :: resolution(3), cntrpx, cntrpy, cntrpz
+       type(position_in_space), intent(out) :: points(nx,ny,nz)
+       real(8), intent(in) :: lastrM(3)
+
+       integer :: i, j, k
+       real(8) :: xvec(3), yvec(3), zvec(3), tmpvec(3)
+
+       ! Start with ecliptic Z
+       zvec = (/0d0, 0d0, 1d0/)
+
+       ! x̂: projection of lastrM onto the ecliptic plane, normalized
+       xvec = lastrM
+       xvec = xvec - zvec * dot_product(xvec, zvec)
+       if (norma3d(xvec) == 0d0) then
+          ! Fallback if lastrM || ẑ: choose arbitrary x̂ in plane
+          xvec = (/1d0, 0d0, 0d0/)
+       else
+          xvec = xvec / norma3d(xvec)
+       end if
+
+       ! Make ẑ orthogonal to x̂, normalize; then ŷ = ẑ × x̂
+       zvec = zvec - xvec * dot_product(xvec, zvec)
+       zvec = zvec / norma3d(zvec)
+       yvec = vector_product(zvec, xvec)
+
+       ! Scale step vectors by physical spacing (meters → AU)
+       xvec = xvec * (resolution(1) / AU)
+       yvec = yvec * (resolution(2) / AU)
+       zvec = zvec * (resolution(3) / AU)
+
+       ! Lower-front-left corner (according to cntrp*) in AU
+       tmpvec = lastrM - nx * xvec * cntrpx - ny * yvec * cntrpy - nz * zvec * cntrpz
+
+       do k = 1, nz
+          do j = 1, ny
+             do i = 1, nx
+                points(i,j,k)%rvector = tmpvec + i*xvec + j*yvec + k*zvec
+                points(i,j,k)%r       = norma3d(points(i,j,k)%rvector)
+                points(i,j,k)%alpha   = acos(points(i,j,k)%rvector(3) / points(i,j,k)%r)
+                points(i,j,k)%beta    = atan(points(i,j,k)%rvector(2), points(i,j,k)%rvector(1))
+             end do
+          end do
+       end do
+    end subroutine get_points_3d
+
 
   
   ! From the given table of particle radii and corresponding beta
