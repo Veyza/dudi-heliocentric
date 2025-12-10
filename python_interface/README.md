@@ -1,126 +1,103 @@
-# Python Interface for DUDI-heliocentric
-This optional interface provides a lightweight Python wrapper around the
-Fortran core routines of DUDI-heliocentric, allowing users to run and
-visualize results from Python without modifying the original Fortran code.
+# DUDI-HC Python Interface
 
-Python ↔ Fortran bridge (how it works & how to build)
-Architecture at a glance
-python_interface/dudi_hc/api.py     ← (Python-facing thin API; calls the bridge)
-        │
-        ├── imports
-        ▼
-python_interface/dudi_hc/_bridge_ctypes.py
-        │  (loads one shared lib with ctypes and exposes 3 functions)
-        │
-        ├── ctypes.CDLL("libpy_dudihc_bridge.so")
-        ▼
-python_interface/fortran_bridge/py_bridge.f90
-   (Fortran wrappers with `bind(C)`; rebuild derived types, call DUDIhc)
-        │
-        ▼
-src/*.f90 (Fortran core: DUDIhc.f90, define_types.f90, …)
+## 1. What is this?
 
-Key idea: Python never touches Fortran derived types directly. The C-bindable 
-Fortran wrappers (py_bridge.f90) receive only C-friendly scalars/arrays, 
-reconstruct the Fortran types (position_in_space, source_properties, ephemeris),
-call the real routines in DUDIhc, and return a single real(8) density value to Python.
+This directory provides the **Python interface** 
+to the **DUDI-heliocentric (DUDI-HC)** model for dust number density calculations
+around comets, asteroids, and atmosphereless bodies.  
+The original DUDI-HC implementation is entirely in Fortran-95, and no 
+changes were made to the physical or numerical core for this Python release.
+
+To support calling DUDI-HC directly from Python, a small Fortran-2003 
+layer is added using:
+
+- `bind(C)` interfaces,
+- C-compatible derived types,
+- a compiled shared library exposed to Python through `ctypes`.
+
+This Python interface provides:
+
+- A documented and object-oriented high-level API 
+  (`Point`, `Source`, `Comet`, `v_integration`, batching routines).
+- Full access to all scientifically relevant features of DUDI-HC without writing
+  in Fortran.
+- 1-to-1 Python equivalents of the Fortran example programs 
+  (select_method, example, Phaethon).
+
+
+## 2. Architecture Overview
+
+Python (your scripts, notebooks)
+        |
+        v      high-level API + data models + batching utilities
+  python_interface/dudi_hc/api.py
+  python_interface/dudi_hc/models.py
+        |
+        v      thin ctypes wrapper (NumPy <-> raw C arrays)
+  python_interface/dudi_hc/ctypes_bridge.py
+        |
+        v      shared library exposing Fortran routines as C functions
+  python_interface/dudi_hc/libpy_dudihc_bridge.so
+        |
+        v      Fortran-2003 wrapper module (bind(C))
+  python_interface/fortran_bridge/py_bridge.f90 and helpers
+        |
+        v      Fortran-95 DUDI-HC scientific core (unchanged)
+
+
+Python never touches Fortran derived types directly. The C-bindable Fortran 
+wrappers (py_bridge.f90) receive only C-friendly scalars/arrays, reconstruct 
+the Fortran types (position_in_space, source_properties, ephemeris), call the 
+real routines in DUDIhc, and return a single real(8) density value to Python. 
 **Types & precision**
-*The DUDIhc routines compute density as real(4). Our wrappers convert that 
-to real(8) (double) just before returning so Python gets a normal float.
-*Python vectors are passed as NumPy float64 contiguous arrays of shape (3,).
-*Fortran LOGICAL inputs at the boundary are passed as C integers (0/1).
+The DUDIhc routines compute density as real(4). Our wrappers convert that 
+to real(8) (double) just before returning so Python gets a normal float. 
+Python vectors are passed as NumPy float64 contiguous arrays of shape (3,). 
+Fortran LOGICAL inputs at the boundary are passed as C integers (0/1).
 
-# Build (one command)
-**Re-run this script any time you change .f90 sources or the wrapper.**
-bash python_interface/fortran_bridge/build_ctypes_bridge.sh
-What it does:
-*Compiles the Fortran core in dependency order (src/*.f90) into objects.
-*Compiles the C-bind wrapper py_bridge.f90.
-*Links everything into one shared library:
-"python_interface/dudi_hc/libpy_dudihc_bridge.so"
-*Smoke tests that the ctypes loader sees the functions.
+All computational kernels and all **OpenMP parallelism** remain entirely in 
+**Fortran**, where they are most efficient. The Python layer is thin and 
+designed only for data preparation, convenience, and analysis.
 
-# Using it from Python
-1. Low-level bridge:
 
-from python_interface.dudi_hc import _bridge_ctypes as fb
-density = fb.call_v_integration(
-    point_r=..., point_alpha=..., point_beta=..., point_rvector=[...,...,...],
-    src_r=..., src_alphaM=..., src_betaM=..., src_rrM=[...,...,...],
-    src_zeta=..., src_eta=..., src_axis=[...,...,...],
-    src_eject_distr=..., src_ud_shape=..., src_umin=..., src_umax=...,
-    comet_coords=[...,...,...], comet_vastvec=[...,...,...], comet_vast=...,
-    muR=..., tnow=..., Rast_AU=..., pericenter=True
-)
-print(density)  # Python float
+## 3. Installation and Build (Linux)
 
-(There are also call_delta_ejection(...) and call_simple_expansion(...) 
-with the obvious signatures.)
+The model has been tested and validated on **Linux** systems. 
+Source installation requires a working Fortran toolchain.
 
-2. High-level API:
+### 3.1. System prerequisites
 
-from python_interface.dudi_hc.api import v_integration, Point, Source, Comet
-#construct Point/Source/Comet, then:
-density = v_integration(point, source, comet, muR=..., tnow=..., Rast_AU=..., pericenter=True)
+Install:
 
-# File locations you’ll care about
+- `gfortran` (Fortran 95/2003 compiler)
+- OpenMP (`libgomp` – normally included with GCC)
+- Python ≥ 3.9
+- `pip`
+- GitHub CLI or `git`
 
-- src/ — Fortran core (unchanged scientific code)
-- python_interface/fortran_bridge/py_bridge.f90 — C-bindable wrappers
-- python_interface/fortran_bridge/build_ctypes_bridge.sh — rerunnable build script
-- python_interface/dudi_hc/_bridge_ctypes.py — Python ctypes loader
-- python_interface/dudi_hc/libpy_dudihc_bridge.so — built shared library (not tracked by git)
+Example (Ubuntu-like):
 
-## Install / Build
+sudo apt-get install gfortran libgomp1 python3 python3-pip git
 
-### Prereqs (for maintainers)
-- gfortran, OpenMP runtime
-- Python 3.9+ and pip
+### 3.2. Clone the repository
 
-### Build Fortran ctypes bridge
+git clone https://github.com/Veyza/dudi-heliocentric.git
+cd dudi-heliocentric
+
+### 3.3. Build the Fortran ctypes bridge
 
 bash python_interface/fortran_bridge/build_ctypes_bridge.sh
 
-### Install (editable dev mode)
+When finished, you should see:
+
+python_interface/dudi_hc/libpy_dudihc_bridge.so
+
+### 3.4. Install the Python package
+
+Editable mode:
 
 pip install -e .
 
 ### Tests
 
 python3 -m pytest -q
-
-### Build a wheel + sdist
-
-python3 -m pip install build
-python3 -m build
-The wheel bundles the compiled shared libraries, so end users can pip install 
-without a Fortran compiler (on compatible platforms).
-
-## Quick start (Python API)
-
-1. Build the Fortran ctypes bridge (compiles Fortran and installs `.so` into `python_interface/dudi_hc/`):
-
-bash python_interface/fortran_bridge/build_ctypes_bridge.sh
-
-2. Install (editable dev mode is convenient while developing):
-
-pip install -e .
-
-3. Run examples:
-
-python python_interface/examples/minimal.py
-python python_interface/examples/grid_sample.py
-
-## Troubleshooting
-
-**ImportError: undefined symbol**
-Rebuild the bridge so the .so matches the current Fortran sources:
-bash python_interface/fortran_bridge/build_ctypes_bridge.sh
-**No prints from Fortran DIAG mode**
-Use the environment flag and ensure Fortran output is flushed (already wired in):
-export HC_BRIDGE_DIAG=1
-python examples/minimal.py
-unset HC_BRIDGE_DIAG
-**ABI issues / segfaults**
-We fixed the scalar calling convention by using value in the bind(C) wrappers.
-If you edit py_bridge.f90, rebuild and re-run.
