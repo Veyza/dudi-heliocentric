@@ -1,3 +1,17 @@
+! This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
+! of the two-body model for the dynamics of dust ejected from an atmosphereless
+! body moving around the Sun
+! Version 1.1.0
+! This is free software. You can use and redistribute it 
+! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
+! If you do, please cite the following paper
+! Anastasiia Ershova and Jürgen Schmidt, 
+! Two-body model for the spatial distribution of dust ejected from
+! an atmosphereless body, 2021, A&A, 650, A186 
+
+! Author: Anastasiia Ershova
+! E-mail: vveyzaa@gmail.com
+
 ! python_interface/fortran_bridge/py_bridge.f90
 !
 ! C-interoperable wrappers around DUDIhc.

@@ -19,7 +19,7 @@ program phaethon_3d
    integer, parameter :: Nlin = 9
    integer, parameter :: Np = (Neph-1)*Nlin + 1
    integer, parameter :: Nmaps = 4
-   integer, parameter :: Nrgs = 9
+   integer, parameter :: Nrgs = 4
 
    ! Grid size (adjust as needed; memory ~ nx*ny*nz*8 bytes per array)
    integer :: nx, ny, nz
@@ -53,13 +53,11 @@ program phaethon_3d
    !--- Setup ---
    fname = 'input_data_files/Phaethon_2025-02-22_last_int=10min_ECLIPJ2000.dat'
 
-   Rgs = (/0.1d0, 0.2d0, 0.3d0, &
-                         0.85d0, 1d0, &
-                          1.2d0, 2.5d0, 4d0, 6d0, 10d0/)
+   Rgs = (/0.2d0, 0.3d0, 1d0, 1.2d0, 2.5d0/)
 
    ! Grid definition (example spacing equal on all axes)
-   nx = 400 ; ny = 400 ; nz = 1
-   resolution(1) = 5d3        ! meters
+   nx = 100 ; ny = 100 ; nz = 100
+   resolution(1) = 16d3        ! meters
    resolution(2) = resolution(1)
    resolution(3) = resolution(1)
 

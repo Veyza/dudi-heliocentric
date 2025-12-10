@@ -1,4 +1,4 @@
-! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
+! This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
 ! Version 1.1.0
@@ -12,7 +12,7 @@
 ! Author: Anastasiia Ershova
 ! E-mail: vveyzaa@gmail.com
 
-! File: phaethon_iNtut.f90
+! File: phaethon_input.f90
 ! Description: This is the main program managing the modeling of dust
 ! ejection from NEA 3200 Phaethon at the orbital phase at which it is
 ! planned to be visited by the DESTINY+ mission using the simple 
