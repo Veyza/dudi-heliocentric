@@ -517,8 +517,8 @@ def run_phaethon(
     "Phaethon_2025-02-22_last_int=10min_ECLIPJ2000.dat",
     Neph: int = 2000,
     Nlin: int = 10,
-    n1: int = 400,
-    n2: int = 400,
+    n1: int = 200,
+    n2: int = 200,
     centerpositionx: float = 0.5,
     centerpositiony: float = 0.5,
 ) -> None:
@@ -557,7 +557,7 @@ def run_phaethon(
     tnow = float(sources[-1].Tj)
 
     # Resolution of the planar grid [m]
-    resolution = np.array([5.0e3, 5.0e3], dtype=np.float64)
+    resolution = np.array([10.0e3, 10.0e3], dtype=np.float64)
 
     # Build 2D grid of points (n1 × n2)
     points_grid = get_points(
