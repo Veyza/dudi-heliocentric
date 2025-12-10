@@ -1,4 +1,10 @@
-# DUDI-HC Python Interface
+Derivations of the formulae for DUDI-heliocentric are detailed in a forthcoming
+publication 
+Ershova, A., Schmidt, J., Liu, X., Szalay, J., Kimura, H., Hirai, T., Arai,
+T., and Kobayashi, M., A computationally efficient semi-analytical model for the 
+dust environment of comets and asteroids, A&A 693, A80 (2025).
+
+Please, cite this paper if using this software.# DUDI-HC Python Interface
 
 ## 1. What is this?
 
