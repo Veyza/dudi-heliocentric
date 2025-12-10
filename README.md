@@ -4,15 +4,15 @@ This repository contains DUDI-heliocentric, a Fortran-95 code that models dust
 ejection from an atmosphereless body orbiting the Sun. This software builds upon
 the research described by 
 Ershova, A. & Schmidt, J. (2021). Two-body model for the spatial distribution 
-of dust ejected from anatmosphereless body, 2021, A&A, 650, A186, 
+of dust ejected from an atmosphereless body, 2021, A&A, 650, A186, 
 and extends the initial DUDI model applicable to moons of giant planets.
 Find the original DUDI at https://github.com/Veyza/dudi.
 
 Derivations of the formulae for DUDI-heliocentric are detailed in a forthcoming
 publication 
 Ershova, A., Schmidt, J., Liu, X., Szalay, J., Kimura, H., Hirai, T., Arai,
-T., and Kobayashi, M., A computationally efficient semi-analytical model for the dust
-environment of comets and asteroids, A&A 693, A80 (2025).
+T., and Kobayashi, M., A computationally efficient semi-analytical model for the 
+dust environment of comets and asteroids, A&A 693, A80 (2025).
 
 == Prerequisites 
 
@@ -28,6 +28,15 @@ but the plot will not be generated.
 == License
 
 DUDI-heliocentric is distributed under GNU GENERAL PUBLIC LICENSE Version 3.
+
+== Python interface
+
+Starting from version 1.1.0, DUDI-heliocentric includes an optional Python 
+interface that provides full access to all core DUDI-HC functionality directly 
+from Python scripts via a lightweight Fortran-2003 `bind(C)` bridge. 
+The scientific core of the package remains written in Fortran-95 and unchanged. 
+For installation instructions, API documentation, and usage examples, refer to 
+the directory `python_interface/` and the README file in it.
 
 == Table of Contents
 
@@ -407,7 +416,24 @@ To address this:
   
   
 == 9. Latest updates
-    Version 1.0.2
+
+    **Version 1.1.0**
+  - Introduces a complete Python interface to DUDI-heliocentric, built 
+    via a lightweight Fortran-2003 interoperability layer (`bind(C)`) and a shared
+    library accessed from Python through `ctypes`.
+  - Adds high-level Python classes (`Point`, `Source`, `Comet`) that mirror the 
+    Fortran derived types for preparing model inputs without writing Fortran.
+  - Includes Python equivalents of the Fortran example programs:
+    `select_method.py`
+    `example.py`
+    `Phaethon.py`
+  - Batching utilities are provided to make efficient use of the internal 
+    Fortran OpenMP parallelism when evaluating dust density at many points or 
+    considering many sources.
+  - Full installation instructions, API documentation, and examples are provided
+    in `python_interface/README.md`.
+
+    **Version 1.0.2**
   - Codebase cleaned of unused variables and unsafe real comparisons; fixed 
     implicit conversions.
   - Kept standard Fortran-95. Added src/nan_utils.f90 to centralize 
@@ -421,6 +447,6 @@ To address this:
   - Note: nan_utils.f90 may still emit compare-reals warnings in strict mode; 
     these are intentional and safe
   
-    Version 1.0.1
+    **Version 1.0.1**
   - Restructured repository with clear src/, examples/, scripts/, bin/, build/, and results/ folders.
   - Updated Makefile and .gitignore accordingly
