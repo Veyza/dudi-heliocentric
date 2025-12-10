@@ -4,7 +4,9 @@ Ershova, A., Schmidt, J., Liu, X., Szalay, J., Kimura, H., Hirai, T., Arai,
 T., and Kobayashi, M., A computationally efficient semi-analytical model for the 
 dust environment of comets and asteroids, A&A 693, A80 (2025).
 
-Please, cite this paper if using this software.# DUDI-HC Python Interface
+Please, cite this paper if using this software in your work.
+
+# DUDI-HC Python Interface 
 
 ## 1. What is this?
 
@@ -55,6 +57,7 @@ Python never touches Fortran derived types directly. The C-bindable Fortran
 wrappers (py_bridge.f90) receive only C-friendly scalars/arrays, reconstruct 
 the Fortran types (position_in_space, source_properties, ephemeris), call the 
 real routines in DUDIhc, and return a single real(8) density value to Python. 
+
 **Types & precision**
 The DUDIhc routines compute density as real(4). Our wrappers convert that 
 to real(8) (double) just before returning so Python gets a normal float. 

@@ -117,7 +117,7 @@ Where:
 - `R` is the radius of the dust particle.
 - `beta(R)` is the ratio of radiation pressure force to gravitational force.
 
-### Calculation of muR
+=== Calculation of `muR`
 
 The subroutine `reduced_gravitational_parameter(Rg, Qpr, muR)` in `data_in.f90`
 calculates `muR` using the expression for `beta` from Burns et al., 1979
