@@ -26,11 +26,11 @@ src = Source(
     zeta=0.0, eta=0.0,
     symmetry_axis=np.array([0.0, 0.0, 1.0], float),
     ejection_angle_distr=0,
-    ud=EjectionSpeedProperties(ud_shape=0, umin=0.0, umax=1.0),
+    ud=EjectionSpeedProperties(ud_shape=0, umin=0.0, umax=1e-3),
     Nparticles=1.0e10, Tj=0.0, dtau=1.0e-4,
 )
 cm = Comet(coords=np.zeros(3, float), Vastvec=np.zeros(3, float), Vast=0.0)
 
-print("simple_expansion:", simple_expansion(pt, src, cloudcentr=[0.0, 0.0, 0.0], dt=0.0))
-print("delta_ejection:",  delta_ejection(pt, src, cm, muR=1.0, dt=0.1, Rast_AU=1.0))
-print("v_integration:",   v_integration(pt, src, cm, muR=1.0, tnow=0.0, Rast_AU=1.0, pericenter=False))
+print("simple_expansion:", simple_expansion(pt, src, cloudcentr=[1.0, 0.0, 0.0], dt=1.0))
+print("delta_ejection:",  delta_ejection(pt, src, cm, muR=1e-4, dt=1.0, Rast_AU=1e-6))
+print("v_integration:",   v_integration(pt, src, cm, muR=1e-4, tnow=1.0, Rast_AU=1e-6, pericenter=False))
