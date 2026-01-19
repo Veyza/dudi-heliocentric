@@ -828,3 +828,62 @@ def call_set_rMtmp(rMtmp: np.ndarray) -> None:
 # ======================================================================
 # End of ratemap / impact map ctypes layer
 # ======================================================================
+# ======================================================================
+#  tabulated distributions setters
+# ======================================================================
+
+# void py_set_tabulated_fu(int nu, const double *u, const double *fu);
+_lib.py_set_tabulated_fu.argtypes = [C.c_int, C.POINTER(C.c_double), C.POINTER(C.c_double)]
+_lib.py_set_tabulated_fu.restype = None
+
+
+def call_set_tabulated_fu(u_tab: np.ndarray, fu_tab: np.ndarray) -> None:
+    u_tab = _as_1d_f64(u_tab, name="u_tab")
+    fu_tab = _as_1d_f64(fu_tab, name="fu_tab")
+    if u_tab.shape != fu_tab.shape:
+        raise ValueError(f"u_tab and fu_tab must have the same shape, got {u_tab.shape} and {fu_tab.shape}")
+
+    nu = int(u_tab.size)
+    u_ptr = u_tab.ctypes.data_as(C.POINTER(C.c_double))
+    fu_ptr = fu_tab.ctypes.data_as(C.POINTER(C.c_double))
+    _lib.py_set_tabulated_fu(C.c_int(nu), u_ptr, fu_ptr)
+
+
+# void py_set_tabulated_fpsi(int Npsi, int NlambdaM,
+#                            const double *psi, const double *lambdaM,
+#                            const double *fpsi);  // fpsi is Fortran-order (Npsi x NlambdaM)
+_lib.py_set_tabulated_fpsi.argtypes = [
+    C.c_int, C.c_int,
+    C.POINTER(C.c_double), C.POINTER(C.c_double),
+    C.POINTER(C.c_double),
+]
+_lib.py_set_tabulated_fpsi.restype = None
+
+
+def call_set_tabulated_fpsi(
+    psi_tab: np.ndarray,
+    lambdaM_tab: np.ndarray,
+    fpsi_tab: np.ndarray,
+) -> None:
+    psi_tab = _as_1d_f64(psi_tab, name="psi_tab")
+    lambdaM_tab = _as_1d_f64(lambdaM_tab, name="lambdaM_tab")
+    fpsi_tab = _as_2d_f64(fpsi_tab, name="fpsi_tab")
+
+    Npsi = int(psi_tab.size)
+    NlambdaM = int(lambdaM_tab.size)
+    if fpsi_tab.shape != (Npsi, NlambdaM):
+        raise ValueError(
+            f"fpsi_tab must have shape (Npsi, NlambdaM) = {(Npsi, NlambdaM)}, got {fpsi_tab.shape}"
+        )
+
+    # Pass fpsi as a flat buffer in Fortran (column-major) order
+    fpsi_flat = np.asfortranarray(fpsi_tab, dtype=np.float64).ravel(order="F")
+
+    psi_ptr = psi_tab.ctypes.data_as(C.POINTER(C.c_double))
+    lam_ptr = lambdaM_tab.ctypes.data_as(C.POINTER(C.c_double))
+    fpsi_ptr = fpsi_flat.ctypes.data_as(C.POINTER(C.c_double))
+
+    _lib.py_set_tabulated_fpsi(
+        C.c_int(Npsi), C.c_int(NlambdaM),
+        psi_ptr, lam_ptr, fpsi_ptr
+    )

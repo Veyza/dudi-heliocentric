@@ -749,3 +749,37 @@ def set_rMtmp(rMtmp: np.ndarray) -> None:
 # ======================================================================
 # End of ratemap / impact map API
 # ======================================================================
+
+from ._bridge_ctypes import (
+    call_set_tabulated_fu as _call_set_tabulated_fu,
+    call_set_tabulated_fpsi as _call_set_tabulated_fpsi,
+)
+
+def set_tabulated_fu(u_tab: np.ndarray, fu_tab: np.ndarray) -> None:
+    """
+    Set tabulated ejection speed PDF in the Fortran module.
+
+    Parameters
+    ----------
+    u_tab : (N,) array
+        Speed grid.
+    fu_tab : (N,) array
+        PDF values at u_tab.
+    """
+    _call_set_tabulated_fu(u_tab, fu_tab)
+
+
+def set_tabulated_fpsi(psi_tab: np.ndarray, lambdaM_tab: np.ndarray, fpsi_tab: np.ndarray) -> None:
+    """
+    Set tabulated ejection direction PDF in the Fortran module.
+
+    Parameters
+    ----------
+    psi_tab : (Npsi,) array
+        Psi grid.
+    lambdaM_tab : (NlambdaM,) array
+        Lambda_M grid.
+    fpsi_tab : (Npsi, NlambdaM) array
+        Directional PDF evaluated on the grid.
+    """
+    _call_set_tabulated_fpsi(psi_tab, lambdaM_tab, fpsi_tab)

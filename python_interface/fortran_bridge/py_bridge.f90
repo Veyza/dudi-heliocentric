@@ -36,7 +36,8 @@ module py_dudihc_bridge
        hc_DUDI_simple_expansion
   use distributions_fun, only: nlats, nlons, lonmax, lonmin, &
                          lats, lons, rmap1, rmap2, ratemap, rMtmp, &
-                         ratematr_interpolate, read_ratemap
+                         ratematr_interpolate, read_ratemap, &
+                         set_tabulated_fu, set_tabulated_fpsi
   implicit none
 
 
@@ -745,7 +746,35 @@ contains
   end subroutine py_hc_batch_sources_points
 
 
+	 !--- tabulated ejection speed distribution ---------------------------------
 
+	  subroutine py_set_tabulated_fu(nu_in, u_in, fu_in) &
+					   bind(C, name="py_set_tabulated_fu")
+		use iso_c_binding, only: c_int, c_double
+		implicit none
+		integer(c_int), value, intent(in) :: nu_in
+		real(c_double), intent(in) :: u_in(nu_in)
+		real(c_double), intent(in) :: fu_in(nu_in)
+
+		call set_tabulated_fu(int(nu_in, kind=kind(1)), u_in, fu_in)
+	  end subroutine py_set_tabulated_fu
+
+
+	  !--- tabulated ejection direction distribution -----------------------------
+
+	  subroutine py_set_tabulated_fpsi(Npsi_in, NlambdaM_in, psi_in, lambdaM_in, fpsi_in) &
+					   bind(C, name="py_set_tabulated_fpsi")
+		use iso_c_binding, only: c_int, c_double
+		implicit none
+		integer(c_int), value, intent(in) :: Npsi_in, NlambdaM_in
+		real(c_double), intent(in) :: psi_in(Npsi_in)
+		real(c_double), intent(in) :: lambdaM_in(NlambdaM_in)
+		real(c_double), intent(in) :: fpsi_in(Npsi_in, NlambdaM_in)
+
+		call set_tabulated_fpsi( int(Npsi_in,     kind=kind(1)), &
+								 int(NlambdaM_in, kind=kind(1)), &
+								 psi_in, lambdaM_in, fpsi_in )
+	  end subroutine py_set_tabulated_fpsi
   !--- dimensions and limits --------------------------------------------------
 
   subroutine get_ratemap_dims(nlats_out, nlons_out) & 
