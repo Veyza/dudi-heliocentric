@@ -417,6 +417,17 @@ To address this:
   
 == 9. Latest updates
 
+    **Version 1.1.1**
+  - Added support for tabulated ejection speed and direction distributions 
+    supplied from Python, with the corresponding arrays (`u_tab`, `fu_tab`, `psi_tab`,
+    `lambdaM_tab`, `fpsi_tab`) defined in the module `src/distributions_fun.f90`.
+  - Introduced new FORTRAN routines and Python–ctypes bridge functions to 
+    transfer user-defined 1D (speed) and 2D (direction) distribution tables 
+    at runtime, avoiding direct modification of FORTRAN code.
+  - `ejection_speed_distribution` and `ejection_direction_distribution` 
+    employ the tabulated distributions when the source parameters are set so 
+    that`ud%ud_shape = 10` and `ejection_angle_distr = 10`.
+    
     **Version 1.1.0**
   - Introduces a complete Python interface to DUDI-heliocentric, built 
     via a lightweight Fortran-2003 interoperability layer (`bind(C)`) and a shared
