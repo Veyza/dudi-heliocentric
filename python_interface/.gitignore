@@ -1,26 +1,3 @@
-bin/
-build/
-results/
-*.o
-*.mod
-*.out
-*.exe
-__pycache__/
-*.pyc
-.DS_Store
-# Logs
-*.log
-
-# (optional) Build artifacts
-build/
-*.o
-*.mod
-*.a
-*.so
-*.dylib
-*.exe
-*.out
-
 # --- Python basics ---
 __pycache__/
 *.py[cod]
@@ -63,23 +40,8 @@ htmlcov/
 *.mod
 *.smod
 *.o
+*.obj
 
-# native bridge outputs
-python_interface/dudi_hc/libpy_dudihc_bridge.so
-python_interface/dudi_hc/_bridge*.so
+# Local wheels & sdist
+python_interface-*.tar.gz
 
-Wheels / build artifacts
-
-dist/
-*.egg-info/
-.build/
-build/
-pycache/
-*.pyc
-
-Fortran build intermediates
-
-*.o
-*.a
-*.mod
-python_interface/fortran_bridge/build_ctypes/

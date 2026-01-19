@@ -1,13 +1,18 @@
-! This file is a part of DUDI-heliocentric, the Fortran-90 implementation 
+! This file is a part of DUDI-heliocentric, the Fortran-95 implementation 
 ! of the two-body model for the dynamics of dust ejected from an atmosphereless
 ! body moving around the Sun
-! Version 1.0.2
+! Version 1.1.1
 ! This is free software. You can use and redistribute it 
 ! under the terms of the GNU General Public License (http://www.gnu.org/licenses/)
-! If you do, please cite the following paper
-! Anastasiia Ershova and Jürgen Schmidt, 
+! If you do, please cite the following papers
+!
+! Anastasiia Ershova and Juergen Schmidt, 
 ! Two-body model for the spatial distribution of dust ejected from
 ! an atmosphereless body, 2021, A&A, 650, A186 
+! and Ershova, A., Schmidt, J., Liu, X., Szalay, J., Kimura, H., Hirai,
+! T., Arai, T., and Kobayashi, M.,
+! A computationally efficient semi-analytical model for the dust
+! environment of comets and asteroids, A&A 693, A80 (2025).
 
 ! File: data_in.f90
 ! Description: Contains subroutines for inputting data defining the dynamical
@@ -53,7 +58,7 @@ contains
          ! generating Ns points uniformly distributed over a unit sphere
          call uniform_random_sphere(Ns, xyz)
          do ii = 1, Ns
-            sources(i,ii)%symmetry_axis = xyz(Ns+1-ii,:)
+            sources(i,ii)%symmetry_axis = xyz(ii,:)
             sources(i,ii)%rrM = comet(i)%coords &
                 + sources(i,ii)%symmetry_axis * Rast_AU
             sources(i,ii)%r = norma3d(sources(i,ii)%rrM)
@@ -81,9 +86,8 @@ contains
             sources(i,ii)%ejection_angle_distr = 2
             sources(i,ii)%Tj = moment(i)
             sources(i,ii)%dtau = 1d-2 / s_in_day
-            sources(i,ii)%Nparticles = 1d5 + 1d5 &
-             * dot_product(comet(i)%Vastvec, sources(i,ii)%symmetry_axis) &
-               / comet(i)%Vast
+            sources(i,ii)%Nparticles = 1d5
+            
          enddo
       enddo
 
@@ -196,7 +200,10 @@ contains
       zvec = vector_product(comet%Vastvec, comet%coords)
       zvec = zvec / norma3d(zvec)
       ! x-axis points along the asteroid heliocentric radius at the moment tnow
-      xvec = comet%coords / norma3d(comet%coords)
+      xvec = comet%coords
+      xvec(1) = xvec(1) * 0.95  ! to avoid bad geometry
+      tmpvec = xvec
+      xvec = xvec / norma3d(tmpvec)
       yvec = vector_product(zvec, xvec)
 
       xvec = xvec * resolution(1) / AU

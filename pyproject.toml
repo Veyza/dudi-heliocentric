@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dudi-heliocentric"
+version = "1.1.0"
+description = "Python wrapper for DUDI-heliocentric (ctypes bridge over Fortran core)"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+  "numpy>=1.21",
+]
+license = {text = "GPL-3.0-only"}
+authors = [
+  { name = "Anastasiia Ershova", email = "vveyzaa@gmail.com" }
+]
+keywords = ["asteroids", "comet", "dust", "heliocentric", "fortran", "ctypes"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Scientific/Engineering :: Astronomy"
+]
+
+[project.urls]
+Homepage = "https://github.com/Veyza/dudi-heliocentric"
+
+[tool.setuptools]
+# Our code lives under python_interface/
+package-dir = {"" = "python_interface"}
+
+[tool.setuptools.packages.find]
+where = ["python_interface"]
+include = ["python_interface*"]  
+exclude = ["python_interface/tests*"]
+
+[tool.setuptools.package-data]
+# Include the built shared libs and helper scripts in the installed package
+"python_interface.dudi_hc" = [
+  "*.so",
+]
+"python_interface.fortran_bridge" = [
+  "build_ctypes_bridge.sh",
+  "*.f90"
+]
+
+[tool.setuptools.exclude-package-data]
+"*" = ["*.o", "*.mod", "*.a", "*.pyc", "__pycache__/*", "build/*", "build_ctypes/*"]
+
