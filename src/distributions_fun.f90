@@ -23,6 +23,7 @@
 
 module distributions_fun
   use const
+  use help
   implicit none
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! parameters and variables for modeling the distribution of 
@@ -194,10 +195,11 @@ module distributions_fun
         implicit none
         real(8), parameter :: normconst1 = 0.7723999d0
         real(8), parameter :: omega60 = 1.047198d0
-        integer ii1, ii2, ind1, ind2
+        integer i, ii2, ind1, ind2
         real(8) lat, lon, klat, klon, prerate1, prerate2
         real(8) utmp(3), uvec(3), xvec(3), yvec(3)
         real(8) xvec1(3), yvec1(3), zvec1(3)
+        real(8) l1, l2
         real(8) :: zvec(3) = (/0d0, 0d0, 1d0/)
         real(8) fpsi
         real(8) Jpsi
@@ -262,21 +264,21 @@ module distributions_fun
 			lon = twopi - lon
 			
 			if(lat > lats(1) .and. lat < lats(nlats)) then
-				ii1 = 1
-				do while(lat < lats(ii1) .or. lat >= lats(ii1+1))
-					ii1 = ii1 + 1
+				i = 1
+				do while(lat < lats(i) .or. lat >= lats(i+1))
+					i = i + 1
 				enddo
-				ind1 = ii1
-				ii1 = ii1 + 1
-				klat = (lat - lats(ind1)) / (lats(ii1) - lats(ind1))
+				ind1 = i
+				i = i + 1
+				klat = (lat - lats(ind1)) / (lats(i) - lats(ind1))
 			else
 			! if the given latitude is beyond the possible
 			! interpolation limits, we use the marginal values
 				if(lat < lats(1)) then
-					ii1 = 1 ; ind1 = 1
+					i = 1 ; ind1 = 1
 					klat = 0d0
 				else
-					ii1 = nlats ; ind1 = nlats
+					i = nlats ; ind1 = nlats
 					klat = 0d0
 				endif
 			endif
@@ -303,8 +305,8 @@ module distributions_fun
 				endif
 			endif
 			! interpolation over latitudes
-			prerate1 = ratemap(ind2, ii1) + klat * (ratemap(ind2, ind1) - ratemap(ind2, ii1))
-			prerate2 = ratemap(ii2, ii1) + klat * (ratemap(ii2, ind1) - ratemap(ii2, ii1))
+			prerate1 = ratemap(ind2, i) + klat * (ratemap(ind2, ind1) - ratemap(ind2, i))
+			prerate2 = ratemap(ii2, i) + klat * (ratemap(ii2, ind1) - ratemap(ii2, i))
 			! interpolation over longitudess
 			fpsi = prerate1 + klon * (prerate2 - prerate1)
           case(4)
@@ -316,8 +318,6 @@ module distributions_fun
 			  write(*,*) 'Tabulated distribution of ejection direction is not defined'
 			  stop
 			endif
-
-
 		    ! lambdaM is guaranteed to be in [0, 2pi], but the tabulated interval may be a sub-interval.
 		    ! If lambdaM lies outside [lambdaM_tab(1), lambdaM_tab(N_lambdaM_tab)], 
 		    ! interpolate across the periodic seam (lambdaM_tab(N_lambdaM_tab) -> lambdaM_tab(1)+2pi).
@@ -422,7 +422,7 @@ module distributions_fun
 			   write(*,*) 'TABULATED EJECTION SPEED DISTRIBUTION IS NOT SET'
 			   stop
 			else
-			   fu_tabulated = LiNTERPOL(nu_tab, fu_tab, u_tab, u)
+			   fu = LiNTERPOL(nu_tab, fu_tab, u_tab, u)
 		    endif
             
         endselect
