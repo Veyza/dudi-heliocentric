@@ -34,8 +34,95 @@ module distributions_fun
   real,    save :: lats(nlats), lons(nlons)
   real(8), save :: rmap1(nlons,nlats), rmap2(nlons,nlats), ratemap(nlons,nlats)
   real(8), save :: rMtmp(3)
+  ! Tabulated ejection speed distribution
+  integer :: nu_tab = 0
+  real(8), allocatable :: u_tab(:)
+  real(8), allocatable :: fu_tab(:)
+  ! Tabulated ejection direction distribution (latitude/longitude grid)
+  integer :: N_psi_tab = 0
+  integer :: N_lambdaM_tab = 0
+  real(8), allocatable :: psi_tab(:)
+  real(8), allocatable :: lambdaM_tab(:)
+  real(8), allocatable :: fpsi_tab(:,:)
+  real(8), allocatable :: tab_meridian(:)
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         contains
+        ! Set a tabulated probability density function for ejection speed.
+		!
+		! The user provides a 1D table consisting of:
+		!   - u_tab   : ejection speed grid (monotonically increasing)
+		!   - fu_tab  : corresponding probability density values
+		!
+		! The table size is explicitly controlled by the user via nu_in.
+		!
+		! Input:
+		!   nu_in  - number of points in the speed table
+		!   u_in   - array of ejection speed values
+		!   fu_in  - array of PDF values evaluated at u_in
+			subroutine set_tabulated_fu(nu_in, u_in, fu_in)
+			  implicit none
+			  integer, intent(in) :: nu_in
+			  real(8), intent(in) :: u_in(nu_in)
+			  real(8), intent(in) :: fu_in(nu_in)
+
+			  nu_tab = nu_in
+
+			  if (allocated(u_tab))  deallocate(u_tab)
+			  if (allocated(fu_tab)) deallocate(fu_tab)
+
+			  allocate(u_tab(nu_tab))
+			  allocate(fu_tab(nu_tab))
+
+			  u_tab  = u_in
+			  fu_tab = fu_in
+			end subroutine set_tabulated_fu
+			
+			
+			! Set a tabulated probability density function for ejection direction.
+!
+			! The user provides a 2D latitude–longitude grid consisting of:
+			!   - psi_tab  : zenith angle grid (monotonically increasing)
+			!   - lambdaM_tab  : azimuth counted clockwise from the local North
+			!                    grid (monotonically increasing)
+			!   - fpsi_tab  : directional PDF evaluated on the (psi, lambdaM) grid
+			!
+			! The grid dimensions are explicitly controlled by the user via
+			! Npsi_in and NlambdaM_in.
+			!
+			! Input:
+			!   Npsi_in - number of zenith angle grid points
+			!   NlambdaM_in - number of azimuth grid points
+			!   psi_in  - latitude grid values
+			!   lambdaM_in  - longitude grid values
+			!   fpsi_in  - 2D array of PDF values, dimension (Npsi_in, NlambdaM_in)
+			subroutine set_tabulated_fpsi(Npsi_in, NlambdaM_in, psi_in, lambdaM_in, fpsi_in)
+			  implicit none
+			  integer, intent(in) :: Npsi_in, NlambdaM_in
+			  real(8), intent(in) :: psi_in(Npsi_in)
+			  real(8), intent(in) :: lambdaM_in(NlambdaM_in)
+			  real(8), intent(in) :: fpsi_in(Npsi_in, NlambdaM_in)
+
+			  N_psi_tab      = Npsi_in
+			  N_lambdaM_tab  = NlambdaM_in
+
+			  if (allocated(psi_tab))        deallocate(psi_tab)
+			  if (allocated(lambdaM_tab))    deallocate(lambdaM_tab)
+			  if (allocated(fpsi_tab))       deallocate(fpsi_tab)
+			  if (allocated(tab_meridian))   deallocate(tab_meridian)
+
+			  allocate(psi_tab(N_psi_tab))
+			  allocate(lambdaM_tab(N_lambdaM_tab))
+			  allocate(fpsi_tab(N_psi_tab, N_lambdaM_tab))
+			  allocate(tab_meridian(N_psi_tab))
+
+			  psi_tab     = psi_in
+			  lambdaM_tab = lambdaM_in
+			  fpsi_tab    = fpsi_in
+
+			  tab_meridian = 0.0d0
+			end subroutine set_tabulated_fpsi
+			
+			
             
             subroutine ratematr_interpolate(rhel, rhel1, rhel2)
                 implicit none
@@ -94,7 +181,7 @@ module distributions_fun
       ! distribution_shape is the parameter used to select
       ! the expression for the PDF
       ! wpsi is the polar angle in the coordinate system where
-      ! the distribution is axisymmetrical
+      ! the distribution is calculated
       ! psi is the polar angle in the horizontal coordinate system
       ! lambdaM is the azimuth in the horizontal CS
       ! zeta and eta are respectively zenith angle and azimuth
@@ -142,88 +229,119 @@ module distributions_fun
               fpsi = 0d0
             endif
           case(3)
-                    ! orts of the CS where we can easily know coords
-                    ! of the ejection velocity vector
-                        ! z-axis is along heliocentric radius
-                        zvec1 = rMtmp / norma3d(rMtmp)
-                        ! x-axis is towards local north
-                        xvec1 = zvec - zvec1 * dot_product(zvec, zvec1)
-                        xvec1 = xvec1 / norma3d(xvec1)
-                        yvec1 = vector_product(zvec1, xvec1)
-                        ! ejection velocity vector in this CS
-                        utmp(1) = sin(psi) * cos(lambdaM) ! lambdaM is azimuth
-                        utmp(2) = sin(psi) * sin(-lambdaM) ! counted from the local north clockwise
-                        utmp(3) = cos(psi) 
-                        ! ejection velocity vector in the same CS as rMtmp
-                        uvec = utmp(1) * xvec1 + utmp(2) * yvec1 &
-                             + utmp(3) * zvec1
-                        uvec = uvec / norma3d(uvec)
-                    ! the CS where the maps are defined: z-axis = (0, 0, 1)
-                        ! projection of rMtmp to xy-plane
-                        xvec = rMtmp - dot_product(zvec, rMtmp) * zvec
-                        xvec = -xvec / norma3d(xvec)
-                        yvec = vector_product(zvec, xvec)
-                        ! ejection velocity vector in this CS
-                        utmp(1) = dot_product(uvec, xvec)
-                        utmp(2) = dot_product(uvec, yvec)
-                        utmp(3) = uvec(3)
-                        
-                        lat = acos(utmp(3))            ! polar angle
-                        lat = halfpi - lat                ! latitude
-                        lon = atan(utmp(2), utmp(1))
-                        if(lon < 0d0) lon = twopi + lon
-                        lon = twopi - lon
-                        
-                        if(lat > lats(1) .and. lat < lats(nlats)) then
-                            ii1 = 1
-                            do while(lat < lats(ii1) .or. lat >= lats(ii1+1))
-                                ii1 = ii1 + 1
-                            enddo
-                            ind1 = ii1
-                            ii1 = ii1 + 1
-                            klat = (lat - lats(ind1)) / (lats(ii1) - lats(ind1))
-                        else
-                        ! if the given latitude is beyond the possible
-                        ! interpolation limits, we use the marginal values
-                            if(lat < lats(1)) then
-                                ii1 = 1 ; ind1 = 1
-                                klat = 0d0
-                            else
-                                ii1 = nlats ; ind1 = nlats
-                                klat = 0d0
-                            endif
-                        endif
-                        if(lon < lonmax .and. lon > lonmin) then
-                            ii2 = 1
-                            do while(lon < lons(ii2) .or. lon >= lons(ii2+1))
-                                ii2 = ii2 + 1
-                            enddo
-                            ind2 = ii2
-                            ii2 = ii2 + 1
-                            klon = (lon - lons(ind2)) / (lons(ii2) - lons(ind2))
-                        else
-                        ! if lon is beyond the values available for interpolation
-                        ! we round the circle and use the values corresponding 
-                        ! to the minimal and maximum longitudes
-                            ii2 = 1
-                            ind2 = nlons
-                            if(lon >= lonmax) then
-                            ! the number is 2 degrees between lon(180) = 359 deg and lon(1) = 1deg
-                                klon = (lon - lonmax) / 0.03490659d0
-                            else
-                            ! 1 deg / 2 deg + lon / 2 deg
-                                klon = 0.5d0 + lon / 0.03490659d0
-                            endif
-                        endif
-                        ! interpolation over latitudes
-                        prerate1 = ratemap(ind2, ii1) + klat * (ratemap(ind2, ind1) - ratemap(ind2, ii1))
-                        prerate2 = ratemap(ii2, ii1) + klat * (ratemap(ii2, ind1) - ratemap(ii2, ii1))
-                        ! interpolation over longitudess
-                        fpsi = prerate1 + klon * (prerate2 - prerate1)
+		! orts of the CS where we can easily know coords
+		! of the ejection velocity vector
+			! z-axis is along heliocentric radius
+			zvec1 = rMtmp / norma3d(rMtmp)
+			! x-axis is towards local north
+			xvec1 = zvec - zvec1 * dot_product(zvec, zvec1)
+			xvec1 = xvec1 / norma3d(xvec1)
+			yvec1 = vector_product(zvec1, xvec1)
+			! ejection velocity vector in this CS
+			utmp(1) = sin(psi) * cos(lambdaM) ! lambdaM is azimuth
+			utmp(2) = sin(psi) * sin(-lambdaM) ! counted from the local north clockwise
+			utmp(3) = cos(psi) 
+			! ejection velocity vector in the same CS as rMtmp
+			uvec = utmp(1) * xvec1 + utmp(2) * yvec1 &
+				 + utmp(3) * zvec1
+			uvec = uvec / norma3d(uvec)
+		! the CS where the maps are defined: z-axis = (0, 0, 1)
+			! projection of rMtmp to xy-plane
+			xvec = rMtmp - dot_product(zvec, rMtmp) * zvec
+			xvec = -xvec / norma3d(xvec)
+			yvec = vector_product(zvec, xvec)
+			! ejection velocity vector in this CS
+			utmp(1) = dot_product(uvec, xvec)
+			utmp(2) = dot_product(uvec, yvec)
+			utmp(3) = uvec(3)
+			
+			lat = acos(utmp(3))            ! polar angle
+			lat = halfpi - lat                ! latitude
+			lon = atan(utmp(2), utmp(1))
+			if(lon < 0d0) lon = twopi + lon
+			lon = twopi - lon
+			
+			if(lat > lats(1) .and. lat < lats(nlats)) then
+				ii1 = 1
+				do while(lat < lats(ii1) .or. lat >= lats(ii1+1))
+					ii1 = ii1 + 1
+				enddo
+				ind1 = ii1
+				ii1 = ii1 + 1
+				klat = (lat - lats(ind1)) / (lats(ii1) - lats(ind1))
+			else
+			! if the given latitude is beyond the possible
+			! interpolation limits, we use the marginal values
+				if(lat < lats(1)) then
+					ii1 = 1 ; ind1 = 1
+					klat = 0d0
+				else
+					ii1 = nlats ; ind1 = nlats
+					klat = 0d0
+				endif
+			endif
+			if(lon < lonmax .and. lon > lonmin) then
+				ii2 = 1
+				do while(lon < lons(ii2) .or. lon >= lons(ii2+1))
+					ii2 = ii2 + 1
+				enddo
+				ind2 = ii2
+				ii2 = ii2 + 1
+				klon = (lon - lons(ind2)) / (lons(ii2) - lons(ind2))
+			else
+			! if lon is beyond the values available for interpolation
+			! we round the circle and use the values corresponding 
+			! to the minimal and maximum longitudes
+				ii2 = 1
+				ind2 = nlons
+				if(lon >= lonmax) then
+				! the number is 2 degrees between lon(180) = 359 deg and lon(1) = 1deg
+					klon = (lon - lonmax) / 0.03490659d0
+				else
+				! 1 deg / 2 deg + lon / 2 deg
+					klon = 0.5d0 + lon / 0.03490659d0
+				endif
+			endif
+			! interpolation over latitudes
+			prerate1 = ratemap(ind2, ii1) + klat * (ratemap(ind2, ind1) - ratemap(ind2, ii1))
+			prerate2 = ratemap(ii2, ii1) + klat * (ratemap(ii2, ind1) - ratemap(ii2, ii1))
+			! interpolation over longitudess
+			fpsi = prerate1 + klon * (prerate2 - prerate1)
           case(4)
-                        ! Here is the place to write the PDF 
-                        ! of the distribution tailored for your needs
-                        fpsi = 0d0
+			! Here is the place to write the PDF 
+			! of the distribution tailored for your needs
+			fpsi = 0d0
+		  case(10)
+		    if (N_psi_tab <= 0 .or. N_lambdaM_tab <= 0) then
+			  write(*,*) 'Tabulated distribution of ejection direction is not defined'
+			  stop
+			endif
+
+
+		    ! lambdaM is guaranteed to be in [0, 2pi], but the tabulated interval may be a sub-interval.
+		    ! If lambdaM lies outside [lambdaM_tab(1), lambdaM_tab(N_lambdaM_tab)], 
+		    ! interpolate across the periodic seam (lambdaM_tab(N_lambdaM_tab) -> lambdaM_tab(1)+2pi).
+		  if(lambdaM < lambdaM_tab(1) .or. lambdaM > lambdaM_tab(N_lambdaM_tab)) then
+		    l1 = lambdaM_tab(N_lambdaM_tab) - twopi
+		    l2 = lambdaM_tab(1)
+		    tab_meridian = fpsi_tab(:,N_lambdaM_tab) &
+			    + (fpsi_tab(:,1) - fpsi_tab(:,N_lambdaM_tab)) &
+			    * (lambdaM - l1) / (l2 - l1)
+		  else
+			! Find bracketing indices in lambdaM_tab for linear interpolation
+			i = 1
+			do while(i < N_lambdaM_tab .and. lambdaM > lambdaM_tab(i+1))
+			  i = i + 1
+			enddo
+            l1 = lambdaM_tab(i)
+            l2 = lambdaM_tab(i+1)
+            tab_meridian = fpsi_tab(:,i) &
+			    + (fpsi_tab(:,i+1) - fpsi_tab(:,i)) &
+			    * (lambdaM - l1) / (l2 - l1)
+		  end if
+
+		  ! Interpolate along psi
+		  fpsi = LiNTERPOL(N_psi_tab, tab_meridian, psi_tab, psi) 
 
         endselect
         Jpsi = 1d0
@@ -271,7 +389,6 @@ module distributions_fun
       ! (possibly time-dependent)
       ! ud is  the parameter used to select the expression for the distribution
       ! u is the ejection speed
-      ! R is the particle size
       function ejection_speed_distribution(ud, u) result(fu)
         use const
         use define_types
@@ -291,15 +408,23 @@ module distributions_fun
           case(0)
             fu = 1d0 / (ud%umax - ud%umin) 
           
-                    case(1)
-                    ! from Szalay & Horányi, 2016, Lunar meteoritic gardening rate
-                        nu = (u * AUdays2SI) / uesc
-                        fu = 2d0 * hrel * nu / uesc / (1d0 - nu**2)**2 &
-                             * exp(- hrel / (nu**(-2) - 1d0))
-                        fu = fu * AUdays2SI
+		  case(1)
+		! from Szalay & Horányi, 2016, Lunar meteoritic gardening rate
+			nu = (u * AUdays2SI) / uesc
+			fu = 2d0 * hrel * nu / uesc / (1d0 - nu**2)**2 &
+				 * exp(- hrel / (nu**(-2) - 1d0))
+			fu = fu * AUdays2SI
           case(2)
-                        ! Custom distribution specification
-                        fu = 0d0
+         ! Custom distribution specification
+            fu = 0d0
+          case(10)
+			if (nu_tab <= 0) then
+			   write(*,*) 'TABULATED EJECTION SPEED DISTRIBUTION IS NOT SET'
+			   stop
+			else
+			   fu_tabulated = LiNTERPOL(nu_tab, fu_tab, u_tab, u)
+		    endif
+            
         endselect
       
       end function ejection_speed_distribution
