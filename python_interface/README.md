@@ -113,6 +113,7 @@ python3 -m pytest -q
 
 ## 4. Model input and solution method selection
 
+### 4.1 General model input
 For the physical meaning of all input quantities, users should refer to 
 **Section 3 “Supplying Input Data” of the main package README**, which describes 
 the required model parameters, units, and conventions used by DUDI-HC. The Python 
@@ -124,6 +125,35 @@ structure as the corresponding Fortran routines in DUDIhc.f90, enabling users to
 rely on the main README and the original Fortran documentation when preparing 
 input for the Python interface.
 
+### 4.2 Tabulated distributions for no-FORTRAN usage of DUDI-hc
+**Works but needs proper testing. Tests are expected to be done by March 2026**
+The main feature of the DUDI-heliocentric package is the ability to employ 
+arbitrary ejection speed and ejection direction distributions, implemented as 
+FORTRAN functions in the module distributions_fun.f90. While this provides full 
+flexibility, it requires direct modification of FORTRAN source code. 
+The Python interface removes this limitation by allowing the same flexibility 
+through tabulated distributions supplied from Python, without writing FORTRAN.
+
+In this mode, the user provides tabulated probability density functions that are 
+transferred to the FORTRAN core via the Python–FORTRAN bridge. For the ejection 
+speed distribution, the arrays `u_tab` and `fu_tab` must be defined, where `u_tab` 
+contains ejection speeds and `fu_tab` contains the corresponding PDF values. 
+For the ejection direction distribution, the user must define the angular grids 
+`psi_tab` (zenith angle counted from anti-solar direction) and `lambdaM_tab` 
+(azimuth counted from the local north), together with the 2D array 
+`fpsi_tab(psi, lambdaM)` specifying the directional PDF. 
+
+The tabulated PDFs are selected by the corresponding distribution identifiers 
+in the source parameters. The identifier for the tabulated ejection speed and 
+direction distributions is **10** in both cases. 
+An example of setting up the model with the tabulated distributions is provided 
+in examples/tabulated_distributions_test.py.
+Make sure that:
+- `psi_tab` and `lambdaM_tab` are given in radians, and both >= 0. 
+- `u_tab` and `fu_tab` are defined for the speed expressed in AU/day.
+- All distributions are properly normalized.
+
+### 4.3 Selecting the appropriate solution method
 For the explanation of the three numerical methods implemented in DUDI-HC 
 (simple expansion, delta-ejection, and v-integration) users should refer to 
 **Section 4 of the main README** and to the original A&A paper, which provide  
