@@ -37,21 +37,15 @@ This Python interface provides:
 
 Python (your scripts, notebooks)
 
-        ->      high-level API + data models + batching utilities
-  python_interface/dudi_hc/api.py
-  python_interface/dudi_hc/models.py
+->      high-level API + data models + batching utilities: python_interface/dudi_hc/api.py python_interface/dudi_hc/models.py
   
-        ->      thin ctypes wrapper (NumPy <-> raw C arrays)
-  python_interface/dudi_hc/ctypes_bridge.py
+->      thin ctypes wrapper (NumPy <-> raw C arrays): python_interface/dudi_hc/ctypes_bridge.py
   
-        ->      shared library exposing Fortran routines as C functions
-  python_interface/dudi_hc/libpy_dudihc_bridge.so
+->      shared library exposing Fortran routines as C functions: python_interface/dudi_hc/libpy_dudihc_bridge.so
   
-        ->      Fortran-2003 wrapper module (bind(C))
-        
-  python_interface/fortran_bridge/py_bridge.f90 and helpers
+ ->      Fortran-2003 wrapper module (bind(C)):  python_interface/fortran_bridge/py_bridge.f90 and helpers
   
-        ->      Fortran-95 DUDI-HC scientific core (unchanged)
+->      Fortran-95 DUDI-HC scientific core (unchanged)
 
 
 Python never touches Fortran derived types directly. The C-bindable Fortran 
