@@ -37,31 +37,21 @@ This Python interface provides:
 
 Python (your scripts, notebooks)
 
-        |
-        
-        v      high-level API + data models + batching utilities
+        ->      high-level API + data models + batching utilities
   python_interface/dudi_hc/api.py
   python_interface/dudi_hc/models.py
   
-        |
-        
-        v      thin ctypes wrapper (NumPy <-> raw C arrays)
+        ->      thin ctypes wrapper (NumPy <-> raw C arrays)
   python_interface/dudi_hc/ctypes_bridge.py
   
-        |
-        
-        v      shared library exposing Fortran routines as C functions
+        ->      shared library exposing Fortran routines as C functions
   python_interface/dudi_hc/libpy_dudihc_bridge.so
   
-        |
-        
-        v      Fortran-2003 wrapper module (bind(C))
+        ->      Fortran-2003 wrapper module (bind(C))
         
   python_interface/fortran_bridge/py_bridge.f90 and helpers
   
-        |
-        
-        v      Fortran-95 DUDI-HC scientific core (unchanged)
+        ->      Fortran-95 DUDI-HC scientific core (unchanged)
 
 
 Python never touches Fortran derived types directly. The C-bindable Fortran 
@@ -137,7 +127,8 @@ rely on the main README and the original Fortran documentation when preparing
 input for the Python interface.
 
 ### 4.2 Tabulated distributions for no-FORTRAN usage of DUDI-hc
-**Works but needs proper testing. Tests are expected to be done by March 2026**
+**Works but needs proper testing. Tests are expected to be done by the eng of March 2026**
+
 The main feature of the DUDI-heliocentric package is the ability to employ 
 arbitrary ejection speed and ejection direction distributions, implemented as 
 FORTRAN functions in the module distributions_fun.f90. While this provides full 
